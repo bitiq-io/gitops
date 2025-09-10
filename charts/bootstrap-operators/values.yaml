@@ -1,0 +1,25 @@
+operators:
+  gitops:
+    channel: latest             # or gitops-1.13, gitops-1.17, etc. See docs.
+    name: openshift-gitops-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""             # typically omitted
+    approval: Automatic         # or Manual
+    disableDefaultInstance: false  # set true if you want to create your own ArgoCD instance
+
+  pipelines:
+    channel: latest             # or pipelines-1.14, etc.
+    name: openshift-pipelines-operator-rh
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
+argoInstance:
+  create: false                 # If true, create a user-defined ArgoCD instance
+  name: example
+  namespace: openshift-gitops
+  routeEnabled: true

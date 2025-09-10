@@ -1,0 +1,18 @@
+repoUrl: https://github.com/bitiq-io/gitops.git
+targetRevision: main
+argocdNamespace: openshift-gitops
+envFilter: ""   # if set to local/sno/prod, only that env is generated
+
+envs:
+  - name: local
+    clusterServer: https://kubernetes.default.svc   # in-cluster
+    appNamespace: bitiq-local
+    baseDomain: apps-crc.testing                    # OpenShift Local default
+  - name: sno
+    clusterServer: https://api.sno.example:6443
+    appNamespace: bitiq-sno
+    baseDomain: apps.sno.example
+  - name: prod
+    clusterServer: https://api.prod.example:6443
+    appNamespace: bitiq-prod
+    baseDomain: apps.prod.example

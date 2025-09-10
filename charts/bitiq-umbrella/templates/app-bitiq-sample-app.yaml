@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bitiq-sample-app-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  annotations:
+    # Tell Image Updater what image to track and how to write back to Helm values
+    argocd-image-updater.argoproj.io/image-list: app={{ .Values.sampleAppImageRepo }}
+    argocd-image-updater.argoproj.io/app.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:charts/bitiq-sample-app/values-{{ .Values.env }}.yaml
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/bitiq-sample-app
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

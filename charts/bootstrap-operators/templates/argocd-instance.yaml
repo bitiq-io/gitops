@@ -1,0 +1,11 @@
+{{- if .Values.argoInstance.create }}
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: {{ .Values.argoInstance.name }}
+  namespace: {{ .Values.argoInstance.namespace }}
+spec:
+  server:
+    route:
+      enabled: {{ .Values.argoInstance.routeEnabled }}
+{{- end }}

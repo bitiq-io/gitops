@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: bitiq-umbrella-by-env
+  namespace: {{ .Values.argocdNamespace }}
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+{{- range $e := .Values.envs }}
+{{- if or (eq $.Values.envFilter "" ) (eq $.Values.envFilter $e.name) }}
+          - env: {{ $e.name }}
+            cluster: {{ $e.clusterServer | quote }}
+            baseDomain: {{ $e.baseDomain | quote }}
+            appNamespace: {{ $e.appNamespace | quote }}
+{{- end }}
+{{- end }}
+  template:
+    metadata:
+      name: 'bitiq-umbrella-{{ .env }}'
+    spec:
+      project: default
+      source:
+        repoURL: {{ .Values.repoUrl | quote }}
+        targetRevision: {{ .Values.targetRevision | quote }}
+        path: charts/bitiq-umbrella
+        helm:
+          parameters:
+            - name: env
+              value: '{{ .env }}'
+            - name: baseDomain
+              value: '{{ .baseDomain }}'
+            - name: appNamespace
+              value: '{{ .appNamespace }}'
+            - name: repoUrl
+              value: {{ .Values.repoUrl | quote }}
+            - name: targetRevision
+              value: {{ .Values.targetRevision | quote }}
+      destination:
+        server: '{{ .cluster }}'
+        namespace: '{{ .appNamespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

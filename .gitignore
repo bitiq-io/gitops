@@ -1,0 +1,13 @@
+# macOS / Linux
+.DS_Store
+*.swp
+*.swo
+
+# Helm & build artifacts
+charts/**/charts/
+charts/**/tmp/
+charts/**/.helmignore
+*.tgz
+
+# Logs
+logs/

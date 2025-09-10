@@ -1,0 +1,96 @@
+{{- if .Values.triggers.create }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.triggers.githubSecretName }}
+  namespace: openshift-pipelines
+type: Opaque
+stringData:
+  secretToken: "replace-me"   # set a GitHub webhook secret
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ .Values.pipeline.name }}-template
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-repo-url
+    - name: git-revision
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: {{ .Values.pipeline.name }}-
+        namespace: openshift-pipelines
+      spec:
+        pipelineRef:
+          name: {{ .Values.pipeline.name }}
+        params:
+          - name: git-url
+            value: $(tt.params.git-repo-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 2Gi
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: {{ .Values.pipeline.name }}-binding
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-repo-url
+      value: $(body.repository.clone_url)
+    - name: git-revision
+      value: $(body.ref)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ .Values.triggers.eventListenerName }}
+  namespace: openshift-pipelines
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: secretRef
+              value:
+                secretName: {{ .Values.triggers.githubSecretName }}
+                secretKey: secretToken
+            - name: eventTypes
+              value: ["push","pull_request"]
+      bindings:
+        - ref: {{ .Values.pipeline.name }}-binding
+      template:
+        ref: {{ .Values.pipeline.name }}-template
+
+{{- if .Values.triggers.route }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ .Values.triggers.eventListenerName }}
+  namespace: openshift-pipelines
+spec:
+  to:
+    kind: Service
+    name: el-{{ .Values.triggers.eventListenerName }}
+  tls:
+    termination: edge
+{{- end }}
+{{- end }}

@@ -1,0 +1,19 @@
+env: local
+appNamespace: bitiq-local
+
+pipeline:
+  name: bitiq-build-and-push
+  gitUrl: https://github.com/bitiq-io/bitiq-svc-api.git
+  gitRevision: main
+  dockerfile: Dockerfile
+  contextDir: .
+  imageRegistry: image-registry.openshift-image-registry.svc:5000   # in-cluster registry
+  imageNamespace: bitiq-ci
+  imageName: bitiq-svc-api
+  tlsVerify: "false"   # often false for in-cluster push
+
+triggers:
+  create: true
+  eventListenerName: bitiq-listener
+  githubSecretName: github-webhook-secret
+  route: true

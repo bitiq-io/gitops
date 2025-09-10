@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ci-pipelines
+  namespace: {{ .Values.gitopsNamespace }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/ci-pipelines
+    helm:
+      parameters:
+        - name: env
+          value: {{ .Values.env | quote }}
+        - name: appNamespace
+          value: {{ .Values.appNamespace | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.pipelinesNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

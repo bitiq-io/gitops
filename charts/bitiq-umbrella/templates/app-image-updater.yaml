@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: image-updater
+  namespace: {{ .Values.gitopsNamespace }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/image-updater
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

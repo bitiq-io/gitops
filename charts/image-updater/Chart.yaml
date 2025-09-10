@@ -1,0 +1,6 @@
+apiVersion: v2
+name: image-updater
+description: Deploy Argo CD Image Updater into the ArgoCD namespace
+type: application
+version: 0.1.0
+appVersion: "0.13.x"

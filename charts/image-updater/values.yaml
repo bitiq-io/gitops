@@ -1,0 +1,10 @@
+argoNamespace: openshift-gitops
+logLevel: info
+
+argocd:
+  server: openshift-gitops-server
+  port: 443
+  insecure: true
+  token: ""   # REQUIRED: paste a token for the Argo CD API
+
+applicationNamespaces: "*"   # watch all namespaces

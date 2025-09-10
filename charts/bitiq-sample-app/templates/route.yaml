@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: bitiq-sample-app
+  labels:
+    app.kubernetes.io/name: bitiq-sample-app
+spec:
+  host: {{ .Values.hostPrefix }}.{{ required "baseDomain must be set (values-<env>.yaml)" .Values.baseDomain }}
+  to:
+    kind: Service
+    name: bitiq-sample-app
+  port:
+    targetPort: http
+  tls:
+    termination: edge

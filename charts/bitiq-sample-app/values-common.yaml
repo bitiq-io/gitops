@@ -1,0 +1,19 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/yourorg/bitiq-svc-api
+  tag: "0.1.0"        # Image Updater will manage this
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+  type: ClusterIP
+
+# Will be set per-env; used to build Route host
+baseDomain: ""
+hostPrefix: "svc-api"
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

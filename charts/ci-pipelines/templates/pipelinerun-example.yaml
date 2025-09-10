@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: {{ .Values.pipeline.name }}-manual
+  namespace: openshift-pipelines
+  annotations:
+    pipelinesascode.tekton.dev/on-target-branch: main
+spec:
+  pipelineRef:
+    name: {{ .Values.pipeline.name }}
+  params:
+    - name: git-url
+      value: {{ .Values.pipeline.gitUrl }}
+    - name: git-revision
+      value: {{ .Values.pipeline.gitRevision }}
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 2Gi

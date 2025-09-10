@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bitiq-sample-app
+description: Simple sample app (Deployment + Service + OpenShift Route)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,59 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ .Values.pipeline.name }}
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: {{ .Values.pipeline.gitUrl | quote }}
+    - name: git-revision
+      type: string
+      default: {{ .Values.pipeline.gitRevision | quote }}
+    - name: image
+      type: string
+      default: "{{ .Values.pipeline.imageRegistry }}/{{ .Values.pipeline.imageNamespace }}/{{ .Values.pipeline.imageName }}"
+    - name: dockerfile
+      type: string
+      default: {{ .Values.pipeline.dockerfile | quote }}
+    - name: context
+      type: string
+      default: {{ .Values.pipeline.contextDir | quote }}
+    - name: tlsverify
+      type: string
+      default: {{ .Values.pipeline.tlsVerify | quote }}
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: fetch-repo
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: build-and-push
+      runAfter: [fetch-repo]
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      params:
+        - name: IMAGE
+          value: $(params.image)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: $(params.context)
+        - name: TLSVERIFY
+          value: $(params.tlsverify)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
