@@ -8,7 +8,14 @@ help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 lint: ## helm lint all charts
-	@for c in $(CHARTS); do echo "==> helm lint $$c"; helm lint $$c || exit 1; done
+	@for c in $(CHARTS); do \
+	  echo "==> helm lint $$c"; \
+	  if [ "$$c" = "charts/bitiq-sample-app" ]; then \
+	    helm lint $$c -f $$c/values-common.yaml -f $$c/values-local.yaml || exit 1; \
+	  else \
+	    helm lint $$c || exit 1; \
+	  fi; \
+	done
 
 template: ## helm template sanity (local, sno, prod)
 	@for env in local sno prod; do \

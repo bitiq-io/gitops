@@ -44,11 +44,11 @@ fi
 # Base domain defaults
 case "$ENV" in
   local)  BASE_DOMAIN="${BASE_DOMAIN:-apps-crc.testing}";;
-  sno|prod) : "${BASE_DOMAIN:?Set BASE_DOMAIN for $ENV, e.g., apps.sno.example}";;
+  sno|prod) : "${BASE_DOMAIN:?Set BASE_DOMAIN for ${ENV}, e.g., apps.sno.example}";;
   *) log "FATAL: ENV must be one of local|sno|prod"; exit 1;;
 esac
 
-log "ENV=$ENV  BASE_DOMAIN=$BASE_DOMAIN  GIT_REPO_URL=$GIT_REPO_URL  TARGET_REV=$TARGET_REV"
+log "ENV=${ENV}  BASE_DOMAIN=${BASE_DOMAIN}  GIT_REPO_URL=${GIT_REPO_URL}  TARGET_REV=${TARGET_REV}"
 
 # Sanity checks: cluster login
 oc whoami >/dev/null || { log "FATAL: oc not logged in"; exit 1; }
@@ -77,7 +77,7 @@ for i in {1..60}; do
 done
 
 # 3) Install ApplicationSet that renders ONE umbrella app for the selected ENV
-log "Installing ApplicationSet (argocd-apps) for ENV=$ENV…"
+log "Installing ApplicationSet (argocd-apps) for ENV=${ENV}…"
 helm upgrade --install argocd-apps charts/argocd-apps \
   --namespace openshift-gitops \
   --set-string repoUrl="${GIT_REPO_URL}" \
