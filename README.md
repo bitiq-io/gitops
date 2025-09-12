@@ -76,6 +76,11 @@ make lint       # helm lint all charts
 make template   # helm template sanity for each env
 ```
 
+## Contributing & Agents
+
+- See `AGENTS.md` for assistant-safe workflows, commit/PR conventions, and validation steps.
+- Refer to ecosystem templates and standards: https://github.com/PaulCapestany/ecosystem
+
 ## Troubleshooting
 
 * If you prefer to **disable** the default ArgoCD instance and create a custom one, set `.operators.gitops.disableDefaultInstance=true` in `charts/bootstrap-operators/values.yaml`. ([Red Hat Docs][3])
