@@ -84,6 +84,12 @@ make lint       # helm lint all charts
 make template   # helm template sanity for each env
 ```
 
+## Project docs
+
+- [SPEC.md](SPEC.md) — scope, requirements, and acceptance criteria
+- [TODO.md](TODO.md) — upcoming tasks in Conventional Commits format
+- [AGENTS.md](AGENTS.md) — assistant-safe workflows and conventions
+
 ## Contributing & Agents
 
 - See `AGENTS.md` for assistant-safe workflows, commit/PR conventions, and validation steps.
