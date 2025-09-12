@@ -135,6 +135,15 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 
 TODO: add a second example microservice and wire **App-of-Apps dependencies** (e.g., DB first, then API) using Argo CD sync phases — or convert the image bump from Image Updater to a **Tekton PR** flow that edits the env Helm values directly (both patterns are compatible with this layout)
 
+## License & Maintainers
+
+This project is licensed under the [ISC License](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+## Security
+
+For vulnerability reporting, please see [SECURITY.md](SECURITY.md).
+
 [1]: https://argo-cd.readthedocs.io/en/latest/user-guide/helm/?utm_source=chatgpt.com "Helm - Argo CD - Declarative GitOps CD for Kubernetes"
 [2]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.13/html/installing_gitops/installing-openshift-gitops?utm_source=chatgpt.com "Chapter 2. Installing Red Hat OpenShift GitOps"
 [3]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.13/html/argo_cd_instance/setting-up-argocd-instance?utm_source=chatgpt.com "Chapter 1. Setting up an Argo CD instance"
