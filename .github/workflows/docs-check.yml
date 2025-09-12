@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify required docs present
-        uses: PaulCapestany/ecosystem/.github/actions/docs-check@main
+        uses: PaulCapestany/ecosystem/.github/actions/docs-check@docs-check-v1
         with:
           path: .
           files: README.md,AGENTS.md,SPEC.md,TODO.md
