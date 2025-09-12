@@ -10,14 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify required docs present
-        run: |
-          missing=()
-          for f in README.md AGENTS.md SPEC.md TODO.md; do
-            [ -f "$f" ] || missing+=("$f")
-          done
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Missing required docs: ${missing[*]}" >&2
-            exit 1
-          fi
-          echo "All required docs present"
-
+        uses: PaulCapestany/ecosystem/.github/actions/docs-check@main
+        with:
+          path: .
+          files: README.md,AGENTS.md,SPEC.md,TODO.md
