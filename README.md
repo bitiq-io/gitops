@@ -11,6 +11,12 @@ It uses:
 - **Argo CD Image Updater** for auto image bumping (with write-back to Git Helm values).
 - A **sample Helm app** to prove end-to-end CI→CD.
 
+## Project docs
+
+- [SPEC](SPEC.md)
+- [TODO](TODO.md)
+- [Architecture Decision Records](docs/adr/)
+
 ## Prereqs
 
 - OpenShift 4.x cluster (OpenShift Local, SNO, or full) and `oc`, `helm` in PATH
