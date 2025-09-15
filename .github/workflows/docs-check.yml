@@ -1,17 +1,16 @@
----
 name: Docs Check
 
-"on":
+on:
   pull_request:
-    branches: [main]
+    branches: [ main, master ]
 
 jobs:
   docs-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify required docs present
-        uses: PaulCapestany/ecosystem/.github/actions/docs-check@v1
+      - name: Check required docs
+        uses: PaulCapestany/ecosystem/.github/actions/docs-check@main
         with:
           path: .
           files: README.md,AGENTS.md,SPEC.md,TODO.md
