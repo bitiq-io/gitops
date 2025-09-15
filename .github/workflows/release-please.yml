@@ -1,6 +1,7 @@
+---
 name: release-please
 
-on:
+"on":
   push:
     branches: [main]
   workflow_dispatch: {}
@@ -17,4 +18,3 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           command: manifest
-
