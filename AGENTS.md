@@ -31,6 +31,7 @@ Run basic checks before committing:
 make lint       # helm lint all charts
 make template   # helm template sanity (uses env values)
 make validate   # render charts, kubeconform, conftest, yamllint
+make dev-setup  # install local commit-msg hook for commitlint
 ```
 
 If adding/altering Helm values:

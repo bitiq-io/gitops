@@ -89,6 +89,7 @@ The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, 
 make lint       # helm lint all charts
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
+make dev-setup  # install local commit-msg hook for commitlint
 ```
 
 ## Project docs
