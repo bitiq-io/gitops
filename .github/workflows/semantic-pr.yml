@@ -36,4 +36,3 @@ jobs:
           requireScope: false
           subjectPattern: ^(?![A-Z]).+
           subjectPatternError: "Subject must be lower-case (no leading capital)."
-
