@@ -53,10 +53,11 @@ export BASE_DOMAIN=apps.sno.example    # e.g., apps.<yourcluster-domain>
 ./scripts/bootstrap.sh
 ```
 
-TODO: need to improve instructions for running locally
-TODO: need to note that `crc setup && crc start` may take a bit to fully run (and that there's no point trying to run bootstrap.sh until OpenShift Local is actually usable), and that the web console url that is given as well as admin username and password are important
-TODO: this did not work: `oc login -u kubeadmin -p $(crc console --credentials | awk '/kubeadmin/ {print $2}')`, however, the following DID work: `oc login -u kubeadmin -p PASSWORD https://api.crc.testing:6443`
-TODO: should explain `ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')` and need for `oc -n openshift-gitops edit configmap argocd-rbac-cm` and the edit followed by `oc -n openshift-gitops rollout restart deploy/openshift-gitops-server`, `argocd login "$ARGOCD_HOST" --sso --grpc-web`
+Local notes (OpenShift Local / CRC)
+
+- Ensure CRC is fully ready before bootstrapping (run: crc setup && crc start).
+- Get kubeadmin credentials with: crc console --credentials
+- Login to the cluster: oc login -u kubeadmin -p <PASSWORD> https://api.crc.testing:6443
 
 
 **What happens:**
