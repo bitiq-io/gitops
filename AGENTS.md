@@ -34,6 +34,8 @@ make validate   # render charts, kubeconform, conftest, yamllint
 make dev-setup  # install local commit-msg hook for commitlint
 ```
 
+CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep local and CI checks aligned.
+
 If adding/altering Helm values:
 
 ```bash
