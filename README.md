@@ -102,15 +102,18 @@ make validate   # full validation: helm render, kubeconform, conftest, yamllint
 make dev-setup  # install local commit-msg hook for commitlint
 ```
 
+CI uses the same entrypoint: the workflow runs `make validate` for parity with local checks.
+
 ## Project docs
 
 - [SPEC.md](SPEC.md) — scope, requirements, and acceptance criteria
 - [TODO.md](TODO.md) — upcoming tasks in Conventional Commits format
 - [AGENTS.md](AGENTS.md) — assistant-safe workflows and conventions
+  - See also: `docs/adr/0002-helm-first-gitops-structure.md` for the Helm-first decision
 
 ## Contributing & Agents
 
-- See `AGENTS.md` for assistant-safe workflows, commit/PR conventions, and validation steps.
+- See `AGENTS.md` for assistant-safe workflows, commit/PR conventions, role templates under `agents/`, and validation steps.
 - Refer to ecosystem templates and standards: https://github.com/PaulCapestany/ecosystem
 
 ## Troubleshooting
