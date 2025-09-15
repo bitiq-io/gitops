@@ -66,7 +66,7 @@ done
 
 log "Render + validate: image-updater"
 out="$OUT_DIR/image-updater.yaml"
-render_chart "$ROOT_DIR/charts/image-updater" "$out" --set argocd.token=dummy
+render_chart "$ROOT_DIR/charts/image-updater" "$out" --set secret.create=false
 validate_file "$out"
 policy_test "$out"
 

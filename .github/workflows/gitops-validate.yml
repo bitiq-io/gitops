@@ -58,7 +58,7 @@ jobs:
 
           echo '==> Render and validate image-updater'
           out=.out/image-updater.yaml
-          helm template charts/image-updater --set argocd.token=dummy > "$out"
+          helm template charts/image-updater --set secret.create=false > "$out"
           kubeconform $STRICT "$out"
           conftest test -p policy "$out"
 

@@ -73,6 +73,16 @@ The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
+Token secret configuration for Image Updater
+
+- The chart supports providing the Argo CD API token via an existing Secret (recommended) or creating one from values.
+- Values (charts/image-updater/values.yaml):
+  - `secret.create`: set to `true` to create the Secret from `.argocd.token`; default `false`.
+  - `secret.name`: Secret name to reference (default `argocd-image-updater-secret`).
+  - `secret.key`: Secret key containing the token (default `argocd.token`).
+  - If `secret.create=true`, set `argocd.token` to the token value (or pass via `--set`).
+  - For production, prefer SealedSecrets/External Secrets and set `secret.create=false` with `secret.name` pointing to the managed Secret.
+
 ### Tekton triggers
 
 The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, TriggerBinding, TriggerTemplate). Point your GitHub webhook to the exposed Route of the EventListener to kick off builds on push/PR. ([Red Hat][11], [Tekton][12])

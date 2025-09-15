@@ -1,0 +1,13 @@
+# Request reviews automatically from maintainers on critical areas
+
+# Default owners
+* @PaulCapestany @bitiq-io/maintainers
+
+# Charts and manifests
+charts/** @PaulCapestany @bitiq-io/maintainers
+
+# CI workflows
+.github/workflows/** @PaulCapestany @bitiq-io/maintainers
+
+# Policies
+policy/** @PaulCapestany @bitiq-io/maintainers
