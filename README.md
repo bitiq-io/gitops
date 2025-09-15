@@ -156,3 +156,12 @@ TODO: add a second example microservice and wire **App-of-Apps dependencies** (e
 [13]: https://hewlettpackard.github.io/OpenShift-on-SimpliVity/post-deploy/expose-registry?utm_source=chatgpt.com "Exposing the image registry | Red Hat OpenShift Container ..."
 [14]: https://docs.prismacloud.io/en/compute-edition/32/admin-guide/vulnerability-management/registry-scanning/scan-openshift?utm_source=chatgpt.com "Scan images in OpenShift integrated Docker registry"
 [15]: https://tekton.dev/docs/triggers/eventlisteners/?utm_source=chatgpt.com "EventListeners - Tekton"
+
+## License & Maintainers
+
+This project is licensed under the [ISC License](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+## Security
+
+For vulnerability reporting, please see [SECURITY.md](SECURITY.md).
