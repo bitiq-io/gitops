@@ -13,3 +13,6 @@ charts/**/.helmignore
 logs/
 # Local caches
 .cache/
+
+# Rendered manifests output
+.out/

@@ -20,8 +20,8 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/image-updater/` — Argo CD Image Updater deployment
 - `charts/bitiq-sample-app/` — Example app used for end-to-end flow
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
-- `scripts/validate.sh` — Optional validation helpers
-- `Makefile` — Lint and template sanity checks
+- `scripts/validate.sh` — Local validation (render + schema + policy)
+- `Makefile` — Lint, template sanity, and full validate
 
 ## Golden Paths (Local Validation)
 
@@ -30,6 +30,7 @@ Run basic checks before committing:
 ```bash
 make lint       # helm lint all charts
 make template   # helm template sanity (uses env values)
+make validate   # render charts, kubeconform, conftest, yamllint
 ```
 
 If adding/altering Helm values:
@@ -60,4 +61,3 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 
 - Ecosystem standards and templates: https://github.com/PaulCapestany/ecosystem
 - Argo CD, Pipelines, Image Updater links are in this repo’s README.
-

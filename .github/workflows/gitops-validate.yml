@@ -1,0 +1,72 @@
+name: GitOps Validate
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.52.0/conftest_0.52.0_Linux_x86_64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin conftest
+
+      - name: Make lint (Helm charts)
+        run: make lint
+
+      - name: YAML lint (non-template files)
+        run: |
+          if [ -f .yamllint.yaml ]; then cfg="-c .yamllint.yaml"; else cfg=""; fi
+          files=$(git ls-files '*.yml' '*.yaml' ':!:charts/**/templates/**')
+          if [ -n "$files" ]; then
+            yamllint $cfg $files
+          else
+            echo "No YAML files to lint (excluding templates)."
+          fi
+
+      - name: Helm render + kubeconform + conftest
+        env:
+          STRICT: "-strict -ignore-missing-schemas"
+        run: |
+          set -euo pipefail
+          mkdir -p .out
+
+          echo '==> Render and validate bitiq-sample-app for each env'
+          for env in local sno prod; do
+            out=.out/bitiq-sample-app-$env.yaml
+            helm template charts/bitiq-sample-app \
+              -f charts/bitiq-sample-app/values-common.yaml \
+              -f charts/bitiq-sample-app/values-$env.yaml \
+            > "$out"
+            kubeconform $STRICT "$out"
+            conftest test -p policy "$out" || (echo "Policy violations in $out"; exit 1)
+          done
+
+          echo '==> Render and validate image-updater'
+          out=.out/image-updater.yaml
+          helm template charts/image-updater --set argocd.token=dummy > "$out"
+          kubeconform $STRICT "$out"
+          conftest test -p policy "$out"
+
+          echo '==> Render ci-pipelines (Tekton CRDs may be skipped by kubeconform)'
+          out=.out/ci-pipelines.yaml
+          helm template charts/ci-pipelines > "$out"
+          kubeconform $STRICT "$out" || true
+
+          echo '==> Render umbrella + argocd-apps for each env (CRDs; schema skipped)'
+          for env in local sno prod; do
+            helm template charts/argocd-apps --set envFilter=$env | kubeconform $STRICT || true
+          done

@@ -1,0 +1,11 @@
+extends: default
+rules:
+  line-length:
+    max: 140
+    level: warning
+  truthy:
+    level: warning
+
+# Avoid linting raw Helm templates which are not valid YAML pre-render
+ignore: |
+  charts/**/templates/**
