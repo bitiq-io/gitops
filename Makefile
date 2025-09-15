@@ -1,4 +1,4 @@
-SHELL := /usr/bin/env bash
+SHELL := /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL := help
 
@@ -22,3 +22,9 @@ template: ## helm template sanity (local, sno, prod)
 	  echo "==> argocd-apps ($$env)"; \
 	  helm template charts/argocd-apps --set envFilter=$$env >/dev/null || exit 1; \
 	done
+
+validate: ## run full validation (lint, render, schema, policy)
+	@bash scripts/validate.sh
+
+dev-setup: ## install local commit-msg hook (requires Node/npm)
+	@bash scripts/dev-setup.sh

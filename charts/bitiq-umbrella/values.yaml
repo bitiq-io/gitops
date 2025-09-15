@@ -1,0 +1,13 @@
+# Default values used for linting and as safe fallbacks.
+# Environment-specific values should continue to live in values-common.yaml or env-derived sources.
+
+env: local
+baseDomain: apps-crc.testing
+appNamespace: bitiq-local
+gitopsNamespace: openshift-gitops
+pipelinesNamespace: openshift-pipelines
+
+repoUrl: https://github.com/bitiq-io/gitops.git
+targetRevision: main
+
+sampleAppImageRepo: quay.io/yourorg/bitiq-svc-api

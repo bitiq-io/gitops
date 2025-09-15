@@ -5,6 +5,24 @@ argocd:
   server: openshift-gitops-server
   port: 443
   insecure: true
-  token: ""   # REQUIRED: paste a token for the Argo CD API
+  # When secret.create=true below, set the token here or via env/CI
+  token: ""
 
 applicationNamespaces: "*"   # watch all namespaces
+
+image:
+  repository: quay.io/argoprojlabs/argocd-image-updater
+  tag: v0.16.0
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+secret:
+  create: false
+  name: argocd-image-updater-secret
+  key: argocd.token

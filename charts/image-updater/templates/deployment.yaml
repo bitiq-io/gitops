@@ -16,9 +16,17 @@ spec:
         app.kubernetes.io/name: argocd-image-updater
     spec:
       serviceAccountName: argocd-image-updater
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: argocd-image-updater
-          image: quay.io/argoprojlabs/argocd-image-updater:latest
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           args:
             - --log-level={{ .Values.logLevel }}
             - --applications-namespace={{ .Values.applicationNamespaces }}
@@ -30,5 +38,7 @@ spec:
             - name: ARGOCD_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: argocd-image-updater-secret
-                  key: argocd.token
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.key }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
