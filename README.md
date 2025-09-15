@@ -24,6 +24,14 @@ It uses:
 - Git repo hosting (HTTPS or SSH) with ArgoCD repo credentials configured
 - For OpenShift Local: the app base domain is `apps-crc.testing`. :contentReference[oaicite:7]{index=7}
 
+OpenShift Local (CRC) resources
+
+- For a smoother local experience, size CRC generously:
+  - `crc config set memory 16384`
+  - `crc config set cpus 6`
+  - `crc config set disk-size 120`
+- Note: resource changes take effect after `crc stop && crc delete && crc start`.
+
 ## Quick start
 
 For detailed macOS/OpenShift Local setup, see `docs/LOCAL-SETUP.md`.
@@ -100,6 +108,7 @@ make lint       # helm lint all charts
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
 make dev-setup  # install local commit-msg hook for commitlint
+make smoke ENV=local [BOOTSTRAP=true]  # cluster smoke checks (optional bootstrap)
 ```
 
 CI uses the same entrypoint: the workflow runs `make validate` for parity with local checks.

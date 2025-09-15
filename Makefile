@@ -26,5 +26,8 @@ template: ## helm template sanity (local, sno, prod)
 validate: ## run full validation (lint, render, schema, policy)
 	@bash scripts/validate.sh
 
+smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...])
+	@ENV=${ENV} BOOTSTRAP=${BOOTSTRAP} BASE_DOMAIN=${BASE_DOMAIN} bash scripts/smoke.sh ${ENV}
+
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
