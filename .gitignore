@@ -11,3 +11,5 @@ charts/**/.helmignore
 
 # Logs
 logs/
+# Local caches
+.cache/
