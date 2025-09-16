@@ -16,3 +16,5 @@ logs/
 
 # Rendered manifests output
 .out/
+/.out/
+/.bin/

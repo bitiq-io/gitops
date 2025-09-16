@@ -4,6 +4,7 @@ metadata:
   name: bitiq-umbrella-by-env
   namespace: {{ .Values.argocdNamespace }}
 spec:
+  goTemplate: true
   generators:
     - list:
         elements:
@@ -17,7 +18,7 @@ spec:
 {{- end }}
   template:
     metadata:
-      name: 'bitiq-umbrella-{{env}}'
+      name: 'bitiq-umbrella-{{ "{{ .env }}" }}'
     spec:
       project: default
       source:
@@ -27,18 +28,18 @@ spec:
         helm:
           parameters:
             - name: env
-              value: '{{env}}'
+              value: '{{ "{{ .env }}" }}'
             - name: baseDomain
-              value: '{{baseDomain}}'
+              value: '{{ "{{ .baseDomain }}" }}'
             - name: appNamespace
-              value: '{{appNamespace}}'
+              value: '{{ "{{ .appNamespace }}" }}'
             - name: repoUrl
               value: {{ .Values.repoUrl | quote }}
             - name: targetRevision
               value: {{ .Values.targetRevision | quote }}
       destination:
-        server: '{{cluster}}'
-        namespace: '{{appNamespace}}'
+        server: '{{ "{{ .cluster }}" }}'
+        namespace: '{{ "{{ .appNamespace }}" }}'
       syncPolicy:
         automated:
           prune: true

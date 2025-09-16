@@ -16,6 +16,7 @@ It uses:
 - [SPEC](SPEC.md)
 - [TODO](TODO.md)
 - [Architecture Decision Records](docs/adr/)
+- [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
 
 ## Prereqs
 
