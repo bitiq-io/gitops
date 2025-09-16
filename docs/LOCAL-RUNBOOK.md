@@ -34,6 +34,36 @@ Bootstrap passes `envFilter=local`. If you ever need to reapply the AppSet manua
 oc -n openshift-gitops apply -f <(helm template charts/argocd-apps --set envFilter=local)
 ```
 
+## 3) ArgoCD RBAC and repository credentials
+
+ArgoCD is operator‑managed on OpenShift. To persist RBAC changes, patch the ArgoCD CR (not the `argocd-rbac-cm` directly).
+
+Grant admin to kubeadmin locally (dev convenience), and allow all admin actions:
+
+```bash
+oc -n openshift-gitops patch argocd openshift-gitops \
+  --type merge -p '{"spec":{"rbac":{"policy":"g, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}'
+oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
+```
+
+Then connect the repo with write access via the Argo UI (SSO login):
+
+```bash
+ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+open https://$ARGOCD_HOST   # or paste in browser
+```
+
+Argo UI → Settings → Repositories → Connect repo using HTTPS
+- Repository URL: https://github.com/bitiq-io/gitops.git
+- Username: any non‑empty (e.g., `git`)
+- Password: fine‑grained PAT with Contents: Read/Write (repo‑scoped), or use an SSH deploy key with write access
+
+Tip: the operator writes the effective RBAC into `argocd-rbac-cm`; verify with:
+
+```bash
+oc -n openshift-gitops get cm argocd-rbac-cm -o json | jq -r '.data["policy.csv"]'
+```
+
 ## 3) Allow ArgoCD to manage the target namespace
 
 ```bash
@@ -54,6 +84,17 @@ oc -n openshift-gitops rollout restart deploy/argocd-image-updater
 Notes:
 - Dummy token lets the pod run for smoke tests. For a real token, log into ArgoCD via SSO and create a token, then update the Secret.
 - The chart supports `secret.create=false` (default) to use an existing Secret, or `secret.create=true` to create from values.
+
+Real token flow (optional, for write‑back):
+
+```bash
+ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
+TOKEN=$(argocd account generate-token --grpc-web)
+oc -n openshift-gitops create secret generic argocd-image-updater-secret \
+  --from-literal=argocd.token="$TOKEN" --dry-run=client -o yaml | oc apply -f -
+oc -n openshift-gitops rollout restart deploy/argocd-image-updater
+```
 
 ## 5) Auto‑sync child apps
 

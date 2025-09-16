@@ -29,5 +29,17 @@ validate: ## run full validation (lint, render, schema, policy)
 smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...])
 	@ENV=${ENV} BOOTSTRAP=${BOOTSTRAP} BASE_DOMAIN=${BASE_DOMAIN} bash scripts/smoke.sh ${ENV}
 
+tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB_WEBHOOK_SECRET is set
+	@oc new-project bitiq-ci >/dev/null 2>&1 || true
+	@oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci >/dev/null 2>&1 || true
+	@if [ -n "$$GITHUB_WEBHOOK_SECRET" ]; then \
+	  echo "Creating GitHub webhook secret in openshift-pipelines"; \
+	  oc -n openshift-pipelines create secret generic github-webhook-secret \
+	    --from-literal=secretToken="$$GITHUB_WEBHOOK_SECRET" >/dev/null 2>&1 || \
+	    oc -n openshift-pipelines set data secret/github-webhook-secret secretToken="$$GITHUB_WEBHOOK_SECRET" >/dev/null 2>&1 || true; \
+	else \
+	  echo "Set GITHUB_WEBHOOK_SECRET to create webhook secret"; \
+	fi
+
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
