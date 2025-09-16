@@ -20,6 +20,9 @@ spec:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--port"
+            - "{{ .Values.service.port }}"
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false

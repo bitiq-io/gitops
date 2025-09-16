@@ -6,7 +6,7 @@ image:
   pullPolicy: IfNotPresent
 
 service:
-  port: 80
+  port: 8080
   type: ClusterIP
 
 # Will be set per-env; used to build Route host

@@ -78,10 +78,10 @@ echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
 
 ## 7) Sample app image (public by default)
 
-- The sample app now uses a public image by default: `ghcr.io/traefik/whoami:v1.10.2` on port 80 and probes `GET /` (200).
+- The sample app now uses a public image by default: `ghcr.io/traefik/whoami:v1.10.2` on port 8080 and probes `GET /` (200).
 - These are set in `charts/bitiq-sample-app/values-common.yaml`:
   - `image.repository`, `image.tag`
-  - `service.port: 80`
+  - `service.port: 8080`
   - `healthPath: "/"`
 - If you swap to your own image, ensure the port and probe path line up; then hard refresh:
   ```bash
