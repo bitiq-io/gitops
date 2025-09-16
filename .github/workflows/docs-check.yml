@@ -1,8 +1,9 @@
+---
 name: Docs Check
 
-on:
+"on":
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   docs-check:
