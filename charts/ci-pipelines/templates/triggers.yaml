@@ -20,6 +20,7 @@ spec:
   params:
     - name: git-repo-url
     - name: git-revision
+    - name: image-tag
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
@@ -34,6 +35,8 @@ spec:
             value: $(tt.params.git-repo-url)
           - name: git-revision
             value: $(tt.params.git-revision)
+          - name: imageTag
+            value: $(tt.params.image-tag)
         workspaces:
           - name: shared-workspace
             volumeClaimTemplate:
@@ -55,6 +58,8 @@ spec:
       value: $(body.repository.clone_url)
     - name: git-revision
       value: $(body.ref)
+    - name: image-tag
+      value: $(body.after)
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
