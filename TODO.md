@@ -24,5 +24,10 @@
 - feat(secrets): optional External Secrets Operator (disabled by default) + `charts/vault-secrets` example (Vault/ESO)
 - docs(secrets): document ESO/Vault integration and Argo repo credential handling
 
+### local-e2e: hardening
+- ci(tekton): stop creating webhook Secret by default; gate via `triggers.createSecret` (done)
+- dev(runbook): add clear steps to obtain Argo CD token via SSO; note the common `account '<user>' does not exist` error and fix (done)
+- chore(make): add `image-updater-secret` helper target (done)
+
 ## Later
 - docs: add ADRs for secrets management and repo credentials strategy

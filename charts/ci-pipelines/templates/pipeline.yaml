@@ -28,8 +28,16 @@ spec:
   tasks:
     - name: fetch-repo
       taskRef:
-        kind: ClusterTask
-        name: git-clone
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.9"
       params:
         - name: url
           value: $(params.git-url)
@@ -43,8 +51,16 @@ spec:
     - name: build-and-push
       runAfter: [fetch-repo]
       taskRef:
-        kind: ClusterTask
-        name: buildah
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: version
+            value: "0.10"
       params:
         - name: IMAGE
           value: $(params.image)

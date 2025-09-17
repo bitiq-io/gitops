@@ -1,4 +1,5 @@
 {{- if .Values.triggers.create }}
+{{- if .Values.triggers.createSecret }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -6,7 +7,8 @@ metadata:
   namespace: openshift-pipelines
 type: Opaque
 stringData:
-  secretToken: "replace-me"   # set a GitHub webhook secret
+  secretToken: {{ required "Set triggers.secretToken when triggers.createSecret=true" .Values.triggers.secretToken | quote }}
+{{- end }}
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1

@@ -60,6 +60,10 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 - Coordinate operator channel changes with maintainers; include references (release notes/docs).
 - When introducing secrets management (SealedSecrets/ESO), add usage docs and examples.
 
+Notes for agents (local e2e):
+- Do not auto-create GitHub webhook secrets in charts without an explicit opt-in; use `triggers.createSecret=true` for that behavior.
+- Prefer creating Argo CD API tokens for a dedicated local account (`argocd-image-updater`) over SSO users for use by automation.
+
 ## References
 
 - Ecosystem standards and templates: https://github.com/PaulCapestany/ecosystem
