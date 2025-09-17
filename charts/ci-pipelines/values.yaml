@@ -19,7 +19,7 @@ pipeline:
   dockerfile: Dockerfile
   contextDir: .
 
-  # Image destination (in-cluster registry is preferred for CRC)
+  # Image destination (Quay for local e2e)
   imageRegistry: quay.io
   imageNamespace: paulcapestany
   imageName: toy-service

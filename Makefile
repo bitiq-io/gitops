@@ -64,6 +64,5 @@ image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_T
 	@oc -n openshift-gitops create secret generic argocd-image-updater-secret \
 	  --from-literal=argocd.token="$$ARGOCD_TOKEN" --dry-run=client -o yaml | oc apply -f -
 	@oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
-
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh

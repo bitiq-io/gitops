@@ -80,7 +80,7 @@ oc -n openshift-pipelines port-forward svc/el-bitiq-listener 8080:8080
 ngrok http 8080   # copy the HTTPS URL shown
 
 # Get the webhook secret value
-och=$(oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.secretToken}' | base64 -d); echo "$och"
+oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.secretToken}' | base64 -d; echo
 ```
 
 GitHub repo → Settings → Webhooks → Add webhook
