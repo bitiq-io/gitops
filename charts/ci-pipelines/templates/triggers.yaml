@@ -21,6 +21,7 @@ spec:
     - name: git-repo-url
     - name: git-revision
     - name: image-tag
+      default: latest
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
@@ -59,7 +60,7 @@ spec:
     - name: git-revision
       value: $(body.ref)
     - name: image-tag
-      value: $(body.after)
+      value: $(extensions.image_tag)
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
@@ -81,6 +82,25 @@ spec:
                 secretKey: secretToken
             - name: eventTypes
               value: ["push","pull_request"]
+        - ref:
+            name: "cel"
+          params:
+            - name: overlays
+              value:
+                - key: extensions.image_tag
+                  expression: >-
+                    (
+                      'after' in body && body.after != '' ?
+                      body.after :
+                      (
+                        'pull_request' in body &&
+                        'head' in body.pull_request &&
+                        'sha' in body.pull_request.head &&
+                        body.pull_request.head.sha != '' ?
+                        body.pull_request.head.sha :
+                        'latest'
+                      )
+                    )
       bindings:
         - ref: {{ .Values.pipeline.name }}-binding
       template:
