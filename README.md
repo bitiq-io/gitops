@@ -93,9 +93,34 @@ Token secret configuration for Image Updater
   - If `secret.create=true`, set `argocd.token` to the token value (or pass via `--set`).
   - For production, prefer SealedSecrets/External Secrets and set `secret.create=false` with `secret.name` pointing to the managed Secret.
 
+CLI helper for local e2e:
+
+```bash
+# After "argocd login ... --sso --grpc-web --insecure"
+export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
+make image-updater-secret   # applies/updates secret and restarts updater
+```
+
+If your SSO user cannot generate a token (error: `account '<user>' does not exist`), define a dedicated local Argo CD account and generate a token for it:
+
+```bash
+oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{
+  "spec":{
+    "extraConfig":{"accounts.argocd-image-updater":"apiKey"},
+    "rbac":{"policy":"g, kubeadmin, role:admin\n\ng, argocd-image-updater, role:admin\n\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}
+  }
+}'
+oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
+argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
+export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web --account argocd-image-updater)
+make image-updater-secret
+```
+
 ### Tekton triggers
 
 The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, TriggerBinding, TriggerTemplate). Point your GitHub webhook to the exposed Route of the EventListener to kick off builds on push/PR. ([Red Hat][11], [Tekton][12])
+
+Secret management note: the chart does not create the webhook Secret by default to avoid overwriting manual/managed secrets. Manually create it or set `triggers.createSecret=true` and provide `triggers.secretToken`.
 
 ### Notes
 
@@ -145,7 +170,7 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 2. **Configure Argo CD repo creds** with write access to this Git repo (for Image Updater’s Git write-back). See Argo CD docs for repo credentials; Image Updater uses Argo CD’s API & repo creds. ([Argo CD Image Updater][10])
 
 3. **(Optional) GitHub webhook**
-   Grab the Route URL of `el-bitiq-listener` in `openshift-pipelines` and add it as a GitHub webhook for your microservice repo (content type: JSON; secret = the value you set in `triggers.githubSecretName`). ([Red Hat][11], [Tekton][15])
+   Grab the Route URL named `bitiq-listener` in `openshift-pipelines` (it targets service `el-bitiq-listener`) and add it as a GitHub webhook for your microservice repo (content type: JSON; secret = the value you set in `triggers.githubSecretName`). ([Red Hat][11], [Tekton][15])
 
 4. **Access the app**
    The sample Route host is `svc-api.${BASE_DOMAIN}`. For OpenShift Local that’s `svc-api.apps-crc.testing`. ([crc.dev][5])

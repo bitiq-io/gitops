@@ -85,6 +85,63 @@ Notes:
 - Dummy token lets the pod run for smoke tests. For a real token, log into ArgoCD via SSO and create a token, then update the Secret.
 - The chart supports `secret.create=false` (default) to use an existing Secret, or `secret.create=true` to create from values.
 
+Preferred: create a dedicated Argo CD local account for Image Updater and generate a token for it (works reliably with SSO):
+
+```bash
+# 4a) Define a local Argo CD account for the updater and RBAC (operator-managed)
+oc -n openshift-gitops patch argocd openshift-gitops \
+  --type merge -p '{
+    "spec":{
+      "extraConfig":{
+        "accounts.argocd-image-updater":"apiKey"
+      },
+      "rbac":{
+        "policy":"g, kubeadmin, role:admin\n"
+                 "g, argocd-image-updater, role:admin\n"
+                 "p, role:admin, *, *, *, allow\n",
+        "scopes":"[groups, sub, preferred_username, email]"
+      }
+    }
+  }'
+
+# 4b) Restart the Argo CD server to pick up RBAC/extraConfig changes
+oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
+
+# 4c) Login via SSO and generate a token for the local account
+ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
+export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web --account argocd-image-updater)
+make image-updater-secret
+```
+
+If you see `account '<user>' does not exist` when generating a token for your SSO user:
+
+1) Ensure you log in to Argo CD first via SSO and verify your identity:
+
+```bash
+ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
+argocd account get-user-info --grpc-web   # should print your SSO username (e.g., kubeadmin)
+```
+
+2) Ensure RBAC grants your user admin rights (dev convenience):
+
+```bash
+oc -n openshift-gitops patch argocd openshift-gitops \
+  --type merge -p '{"spec":{"rbac":{"policy":"g, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}'
+oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
+```
+
+3) Re-login and generate the token for your user (or prefer the dedicated account method above):
+
+```bash
+argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
+export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
+make image-updater-secret   # uses $ARGOCD_TOKEN to (re)create the secret and restart the deployment
+```
+
+If your environment still refuses SSO token generation for users, create a dedicated local account with API key via the Argo CD config (operator‑managed) as a follow‑up; otherwise, prefer SSO tokens.
+
 Real token flow (optional, for write‑back):
 
 ```bash

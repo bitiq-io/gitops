@@ -1,19 +1,40 @@
+##
+## Values for the example Tekton pipeline + triggers
+##
+
+# Target environment (namespace etc.)
 env: local
-appNamespace: bitiq-local
+appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshift-pipelines
 
 pipeline:
+  # PipelineRun metadata
   name: bitiq-build-and-push
+
+  # Source repository to build (set this to YOUR repo)
+  # Example: https://github.com/yourorg/your-service.git
   gitUrl: https://github.com/bitiq-io/bitiq-svc-api.git
   gitRevision: main
+
+  # Build context
   dockerfile: Dockerfile
   contextDir: .
-  imageRegistry: image-registry.openshift-image-registry.svc:5000   # in-cluster registry
+
+  # Image destination (in-cluster registry is preferred for CRC)
+  imageRegistry: image-registry.openshift-image-registry.svc:5000
   imageNamespace: bitiq-ci
   imageName: bitiq-svc-api
-  tlsVerify: "false"   # often false for in-cluster push
+  tlsVerify: "false"   # often false for in-cluster pushes
 
 triggers:
   create: true
+  # Control creation of the GitHub webhook Secret via chart (off by default to avoid stomping manual secrets)
+  createSecret: false
   eventListenerName: bitiq-listener
+  # Name of a Secret in openshift-pipelines with key `secretToken`.
+  # Create with: oc -n openshift-pipelines create secret generic github-webhook-secret \
+  #   --from-literal=secretToken=YOUR_RANDOM_SECRET
   githubSecretName: github-webhook-secret
+  # Only used if createSecret=true; required in that case
+  secretToken: ""
+  # Expose an OpenShift Route for the EventListener
   route: true

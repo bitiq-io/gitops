@@ -41,5 +41,15 @@ tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB
 	  echo "Set GITHUB_WEBHOOK_SECRET to create webhook secret"; \
 	fi
 
+image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_TOKEN (and restart deployment)
+	@if [ -z "$$ARGOCD_TOKEN" ]; then \
+	  echo "Set ARGOCD_TOKEN environment variable"; exit 1; \
+	fi
+	@oc -n openshift-gitops get ns >/dev/null 2>&1 || { echo "Namespace openshift-gitops not found"; exit 1; }
+	@echo "Applying argocd-image-updater-secret in openshift-gitops"
+	@oc -n openshift-gitops create secret generic argocd-image-updater-secret \
+	  --from-literal=argocd.token="$$ARGOCD_TOKEN" --dry-run=client -o yaml | oc apply -f -
+	@oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
+
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
