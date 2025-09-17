@@ -89,10 +89,10 @@ GitHub repo → Settings → Webhooks → Add webhook
 - Secret: the secret printed above
 - Events: “Just the push event” (PRs are also supported)
 
-7) Trigger a build and watch
+7) Trigger a build and watch (Quay)
 
 - Push a commit to the repo configured in `charts/ci-pipelines/values.yaml` (`pipeline.gitUrl`).
-- The Pipeline tags the image with the commit SHA and pushes to the internal registry (`image-registry.openshift-image-registry.svc:5000/bitiq-ci/bitiq-svc-api:<sha>`).
+- The Pipeline tags the image with the commit SHA and pushes to Quay (`quay.io/paulcapestany/toy-service:<sha>`).
 - Observe runs and logs:
 
 ```bash
@@ -120,6 +120,15 @@ Troubleshooting
   - Add SCC if needed: `oc -n openshift-pipelines adm policy add-scc-to-user privileged -z pipeline`.
 - Internal registry tag listing (Image Updater):
   - If tag discovery fails, add registry credentials for the updater, or temporarily point to a public registry. See README “Image updates & Git write‑back”.
+
+Optional: set Quay credentials for the pipeline SA
+
+```bash
+export QUAY_USERNAME=<your-username>
+export QUAY_PASSWORD=<your-token-or-password>
+export QUAY_EMAIL=<your-email>
+make quay-secret
+```
 
 Optional: point ci-pipelines at a feature branch for testing
 
