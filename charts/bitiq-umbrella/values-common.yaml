@@ -9,5 +9,5 @@ repoUrl: https://github.com/bitiq-io/gitops.git
 targetRevision: main
 
 # Sample app image repo (Image Updater watches this)
-# For ENV=local, align to Tekton defaults (internal registry)
-sampleAppImageRepo: image-registry.openshift-image-registry.svc:5000/bitiq-ci/bitiq-svc-api
+# Use Quay for easier public tag discovery in local e2e
+sampleAppImageRepo: quay.io/paulcapestany/toy-service

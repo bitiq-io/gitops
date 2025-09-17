@@ -1,1 +1,2 @@
 baseDomain: apps-crc.testing
+healthPath: "/healthz"

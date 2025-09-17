@@ -41,6 +41,20 @@ tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB
 	  echo "Set GITHUB_WEBHOOK_SECRET to create webhook secret"; \
 	fi
 
+quay-secret: ## create/link Quay push secret for pipeline SA (QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL required)
+	@if [ -z "$$QUAY_USERNAME" ] || [ -z "$$QUAY_PASSWORD" ] || [ -z "$$QUAY_EMAIL" ]; then \
+	  echo "Set QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL"; exit 1; \
+	fi
+	@oc -n openshift-pipelines create secret docker-registry quay-auth \
+	  --docker-server=quay.io \
+	  --docker-username="$$QUAY_USERNAME" \
+	  --docker-password="$$QUAY_PASSWORD" \
+	  --docker-email="$$QUAY_EMAIL" \
+	  --dry-run=client -o yaml | oc apply -f -
+	@oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
+	@oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+	@echo "Quay secret configured and linked to SA 'pipeline'"
+
 image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_TOKEN (and restart deployment)
 	@if [ -z "$$ARGOCD_TOKEN" ]; then \
 	  echo "Set ARGOCD_TOKEN environment variable"; exit 1; \
@@ -50,6 +64,5 @@ image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_T
 	@oc -n openshift-gitops create secret generic argocd-image-updater-secret \
 	  --from-literal=argocd.token="$$ARGOCD_TOKEN" --dry-run=client -o yaml | oc apply -f -
 	@oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
-
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
