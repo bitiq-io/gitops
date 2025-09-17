@@ -33,14 +33,16 @@ spec:
       taskRef:
         resolver: hub
         params:
+          - name: type
+            value: artifact
           - name: catalog
-            value: tekton
+            value: tekton-catalog-tasks
           - name: kind
             value: task
           - name: name
             value: git-clone
           - name: version
-            value: "0.9"
+            value: "0.10.0"
       params:
         - name: url
           value: $(params.git-url)
@@ -56,14 +58,16 @@ spec:
       taskRef:
         resolver: hub
         params:
+          - name: type
+            value: artifact
           - name: catalog
-            value: tekton
+            value: tekton-catalog-tasks
           - name: kind
             value: task
           - name: name
             value: buildah
           - name: version
-            value: "0.10"
+            value: "0.9.0"
       params:
         - name: IMAGE
           value: $(params.image):$(params.imageTag)
