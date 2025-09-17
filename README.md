@@ -17,6 +17,7 @@ It uses:
 - [TODO](TODO.md)
 - [Architecture Decision Records](docs/adr/)
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
+- [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End‑to‑end local CI→CD (webhook + ngrok)
 
 ## Prereqs
 
