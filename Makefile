@@ -41,6 +41,9 @@ tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB
 	  echo "Set GITHUB_WEBHOOK_SECRET to create webhook secret"; \
 	fi
 
+local-e2e: ## interactive helper to prep ENV=local CI/CD flow
+	@bash scripts/local-e2e-setup.sh
+
 quay-secret: ## create/link Quay push secret for pipeline SA (QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL required)
 	@if [ -z "$$QUAY_USERNAME" ] || [ -z "$$QUAY_PASSWORD" ] || [ -z "$$QUAY_EMAIL" ]; then \
 	  echo "Set QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL"; exit 1; \
