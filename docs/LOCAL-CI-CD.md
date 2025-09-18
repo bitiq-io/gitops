@@ -2,9 +2,20 @@
 
 This guide captures the exact steps that work for running the full CI→CD flow on OpenShift Local (CRC): Tekton builds and pushes an image, Argo CD Image Updater writes the new tag back to Helm values, and Argo deploys the sample app.
 
+Short on time? Run `make local-e2e` for an interactive helper that walks through the automation-friendly portions (bootstrap, RBAC, secrets) and leaves you only the external bits (webhook tunnel, git push).
+
+When it prompts for the Git repo, it defaults to this GitOps repository URL (from `git remote get-url origin`). Only change it if Argo CD should track a fork or alternate remote.
+
 Prereqs
 
-- CRC running and you are logged in as cluster‑admin (`oc login ...`)
+- CRC running and you are logged in as cluster‑admin (`oc login ...`). Using the default `developer` user will trigger `Forbidden` errors when you interact with Argo CD or Tekton resources—either switch to `kubeadmin` or grant your user access, for example:
+
+  ```bash
+  oc adm policy add-role-to-user admin <your-user> -n openshift-gitops
+  oc adm policy add-role-to-user admin <your-user> -n openshift-pipelines
+  # or for full convenience (broad): oc adm policy add-cluster-role-to-user cluster-admin <your-user>
+  ```
+
 - This repo cloned and your shell in the repo root
 - `argocd`, `helm`, and `ngrok` (or `cloudflared`) available locally
 
@@ -67,6 +78,8 @@ oc -n openshift-gitops annotate application ci-pipelines argocd.argoproj.io/refr
 oc -n openshift-pipelines get pipeline bitiq-build-and-push
 oc -n openshift-pipelines get eventlistener bitiq-listener
 ```
+
+> These `oc` commands require the permissions noted in the prereqs. If you see `Forbidden`, re-run them as a cluster-admin or apply the RBAC grants above.
 
 6) Expose the EventListener to GitHub (CRC)
 
