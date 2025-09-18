@@ -29,7 +29,7 @@ spec:
               drop: ["ALL"]
           args:
             - run
-            - --log-level={{ .Values.logLevel }}
+            - --loglevel={{ .Values.logLevel }}
             - --applications-namespace={{ .Values.applicationNamespaces }}
             - --argocd-server={{ .Values.argocd.server }}:{{ .Values.argocd.port }}
             {{- if .Values.argocd.insecure }}

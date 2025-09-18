@@ -138,7 +138,7 @@ Troubleshooting
   - The `pipeline` service account must be bound to the `pipelines-scc` SCC so Tekton’s affinity assistant can start.
   - Match `pipeline.fsGroup` in `charts/ci-pipelines/values.yaml` to the namespace `supplemental-groups` range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`).
 - Image Updater CrashLoopBackOff with `unknown flag: --log-level`:
-  - Ensure the deployment args include the `run` subcommand before flag arguments (`args: ["run", "--log-level=…"]`). The chart now templates this by default; resync the app if your pod still restarts.
+  - Ensure the deployment args include the `run` subcommand before flag arguments (`args: ["run", "--loglevel=…"]`). The chart now templates this by default; resync the app if your pod still restarts.
 
 Optional: set Quay credentials for the pipeline SA
 
