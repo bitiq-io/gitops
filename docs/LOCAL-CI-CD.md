@@ -108,6 +108,8 @@ GitHub repo → Settings → Webhooks → Add webhook
 - The Pipeline tags the image with the commit SHA and pushes to Quay (`quay.io/paulcapestany/toy-service:<sha>`).
 - Observe runs and logs:
 
+The sample app Helm values (`charts/bitiq-sample-app/values-local.yaml`) default the image to `quay.io/paulcapestany/toy-service:latest`; Argo CD Image Updater rewrites the tag to each commit SHA once the pipeline publishes it.
+
 ```bash
 oc -n openshift-pipelines get pipelineruns
 tkn pr logs -L -f -n openshift-pipelines

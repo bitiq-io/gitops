@@ -1,2 +1,6 @@
 baseDomain: apps-crc.testing
 healthPath: "/healthz"
+
+image:
+  repository: quay.io/paulcapestany/toy-service
+  tag: latest
