@@ -126,13 +126,17 @@ oc -n openshift-gitops logs deploy/argocd-image-updater -f
 Troubleshooting
 
 - EventListener CrashLoopBackOff with ClusterInterceptor forbidden:
-  - Fixed by cluster‑scope RBAC included in the chart (`pipeline` SA can list `clusterinterceptors.triggers.tekton.dev`).
+  - Fixed by cluster-scope RBAC included in the chart (`pipeline` SA can list `clusterinterceptors.triggers.tekton.dev`).
 - Pipeline “custom task ref must specify apiVersion”:
   - Fixed by switching to Tekton Hub resolver tasks (no ClusterTasks needed).
 - Buildah permission errors:
   - Add SCC if needed: `oc -n openshift-pipelines adm policy add-scc-to-user privileged -z pipeline`.
 - Internal registry tag listing (Image Updater):
-  - If tag discovery fails, add registry credentials for the updater, or temporarily point to a public registry. See README “Image updates & Git write‑back”.
+  - If tag discovery fails, add registry credentials for the updater, or temporarily point to a public registry. See README “Image updates & Git write-back”.
+- Tekton git-clone fails with `/workspace/output/.git: Permission denied`:
+  - Ensure Argo synced the latest chart revision; the Tekton manifests commit the pod security context via `taskRunTemplate.podTemplate.securityContext`.
+  - The `pipeline` service account must be bound to the `pipelines-scc` SCC so Tekton’s affinity assistant can start.
+  - Match `pipeline.fsGroup` in `charts/ci-pipelines/values.yaml` to the namespace `supplemental-groups` range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`).
 
 Optional: set Quay credentials for the pipeline SA
 
