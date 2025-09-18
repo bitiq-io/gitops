@@ -137,8 +137,8 @@ Troubleshooting
   - Ensure Argo synced the latest chart revision; the Tekton manifests commit the pod security context via `taskRunTemplate.podTemplate.securityContext`.
   - The `pipeline` service account must be bound to the `pipelines-scc` SCC so Tekton’s affinity assistant can start.
   - Match `pipeline.fsGroup` in `charts/ci-pipelines/values.yaml` to the namespace `supplemental-groups` range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`).
-- Image Updater CrashLoopBackOff with flag errors (`--log-level`, `--applications-namespace`):
-  - Ensure the deployment args include the `run` subcommand and only supported flags (`args: ["run", "--loglevel=…"]`). The chart no longer passes `--applications-namespace`; resync the app if your pod still restarts.
+- Image Updater CrashLoopBackOff with flag errors (`--log-level`, `--applications-namespace`, `--argocd-server`):
+  - Ensure the deployment args include the `run` subcommand and only supported flags (`args: ["run", "--loglevel=…", "--argocd-server-addr=…"]`). The chart now uses the current flag names; resync the app if your pod still restarts.
 
 Optional: set Quay credentials for the pipeline SA
 

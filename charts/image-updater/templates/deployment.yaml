@@ -30,7 +30,7 @@ spec:
           args:
             - run
             - --loglevel={{ .Values.logLevel }}
-            - --argocd-server={{ .Values.argocd.server }}:{{ .Values.argocd.port }}
+            - --argocd-server-addr={{ .Values.argocd.server }}:{{ .Values.argocd.port }}
             {{- if .Values.argocd.insecure }}
             - --argocd-insecure
             {{- end }}
