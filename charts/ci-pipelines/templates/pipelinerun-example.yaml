@@ -6,9 +6,10 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/on-target-branch: main
 spec:
-  podTemplate:
-    securityContext:
-      fsGroup: 65532
+  taskRunTemplate:
+    podTemplate:
+      securityContext:
+        fsGroup: 65532
   pipelineRef:
     name: {{ .Values.pipeline.name }}
   params:

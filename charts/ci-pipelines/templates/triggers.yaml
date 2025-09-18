@@ -29,9 +29,10 @@ spec:
         generateName: {{ .Values.pipeline.name }}-
         namespace: openshift-pipelines
       spec:
-        podTemplate:
-          securityContext:
-            fsGroup: 65532
+        taskRunTemplate:
+          podTemplate:
+            securityContext:
+              fsGroup: 65532
         pipelineRef:
           name: {{ .Values.pipeline.name }}
         params:
