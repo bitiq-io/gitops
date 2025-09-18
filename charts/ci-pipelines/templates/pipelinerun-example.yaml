@@ -9,7 +9,7 @@ spec:
   taskRunTemplate:
     podTemplate:
       securityContext:
-        fsGroup: 65532
+        fsGroup: {{ .Values.pipeline.fsGroup }}
   pipelineRef:
     name: {{ .Values.pipeline.name }}
   params:

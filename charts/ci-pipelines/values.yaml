@@ -18,6 +18,7 @@ pipeline:
   # Build context
   dockerfile: Dockerfile
   contextDir: .
+  fsGroup: 1000660000
 
   # Image destination (Quay for local e2e)
   imageRegistry: quay.io
