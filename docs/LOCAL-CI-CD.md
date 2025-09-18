@@ -144,7 +144,7 @@ Troubleshooting
 - Image Updater forbidden on Applications:
   - The chart now binds the service account with a ClusterRole so it can list `applications.argoproj.io` cluster-wide; resync `image-updater` if you see `applications.argoproj.io is forbidden` after upgrades.
 - Image Updater "Invalid Semantic Version" errors:
-  - Tags from the pipeline are commit SHAs, so the Application annotations pin the update strategy to `latest` and allow SHA-shaped tags; ensure the umbrella app has been resynced if you still see this error.
+  - Tags from the pipeline are commit SHAs, so the Application annotations pin the update strategy to `newest-build` and allow SHA-shaped tags; ensure the umbrella app has been resynced if you still see this error.
 
 Optional: set Quay credentials for the pipeline SA
 
