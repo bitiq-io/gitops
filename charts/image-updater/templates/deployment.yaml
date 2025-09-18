@@ -28,6 +28,7 @@ spec:
             capabilities:
               drop: ["ALL"]
           args:
+            - run
             - --log-level={{ .Values.logLevel }}
             - --applications-namespace={{ .Values.applicationNamespaces }}
             - --argocd-server={{ .Values.argocd.server }}:{{ .Values.argocd.port }}
