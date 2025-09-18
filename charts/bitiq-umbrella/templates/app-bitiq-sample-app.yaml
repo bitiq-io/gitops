@@ -7,7 +7,6 @@ metadata:
     # Tell Image Updater what image to track and how to write back to Helm values
     argocd-image-updater.argoproj.io/image-list: app={{ .Values.sampleAppImageRepo }}
     argocd-image-updater.argoproj.io/app.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/app.allow-tags: regexp:^(latest|[0-9a-f]{7,40})$
     argocd-image-updater.argoproj.io/app.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
