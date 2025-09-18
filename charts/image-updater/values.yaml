@@ -1,5 +1,5 @@
 argoNamespace: openshift-gitops
-logLevel: info
+logLevel: debug
 
 argocd:
   server: openshift-gitops-server
