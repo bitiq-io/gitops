@@ -130,7 +130,7 @@ Troubleshooting
 - Pipeline “custom task ref must specify apiVersion”:
   - Fixed by switching to Tekton Hub resolver tasks (no ClusterTasks needed).
 - Buildah permission errors:
-  - Add SCC if needed: `oc -n openshift-pipelines adm policy add-scc-to-user privileged -z pipeline`.
+  - The chart binds the `pipeline` service account to the `privileged` SCC for local CRC builds. If you see `privileged: Invalid value: true`, ensure Argo synced the latest manifests or run `oc -n openshift-pipelines get rolebinding pipeline-privileged-scc`.
 - Internal registry tag listing (Image Updater):
   - If tag discovery fails, add registry credentials for the updater, or temporarily point to a public registry. See README “Image updates & Git write-back”.
 - Tekton git-clone fails with `/workspace/output/.git: Permission denied`:
