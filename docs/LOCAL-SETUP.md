@@ -48,8 +48,31 @@ Provide the token to Image Updater (kept out of Git)
   - `oc -n openshift-gitops get secret argocd-image-updater-secret -o jsonpath='{.data.argocd\.token}' | base64 -d; echo`
 
 Configure Argo CD repo write access
-- In Argo CD UI → Settings → Repositories → add this Git repo with write access (HTTPS PAT or SSH key).
-- Image Updater uses Argo CD’s repo creds to commit Helm value changes.
+- CLI (recommended for OpenShift GitOps):
+
+  ```bash
+  export ARGOCD_SERVER=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+  argocd login "$ARGOCD_SERVER" --sso --grpc-web
+
+  # Fine-grained PAT with Contents:Read/Write, SSO-authorized for bitiq-io org
+  export GH_PAT=<your_token>
+  argocd repo add https://github.com/bitiq-io/gitops.git \
+    --username <github-username> \
+    --password "$GH_PAT" --grpc-web
+  ```
+
+- Sanity checks (either call should flip the PAT to “Last used …” in GitHub):
+
+  ```bash
+  curl -sS https://api.github.com/repos/bitiq-io/gitops \
+    -H "Authorization: Bearer $GH_PAT" \
+    -H "X-GitHub-Api-Version: 2022-11-28" | head -n 5
+
+  git ls-remote https://<github-username>:$GH_PAT@github.com/bitiq-io/gitops.git | head
+  ```
+
+- UI alternative: Settings → Repositories → CONNECT REPO → HTTPS. Ensure the PAT (or SSH key) is authorized for the bitiq-io org.
+- Image Updater uses Argo CD’s repo creds to commit Helm value changes, so the credential must have write access.
 
 Sample app image
 - Default image `quay.io/yourorg/bitiq-svc-api:0.1.0` is a placeholder.
@@ -79,4 +102,3 @@ Troubleshooting
 - Lint issues: run `helm lint charts/bitiq-sample-app -f charts/bitiq-sample-app/values-common.yaml -f charts/bitiq-sample-app/values-local.yaml`.
 - RBAC errors generating token: ensure `argocd-rbac-cm` has `g, kubeadmin, role:admin` and server is restarted.
 - Image pull errors: confirm image exists and is pullable from the cluster, and ports/probes match.
-

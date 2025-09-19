@@ -184,6 +184,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 * If you prefer to **disable** the default ArgoCD instance and create a custom one, set `.operators.gitops.disableDefaultInstance=true` in `charts/bootstrap-operators/values.yaml`. ([Red Hat Docs][3])
 * Helm `valueFiles` not found? We intentionally use `ignoreMissingValueFiles: true` in Argo’s Helm source. ([Argo CD][1])
 * Image Updater RBAC: the `argocd-image-updater` ServiceAccount must be able to `get,list,watch` `secrets` and `configmaps` in the Argo CD namespace (`openshift-gitops`). The chart defines a namespaced `Role` + `RoleBinding` for this. If you see errors like “secrets is forbidden … cannot list … in the namespace openshift-gitops”, re‑sync the `image-updater` app to apply RBAC.
+* GitHub PAT shows “Never used”: ensure you log into Argo CD with `argocd login ... --sso --grpc-web` before running `argocd repo add`. Sanity-check the token with `curl -H "Authorization: Bearer $GH_PAT" https://api.github.com/repos/bitiq-io/gitops` and `git ls-remote https://<user>:$GH_PAT@github.com/bitiq-io/gitops.git`. Either call should flip the PAT to “Last used …” in GitHub’s UI.
 
 ## How to use it
 
@@ -195,7 +196,32 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 ./scripts/bootstrap.sh
 ```
 
-2. **Configure Argo CD repo creds** with write access to this Git repo (for Image Updater’s Git write-back). See Argo CD docs for repo credentials; Image Updater uses Argo CD’s API & repo creds. If using a GitHub org, ensure your PAT/SSH key is SSO‑authorized for the org, or use an org‑installed GitHub App credential. ([Argo CD Image Updater][10])
+2. **Configure Argo CD repo creds** with write access to this Git repo (for Image Updater’s Git write-back). Image Updater uses Argo CD’s API + repo credentials. ([Argo CD Image Updater][10])
+
+   Common OpenShift GitOps CLI flow (SSO + PAT):
+
+   ```bash
+   export ARGOCD_SERVER=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+   argocd login "$ARGOCD_SERVER" --sso --grpc-web
+
+   # Fine-grained PAT with Contents:Read/Write (authorize for the org via "Configure SSO")
+   export GH_PAT=<your_token>
+   argocd repo add https://github.com/bitiq-io/gitops.git \
+     --username <github-username> \
+     --password "$GH_PAT" --grpc-web
+   ```
+
+   Sanity checks (PAT should show as “Last used” in GitHub after either call succeeds):
+
+   ```bash
+   curl -sS https://api.github.com/repos/bitiq-io/gitops \
+     -H "Authorization: Bearer $GH_PAT" \
+     -H "X-GitHub-Api-Version: 2022-11-28" | head -n 5
+
+   git ls-remote https://<github-username>:$GH_PAT@github.com/bitiq-io/gitops.git | head
+   ```
+
+   If using SSH or a GitHub App, configure the matching repo credential instead. Always authorize PATs/SSH keys for the org (GitHub → Settings → Organizations → bitiq-io → Configure SSO).
 
 3. **(Optional) GitHub webhook**
    Grab the Route URL named `bitiq-listener` in `openshift-pipelines` (it targets service `el-bitiq-listener`) and add it as a GitHub webhook for your microservice repo (content type: JSON; secret = the value you set in `triggers.githubSecretName`). ([Red Hat][11], [Tekton][15])

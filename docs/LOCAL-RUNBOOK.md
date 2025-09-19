@@ -46,17 +46,41 @@ oc -n openshift-gitops patch argocd openshift-gitops \
 oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
 ```
 
-Then connect the repo with write access via the Argo UI (SSO login):
+Then connect the repo with write access (CLI or UI).
+
+CLI (works well with OpenShift GitOps + SSO):
 
 ```bash
 ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+argocd login "$ARGOCD_HOST" --sso --grpc-web
+
+# Fine-grained PAT with Contents:Read/Write. Authorize for the bitiq-io org via "Configure SSO".
+export GH_PAT=<your_token>
+argocd repo add https://github.com/bitiq-io/gitops.git \
+  --username <github-username> \
+  --password "$GH_PAT" --grpc-web
+```
+
+Sanity checks (PAT should switch from “Never used” after either call succeeds):
+
+```bash
+curl -sS https://api.github.com/repos/bitiq-io/gitops \
+  -H "Authorization: Bearer $GH_PAT" \
+  -H "X-GitHub-Api-Version: 2022-11-28" | head -n 5
+
+git ls-remote https://<github-username>:$GH_PAT@github.com/bitiq-io/gitops.git | head
+```
+
+UI alternative (if you prefer the console):
+
+```bash
 open https://$ARGOCD_HOST   # or paste in browser
 ```
 
 Argo UI → Settings → Repositories → Connect repo using HTTPS
 - Repository URL: https://github.com/bitiq-io/gitops.git
-- Username: any non‑empty (e.g., `git`)
-- Password: fine‑grained PAT with Contents: Read/Write (repo‑scoped), or use an SSH deploy key with write access
+- Username: any non-empty (e.g., your GitHub username)
+- Password: the SSO-authorized PAT (or use SSH / GitHub App credentials)
 
 Tip: the operator writes the effective RBAC into `argocd-rbac-cm`; verify with:
 
