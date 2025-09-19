@@ -73,7 +73,7 @@ Local notes (OpenShift Local / CRC)
 4. The umbrella app deploys:
 
    * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-   * **ci-pipelines-backend** and **ci-pipelines-frontend** in `openshift-pipelines` (Tekton pipelines + triggers; Buildah & SA come from the operator). ([Red Hat Docs][4])
+   * **ci-pipelines-backend** and **ci-pipelines-frontend** in `openshift-pipelines` (Tekton pipelines + triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
    * **bitiq-sample-app** (toy-service backend + toy-web frontend) in a `bitiq-${ENV}` namespace with two Routes on your base domain.
 
 ### Image updates & Git write-back

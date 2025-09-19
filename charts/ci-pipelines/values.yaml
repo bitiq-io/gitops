@@ -19,6 +19,9 @@ pipeline:
   dockerfile: Dockerfile
   contextDir: .
   fsGroup: 1000660000
+  runTests: "false"
+  testImage: ""
+  testScript: ""
 
   # Image destination (Quay for local e2e)
   imageRegistry: quay.io

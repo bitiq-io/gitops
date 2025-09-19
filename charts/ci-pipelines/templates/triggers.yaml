@@ -38,6 +38,12 @@ spec:
             value: $(tt.params.git-repo-url)
           - name: git-revision
             value: $(tt.params.git-revision)
+          - name: runTests
+            value: {{ .Values.pipeline.runTests | default "false" | quote }}
+          - name: testImage
+            value: {{ .Values.pipeline.testImage | default "" | quote }}
+          - name: testScript
+            value: {{ .Values.pipeline.testScript | default "" | quote }}
         workspaces:
           - name: shared-workspace
             volumeClaimTemplate:

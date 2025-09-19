@@ -34,6 +34,12 @@ spec:
           value: {{ .Values.pipelines.backend.eventListener | quote }}
         - name: triggers.githubSecretName
           value: {{ .Values.pipelines.backend.githubSecretName | quote }}
+        - name: pipeline.runTests
+          value: {{ .Values.pipelines.backend.runTests | default "false" | quote }}
+        - name: pipeline.testImage
+          value: {{ .Values.pipelines.backend.testImage | default "" | quote }}
+        - name: pipeline.testScript
+          value: {{ .Values.pipelines.backend.testScript | default "" | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.pipelinesNamespace }}

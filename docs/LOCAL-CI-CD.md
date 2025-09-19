@@ -72,6 +72,7 @@ The chart provides:
 - Pipeline using Tekton Hub resolver tasks (no ClusterTasks needed)
 - EventListener + TriggerBinding + TriggerTemplate
 - ServiceAccount `pipeline` and RBAC (including cluster‑scope read for ClusterInterceptors)
+- Optional test phase driven by `pipeline.runTests`: backend runs `go test ./...`; frontend runs `npm ci && npm test -- --watch=false` using configurable builder images.
 
 ```bash
 oc -n openshift-gitops annotate application ci-pipelines-backend-${ENV} argocd.argoproj.io/refresh=hard --overwrite

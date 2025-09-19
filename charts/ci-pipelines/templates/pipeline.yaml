@@ -14,6 +14,15 @@ spec:
     - name: image
       type: string
       default: "{{ .Values.pipeline.imageRegistry }}/{{ .Values.pipeline.imageNamespace }}/{{ .Values.pipeline.imageName }}"
+    - name: runTests
+      type: string
+      default: {{ .Values.pipeline.runTests | default "false" | quote }}
+    - name: testImage
+      type: string
+      default: {{ .Values.pipeline.testImage | default "" | quote }}
+    - name: testScript
+      type: string
+      default: {{ .Values.pipeline.testScript | default "" | quote }}
     - name: dockerfile
       type: string
       default: {{ .Values.pipeline.dockerfile | quote }}
@@ -79,8 +88,36 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
+    - name: run-tests
+      runAfter: [fetch-repo]
+      when:
+        - input: "$(params.runTests)"
+          operator: in
+          values: ["true", "True", "TRUE"]
+      taskSpec:
+        workspaces:
+          - name: source
+        params:
+          - name: test-image
+          - name: test-script
+        steps:
+          - name: tests
+            image: $(params.test-image)
+            script: |
+              #!/bin/sh
+              set -euo pipefail
+              cd $(workspaces.source.path)
+              $(params.test-script)
+      params:
+        - name: test-image
+          value: $(params.testImage)
+        - name: test-script
+          value: $(params.testScript)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
     - name: build-and-push
-      runAfter: [compute-image-tag]
+      runAfter: [compute-image-tag, run-tests]
       taskRef:
         resolver: hub
         params:

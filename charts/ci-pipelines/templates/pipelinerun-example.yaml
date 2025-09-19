@@ -17,6 +17,12 @@ spec:
       value: {{ .Values.pipeline.gitUrl }}
     - name: git-revision
       value: {{ .Values.pipeline.gitRevision }}
+    - name: runTests
+      value: {{ .Values.pipeline.runTests | default "false" | quote }}
+    - name: testImage
+      value: {{ .Values.pipeline.testImage | default "" | quote }}
+    - name: testScript
+      value: {{ .Values.pipeline.testScript | default "" | quote }}
   workspaces:
     - name: shared-workspace
       volumeClaimTemplate:
