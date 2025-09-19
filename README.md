@@ -183,6 +183,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 
 * If you prefer to **disable** the default ArgoCD instance and create a custom one, set `.operators.gitops.disableDefaultInstance=true` in `charts/bootstrap-operators/values.yaml`. ([Red Hat Docs][3])
 * Helm `valueFiles` not found? We intentionally use `ignoreMissingValueFiles: true` in Argo’s Helm source. ([Argo CD][1])
+* Image Updater RBAC: the `argocd-image-updater` ServiceAccount must be able to `get,list,watch` `secrets` and `configmaps` in the Argo CD namespace (`openshift-gitops`). The chart defines a namespaced `Role` + `RoleBinding` for this. If you see errors like “secrets is forbidden … cannot list … in the namespace openshift-gitops”, re‑sync the `image-updater` app to apply RBAC.
 
 ## How to use it
 
