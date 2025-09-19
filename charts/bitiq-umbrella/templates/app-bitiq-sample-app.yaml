@@ -26,6 +26,7 @@ spec:
       valueFiles:
         - values-common.yaml
         - values-{{ .Values.env }}.yaml
+        - values-{{ .Values.env }}-local.yaml
       ignoreMissingValueFiles: true
       parameters:
         - name: baseDomain

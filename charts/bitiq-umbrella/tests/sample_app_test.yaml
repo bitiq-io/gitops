@@ -11,13 +11,18 @@ assertions:
           path: metadata.annotations["argocd-image-updater.argoproj.io/app.allow-tags"]
           value: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
   - it: includes env value file layering and ignoreMissingValueFiles
+    set:
+      env: sno
     asserts:
       - contains:
           path: spec.source.helm.valueFiles
           content: values-common.yaml
       - contains:
           path: spec.source.helm.valueFiles
-          content: values-local.yaml
+          content: values-sno.yaml
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-sno-local.yaml
       - equal:
           path: spec.source.helm.ignoreMissingValueFiles
           value: true
