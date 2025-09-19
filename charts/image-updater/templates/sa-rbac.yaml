@@ -12,9 +12,19 @@ rules:
   - apiGroups: ["argoproj.io"]
     resources: ["applications"]
     verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argocd-image-updater-ns
+  namespace: {{ .Values.argoNamespace }}
+rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -28,3 +38,17 @@ roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
   name: argocd-image-updater
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-image-updater-ns
+  namespace: {{ .Values.argoNamespace }}
+subjects:
+  - kind: ServiceAccount
+    name: argocd-image-updater
+    namespace: {{ .Values.argoNamespace }}
+roleRef:
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+  name: argocd-image-updater-ns
