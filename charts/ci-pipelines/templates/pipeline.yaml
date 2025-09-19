@@ -14,9 +14,6 @@ spec:
     - name: image
       type: string
       default: "{{ .Values.pipeline.imageRegistry }}/{{ .Values.pipeline.imageNamespace }}/{{ .Values.pipeline.imageName }}"
-    - name: imageTag
-      type: string
-      default: "latest"
     - name: dockerfile
       type: string
       default: {{ .Values.pipeline.dockerfile | quote }}
@@ -53,8 +50,37 @@ spec:
       workspaces:
         - name: output
           workspace: shared-workspace
-    - name: build-and-push
+    - name: compute-image-tag
       runAfter: [fetch-repo]
+      taskSpec:
+        workspaces:
+          - name: source
+        results:
+          - name: tag
+            description: "Deterministic image tag v<semver>-commit.<shortSHA>"
+        steps:
+          - name: compute
+            image: alpine/git:2.45.2
+            script: |
+              #!/bin/sh
+              set -eu
+              cd $(workspaces.source.path)
+              if git describe --tags --exact-match >/dev/null 2>&1; then
+                VER=$(git describe --tags --abbrev=0)
+              else
+                VER=$(git describe --tags --abbrev=0 2>/dev/null || true)
+              fi
+              if [ -z "${VER:-}" ]; then
+                VER="v0.0.0"
+              fi
+              SHA=$(git rev-parse --short=7 HEAD)
+              TAG="${VER}-commit.${SHA}"
+              printf "%s" "$TAG" > /tekton/results/tag
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: build-and-push
+      runAfter: [compute-image-tag]
       taskRef:
         resolver: hub
         params:
@@ -70,7 +96,7 @@ spec:
             value: "0.9.0"
       params:
         - name: IMAGE
-          value: $(params.image):$(params.imageTag)
+          value: $(params.image):$(tasks.compute-image-tag.results.tag)
         - name: DOCKERFILE
           value: $(params.dockerfile)
         - name: CONTEXT
