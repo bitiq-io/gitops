@@ -63,6 +63,7 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 Notes for agents (local e2e):
 - Do not auto-create GitHub webhook secrets in charts without an explicit opt-in; use `triggers.createSecret=true` for that behavior.
 - Prefer creating Argo CD API tokens for a dedicated local account (`argocd-image-updater`) over SSO users for use by automation.
+- When configuring repo credentials, run `argocd login $(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}') --sso --grpc-web` first, then `argocd repo add https://github.com/bitiq-io/gitops.git --username <user> --password $GH_PAT --grpc-web`. Sanity-check the PAT with `curl` + `git ls-remote` so GitHub marks it “Last used”.
 
 ## References
 

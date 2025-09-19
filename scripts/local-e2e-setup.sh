@@ -166,9 +166,14 @@ else
 fi
 
 if command -v argocd >/dev/null 2>&1; then
+  # Default argocd CLI options for OpenShift GitOps (requires gRPC-web)
+  ARGOCD_COMMON_ARGS=(--grpc-web)
+  if [[ -n "${ARGOCD_SERVER:-}" ]]; then
+    ARGOCD_COMMON_ARGS+=(--server "${ARGOCD_SERVER}")
+  fi
   repo_url=$GIT_REPO_URL
   log "Checking Argo CD repo credentials for $repo_url"
-  if argocd repo list -o name >/tmp/argocd-repo-list.$$ 2>/dev/null; then
+  if argocd repo list "${ARGOCD_COMMON_ARGS[@]}" -o name >/tmp/argocd-repo-list.$$ 2>/dev/null; then
     if grep -Fxq "$repo_url" /tmp/argocd-repo-list.$$; then
       log "Repo credential already present for $repo_url"
       if prompt_yes "Update Argo CD repo credential for $repo_url?"; then
@@ -177,9 +182,9 @@ if command -v argocd >/dev/null 2>&1; then
         if [[ -n "$repo_pass" ]]; then
           log "Updating repo credential"
           if [[ -n "$repo_user" ]]; then
-            argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert || err "argocd repo add failed"
+            argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
           else
-            argocd repo add "$repo_url" --password "$repo_pass" --upsert || err "argocd repo add failed"
+            argocd repo add "$repo_url" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
           fi
         else
           log "No password provided; keeping existing repo credential"
@@ -195,9 +200,9 @@ if command -v argocd >/dev/null 2>&1; then
         if [[ -n "$repo_pass" ]]; then
           log "Adding repo credential"
           if [[ -n "$repo_user" ]]; then
-            argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert || err "argocd repo add failed"
+            argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
           else
-            argocd repo add "$repo_url" --password "$repo_pass" --upsert || err "argocd repo add failed"
+            argocd repo add "$repo_url" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
           fi
         else
           log "No password provided; skipping repo add"
@@ -211,9 +216,9 @@ if command -v argocd >/dev/null 2>&1; then
           if [[ -n "$repo_pass" ]]; then
             log "Adding repo credential for $repo_url"
             if [[ -n "$repo_user" ]]; then
-              argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert || err "argocd repo add failed"
+              argocd repo add "$repo_url" --username "$repo_user" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
             else
-              argocd repo add "$repo_url" --password "$repo_pass" --upsert || err "argocd repo add failed"
+              argocd repo add "$repo_url" --password "$repo_pass" --upsert "${ARGOCD_COMMON_ARGS[@]}" || err "argocd repo add failed"
             fi
           else
             log "No password provided; skipping repo add"
@@ -226,7 +231,7 @@ if command -v argocd >/dev/null 2>&1; then
       fi
     fi
   else
-    err "argocd repo list failed (are you logged in?). Skipping repo credential helper."
+    err "argocd repo list failed (log in first, e.g. 'argocd login <route-host> --sso --grpc-web'). Skipping repo credential helper."
   fi
   rm -f /tmp/argocd-repo-list.$$ >/dev/null 2>&1 || true
 else
