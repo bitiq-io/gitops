@@ -28,6 +28,7 @@ Authoritative conventions for repository naming, versioning, and environment ove
   ```
 
 - Keep the umbrella chart’s `appVersion` in sync with the image tags committed in the same change.
+- Before merging, run `make verify-release` to ensure `appVersion` matches the per-env image tags and that all tags follow the deterministic grammar.
 
 ## Values file precedence
 

@@ -37,6 +37,9 @@ validate: hu ## run full validation (lint, render, schema, policy)
 compute-appversion: ## compute composite appVersion from values-$(ENV).yaml and update umbrella Chart (ENV=local|sno|prod)
 	@ENV=${ENV:-local} bash scripts/compute-appversion.sh $$ENV
 
+verify-release: ## ensure Chart appVersion matches per-env tags and naming
+	@bash scripts/verify-release.sh
+
 smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...])
 	@ENV=${ENV} BOOTSTRAP=${BOOTSTRAP} BASE_DOMAIN=${BASE_DOMAIN} bash scripts/smoke.sh ${ENV}
 

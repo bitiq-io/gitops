@@ -34,6 +34,7 @@ make lint       # helm lint all charts
 make hu         # helm-unittest suites (helm plugin required)
 make template   # helm template sanity (uses env values)
 make validate   # render charts, kubeconform, conftest, yamllint
+make verify-release  # check appVersion vs values-<env>.yaml image tags
 make dev-setup  # install local commit-msg hook for commitlint
 ```
 

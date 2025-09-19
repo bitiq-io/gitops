@@ -161,6 +161,7 @@ make lint       # helm lint all charts
 make hu         # run helm-unittest suites (helm plugin required)
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
+make verify-release  # assert appVersion matches env image tags (multi-image safe)
 make dev-setup  # install local commit-msg hook for commitlint
 make smoke-image-update  # show app annotations and tail image-updater logs (ENV=<env>)
 make bump-image           # create a new tag in Quay (SOURCE_TAG->NEW_TAG)

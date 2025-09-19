@@ -18,6 +18,12 @@ repo_root() { cd "$(here)/.." && pwd -P; }
 
 ENV_ARG=${1:-${ENV:-local}}
 ENV_NAME=${ENV_ARG}
+MODE=${MODE:-update}
+
+if [[ "$MODE" != "update" && "$MODE" != "print" ]]; then
+  echo "Unknown MODE='$MODE' (expected 'update' or 'print')" >&2
+  exit 1
+fi
 
 ROOT=$(repo_root)
 UMBRELLA_CHART="$ROOT/charts/bitiq-umbrella/Chart.yaml"
@@ -66,6 +72,11 @@ fi
 
 # Sort entries by service name and build composite
 COMPOSITE=$(printf '%s\n' "${ENTRIES[@]}" | sort -k1,1 | awk '{printf "%s-%s_", $1, $2}' | sed 's/_$//')
+
+if [[ "$MODE" == "print" ]]; then
+  echo "$COMPOSITE"
+  exit 0
+fi
 
 echo "Computed composite appVersion for ENV=${ENV_NAME}:"
 echo "$COMPOSITE"
