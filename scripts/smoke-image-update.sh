@@ -43,6 +43,11 @@ echo
 echo "==> Recent updater logs (last 10m)"
 oc -n "$NS" logs deploy/argocd-image-updater --since=10m 2>/dev/null | tail -n 200 || true
 
+echo
+echo "==> Key decision lines (last 10m)"
+oc -n "$NS" logs deploy/argocd-image-updater --since=10m 2>/dev/null \
+  | grep -E "(eligible for consideration|Setting new image|Dry run|Committing|Pushed change|skipping app)" || true
+
 cat <<'EOF'
 
 Key lines to look for:
@@ -54,4 +59,3 @@ Starting live log tail (Ctrl-C to stop)...
 EOF
 
 oc -n "$NS" logs deploy/argocd-image-updater -f --since=1m
-
