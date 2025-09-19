@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: bitiq-sample-app-{{ .Values.env }}
   namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
   annotations:
     # Tell Image Updater what image to track and how to write back to Helm values
     argocd-image-updater.argoproj.io/image-list: app={{ .Values.sampleAppImageRepo }}

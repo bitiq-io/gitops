@@ -66,7 +66,7 @@ export GITHUB_WEBHOOK_SECRET=$(openssl rand -base64 32)
 make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
 ```
 
-5) Ensure ci-pipelines app is synced
+5) Ensure ci-pipelines-${ENV} app is synced
 
 The chart provides:
 - Pipeline using Tekton Hub resolver tasks (no ClusterTasks needed)
@@ -74,7 +74,7 @@ The chart provides:
 - ServiceAccount `pipeline` and RBAC (including cluster‑scope read for ClusterInterceptors)
 
 ```bash
-oc -n openshift-gitops annotate application ci-pipelines argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 oc -n openshift-pipelines get pipeline bitiq-build-and-push
 oc -n openshift-pipelines get eventlistener bitiq-listener
 ```
@@ -159,12 +159,12 @@ export QUAY_EMAIL=<your-email>
 make quay-secret
 ```
 
-Optional: point ci-pipelines at a feature branch for testing
+Optional: point ci-pipelines-${ENV} at a feature branch for testing
 
 ```bash
-oc -n openshift-gitops patch application ci-pipelines \
+oc -n openshift-gitops patch application ci-pipelines-${ENV} \
   --type merge -p '{"spec":{"source":{"targetRevision":"fix/pipelines-hub-and-sa"}}}'
-oc -n openshift-gitops annotate application ci-pipelines argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 ```
 
 Links

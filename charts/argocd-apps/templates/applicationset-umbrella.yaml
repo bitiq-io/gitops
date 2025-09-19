@@ -19,6 +19,10 @@ spec:
   template:
     metadata:
       name: 'bitiq-umbrella-{{ "{{ .env }}" }}'
+      labels:
+        bitiq.io/env: '{{ "{{ .env }}" }}'
+        app.kubernetes.io/name: bitiq-umbrella
+        app.kubernetes.io/managed-by: argocd
     spec:
       project: default
       source:

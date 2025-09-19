@@ -43,7 +43,7 @@ Generate an Argo CD API token
 
 Provide the token to Image Updater (kept out of Git)
 - Patch the Application to pass the Helm parameter:
-  - `oc -n openshift-gitops patch application image-updater --type merge -p '{"spec":{"source":{"helm":{"parameters":[{"name":"argocd.token","value":"'"$TOKEN"'"}]}}}}'`
+  - `oc -n openshift-gitops patch application image-updater-${ENV} --type merge -p '{"spec":{"source":{"helm":{"parameters":[{"name":"argocd.token","value":"'"$TOKEN"'"}]}}}}'`
 - Verify Secret created:
   - `oc -n openshift-gitops get secret argocd-image-updater-secret -o jsonpath='{.data.argocd\.token}' | base64 -d; echo`
 

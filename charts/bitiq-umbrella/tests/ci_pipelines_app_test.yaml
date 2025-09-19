@@ -1,0 +1,20 @@
+suite: CI pipelines Application naming
+templates:
+  - templates/app-ci-pipelines.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+assertions:
+  - it: app name and label include env
+    set:
+      env: prod
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ci-pipelines-prod
+      - equal:
+          path: metadata.labels["bitiq.io/env"]
+          value: prod
+      - equal:
+          path: spec.destination.namespace
+          value: openshift-pipelines

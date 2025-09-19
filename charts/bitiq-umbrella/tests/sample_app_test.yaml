@@ -6,10 +6,15 @@ release:
   namespace: openshift-gitops
 assertions:
   - it: sets deterministic tag regex
+    set:
+      env: local
     asserts:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/app.allow-tags"]
           value: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+      - equal:
+          path: metadata.labels["bitiq.io/env"]
+          value: local
   - it: includes env value file layering and ignoreMissingValueFiles
     set:
       env: sno

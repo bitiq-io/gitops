@@ -49,6 +49,7 @@ Authoritative conventions for repository naming, versioning, and environment ove
 
 - Namespace convention: `bitiq-<env>`.
 - Umbrella Argo CD Application: `bitiq-umbrella-<env>`.
+- Child Argo CD Applications include the env suffix (e.g., `ci-pipelines-<env>`, `image-updater-<env>`, `bitiq-sample-app-<env>`).
 - Add the label `bitiq.io/env=<env>` to namespaces and top-level workloads for fleet queries.
 
 ## Rollback recipe

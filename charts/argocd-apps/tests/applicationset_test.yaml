@@ -1,0 +1,22 @@
+suite: ApplicationSet naming and sync options
+templates:
+  - templates/applicationset-umbrella.yaml
+values:
+  - values.yaml
+release:
+  name: argocd-apps
+  namespace: openshift-gitops
+assertions:
+  - it: sets umbrella application name and env label
+    asserts:
+      - equal:
+          path: spec.template.metadata.name
+          value: "bitiq-umbrella-{{ .env }}"
+      - equal:
+          path: spec.template.metadata.labels["bitiq.io/env"]
+          value: "{{ .env }}"
+  - it: keeps CreateNamespace sync option
+    asserts:
+      - contains:
+          path: spec.template.spec.syncPolicy.syncOptions
+          content: CreateNamespace=true

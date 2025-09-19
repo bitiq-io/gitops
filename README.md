@@ -194,6 +194,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 ## Operations
 
 - Rollbacks: follow [`docs/ROLLBACK.md`](docs/ROLLBACK.md) for Git revert + Argo sync recovery. The playbook assumes the deterministic tag and `appVersion` conventions in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
+- App naming: Argo Applications carry the env suffix (`bitiq-umbrella-${ENV}`, `ci-pipelines-${ENV}`, `image-updater-${ENV}`, `bitiq-sample-app-${ENV}`) and are labeled `bitiq.io/env=${ENV}`. Namespaces inherit the same label for fleet queries.
 
 ## How to use it
 

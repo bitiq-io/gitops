@@ -1,8 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ci-pipelines
+  name: ci-pipelines-{{ .Values.env }}
   namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
 spec:
   project: default
   source:

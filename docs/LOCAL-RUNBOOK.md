@@ -183,7 +183,7 @@ oc -n openshift-gitops rollout restart deploy/argocd-image-updater
 oc -n openshift-gitops patch application bitiq-sample-app-local \
   --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}'
 
-oc -n openshift-gitops patch application ci-pipelines \
+oc -n openshift-gitops patch application ci-pipelines-${ENV} \
   --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 ```
 
