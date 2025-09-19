@@ -12,6 +12,8 @@ metadata:
     argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-{{ .Values.env }}.yaml
+    argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}
+    argocd-image-updater.argoproj.io/dry-run: "false"
 spec:
   project: default
   source:

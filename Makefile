@@ -29,6 +29,15 @@ validate: ## run full validation (lint, render, schema, policy)
 smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...])
 	@ENV=${ENV} BOOTSTRAP=${BOOTSTRAP} BASE_DOMAIN=${BASE_DOMAIN} bash scripts/smoke.sh ${ENV}
 
+smoke-image-update: ## tail updater logs and show app annotations (ENV=<env> NS=openshift-gitops)
+	@bash scripts/smoke-image-update.sh
+
+bump-image: ## create a new tag in Quay from SOURCE_TAG to NEW_TAG (uses skopeo|podman|docker)
+	@bash scripts/quay-bump-tag.sh
+
+bump-and-tail: ## bump image in Quay then tail updater logs (ENV=<env> NS=openshift-gitops)
+	@bash scripts/quay-bump-tag.sh && bash scripts/smoke-image-update.sh
+
 tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB_WEBHOOK_SECRET is set
 	@oc new-project bitiq-ci >/dev/null 2>&1 || true
 	@oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci >/dev/null 2>&1 || true
