@@ -15,6 +15,7 @@ It uses:
 
 - [SPEC](SPEC.md)
 - [TODO](TODO.md)
+- [CONVENTIONS](docs/CONVENTIONS.md) — versioning, naming, and rollback guardrails
 - [Architecture Decision Records](docs/adr/)
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End‑to‑end local CI→CD (webhook + ngrok)
@@ -171,6 +172,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 
 - [SPEC.md](SPEC.md) — scope, requirements, and acceptance criteria
 - [TODO.md](TODO.md) — upcoming tasks in Conventional Commits format
+- [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — canonical versioning & naming rules
 - [AGENTS.md](AGENTS.md) — assistant-safe workflows and conventions
   - See also: `docs/adr/0002-helm-first-gitops-structure.md` for the Helm-first decision
 

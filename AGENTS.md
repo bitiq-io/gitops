@@ -7,6 +7,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - Prefer small, reviewable PRs; one purpose per PR.
 - Never commit secrets, kubeconfigs, or tokens. Use SealedSecrets/External Secrets when introduced.
 - Follow Conventional Commits. Common scopes: `charts`, `umbrella`, `pipelines`, `image-updater`, `operators`.
+- Enforce the versioning and naming rules in `docs/CONVENTIONS.md` (image tags, composite appVersion, env overlays).
 - Do not change operator channels or critical defaults without explicit approval and notes in the PR body.
 - Avoid cluster-side manual changes; Git is the source of truth. Use `scripts/bootstrap.sh` only for initial operator installs.
 - Validate templates locally before opening a PR.
@@ -68,4 +69,5 @@ Notes for agents (local e2e):
 ## References
 
 - Ecosystem standards and templates: https://github.com/PaulCapestany/ecosystem
+- Canonical repo conventions: docs/CONVENTIONS.md
 - Argo CD, Pipelines, Image Updater links are in this repo’s README.
