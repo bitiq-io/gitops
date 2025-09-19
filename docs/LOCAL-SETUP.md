@@ -16,6 +16,14 @@ Start OpenShift Local
 - Login to the cluster:
   - `oc login -u kubeadmin -p $(crc console --credentials | awk '/kubeadmin/ {print $2}')`
 
+CRC domains & TLS
+- API endpoint: `https://api.crc.testing:6443` (self-signed cert).
+- Application wildcard: `*.apps-crc.testing` resolves inside the CRC VM. The sample stack uses:
+  - Backend Route host prefix `svc-api` → `https://svc-api.apps-crc.testing`
+  - Frontend Route host prefix `svc-web` → `https://svc-web.apps-crc.testing`
+- Changing `BASE_DOMAIN`? Update `charts/bitiq-sample-app/values-local.yaml` (and other env files) and rerun `make compute-appversion ENV=local` so Routes and appVersion remain consistent.
+- Browsers may warn about TLS; accept the cert for local testing or import the CRC CA if desired.
+
 Bootstrap this repo
 - Clone your fork and ensure `origin` points to it.
 - From the repo root:
@@ -74,12 +82,11 @@ Configure Argo CD repo write access
 - UI alternative: Settings → Repositories → CONNECT REPO → HTTPS. Ensure the PAT (or SSH key) is authorized for the bitiq-io org.
 - Image Updater uses Argo CD’s repo creds to commit Helm value changes, so the credential must have write access.
 
-Sample app image
-- Default image `quay.io/yourorg/bitiq-svc-api:0.1.0` is a placeholder.
-- Either push a real image that:
-  - Listens on port 8080
-  - Responds to `/healthz`
-- Or edit `charts/bitiq-sample-app/values-common.yaml` to point to a public image and/or adjust the probes/port in the template.
+Sample app images
+- Backend (`toy-service`) defaults to `quay.io/paulcapestany/toy-service` with `/healthz` probe and host prefix `svc-api`.
+- Frontend (`toy-web`) defaults to `quay.io/paulcapestany/toy-web` with `/` probe and host prefix `svc-web`.
+- Override tags in `charts/bitiq-sample-app/values-local.yaml`; rerun `make compute-appversion ENV=local` (or let Image Updater write back) and `make verify-release` before merging.
+- If you change ports or health paths, adjust the chart templates (`backend.service.port`, `frontend.service.port`, `backend.healthPath`, `frontend.healthPath`).
 
 Tekton pipeline (optional)
 - Default pushes to the in-cluster registry namespace `bitiq-ci`.
@@ -94,9 +101,11 @@ Validate and inspect
   - `make template`
 - Watch applications:
   - `oc -n openshift-gitops get applications,applicationsets`
-- Get sample app route and test:
+- Get sample app routes and test:
   - `oc -n bitiq-local get route bitiq-sample-app -o jsonpath='{.spec.host}{"\n"}'`
-  - `curl -k https://svc-api.apps-crc.testing/healthz` (adjust if you changed domain/image)
+  - `oc -n bitiq-local get route bitiq-sample-app-web -o jsonpath='{.spec.host}{"\n"}'`
+  - `curl -k https://svc-api.apps-crc.testing/healthz`
+  - `curl -k https://svc-web.apps-crc.testing/`
 
 Troubleshooting
 - Lint issues: run `helm lint charts/bitiq-sample-app -f charts/bitiq-sample-app/values-common.yaml -f charts/bitiq-sample-app/values-local.yaml`.
