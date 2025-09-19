@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: bitiq-sample-app
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.backend.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/name: bitiq-sample-app
@@ -17,12 +17,12 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
           args:
             - "--port"
-            - "{{ .Values.service.port }}"
+            - "{{ .Values.backend.service.port }}"
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
@@ -30,16 +30,28 @@ spec:
               drop: ["ALL"]
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.backend.service.port }}
           readinessProbe:
             httpGet:
-              path: {{ .Values.healthPath | default "/healthz" }}
+              path: {{ .Values.backend.healthPath | default "/healthz" }}
               port: http
             initialDelaySeconds: 5
           livenessProbe:
             httpGet:
-              path: {{ .Values.healthPath | default "/healthz" }}
+              path: {{ .Values.backend.healthPath | default "/healthz" }}
               port: http
             initialDelaySeconds: 10
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+      {{- with .Values.backend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

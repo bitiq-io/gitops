@@ -74,15 +74,15 @@ Local notes (OpenShift Local / CRC)
 
    * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
    * **ci-pipelines** in `openshift-pipelines` (pipeline + triggers; Buildah & SA come from the operator). ([Red Hat Docs][4])
-   * **bitiq-sample-app** in a `bitiq-${ENV}` namespace with an OpenShift Route on your base domain.
+   * **bitiq-sample-app** (toy-service backend + toy-web frontend) in a `bitiq-${ENV}` namespace with two Routes on your base domain.
 
 ### Image updates & Git write-back
 
-The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater** to track an image and write back **Helm values** in Git:
+The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater** to track multiple images (backend + frontend) and write back **Helm values** in Git:
 
 * We use `argocd-image-updater.argoproj.io/write-back-method: git` and
   `argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-${ENV}.yaml` (absolute) or `helmvalues:values-${ENV}.yaml` (relative to the app path). ([Argo CD Image Updater][8])
-* We also map Helm parameters via `*.helm.image-name` and `*.helm.image-tag`. ([Argo CD Image Updater][9])
+* We map Helm parameters via `backend.helm.image-name/tag` and `frontend.helm.image-name/tag` so each alias writes to the correct section of `values-${ENV}.yaml`. ([Argo CD Image Updater][9])
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
@@ -254,7 +254,7 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 
 ## What you’ll likely adjust
 
-* **Image repo** (`sampleAppImageRepo`) to a real image you build with Tekton.
+* **Image repos** (`sampleAppImages.backend` and `.frontend`) to real images you build with Tekton.
 * **GitHub webhook secret** in `ci-pipelines` values.
 * **BASE\_DOMAIN** for SNO/prod (often `apps.<cluster-domain>`).
 

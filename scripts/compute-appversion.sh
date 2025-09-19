@@ -33,40 +33,30 @@ for CH in ${CHART_LIST}; do
     # tolerate missing per-env overlay
     continue
   fi
-  repo=""
-  tag=""
-  in_image=0
+  current_repo=""
+  current_tag=""
   while IFS= read -r line; do
-    case "$line" in
-      image:*) in_image=1; continue ;;
-    esac
-    if [[ $in_image -eq 1 ]]; then
-      # Two-space indented keys under image:
-      if [[ "$line" =~ ^[[:space:]]{2}repository:[[:space:]]*(.*)$ ]]; then
-        repo=${BASH_REMATCH[1]}
-        # strip inline comments and surrounding quotes/spaces
-        repo=$(echo "$repo" | sed -E 's/[[:space:]]+#.*$//; s/^\"//; s/\"$//; s/^\x27//; s/\x27$//; s/^[[:space:]]+//; s/[[:space:]]+$//')
-      elif [[ "$line" =~ ^[[:space:]]{2}tag:[[:space:]]*(.*)$ ]]; then
-        tag=${BASH_REMATCH[1]}
-        tag=$(echo "$tag" | sed -E 's/[[:space:]]+#.*$//; s/^\"//; s/\"$//; s/^\x27//; s/\x27$//; s/^[[:space:]]+//; s/[[:space:]]+$//')
-      elif [[ ! "$line" =~ ^[[:space:]] ]]; then
-        # leaving the image: block
-        in_image=0
+    if [[ "$line" =~ ^[[:space:]]*repository:[[:space:]]*(.*)$ ]]; then
+      current_repo=${BASH_REMATCH[1]}
+      current_repo=$(echo "$current_repo" | sed -E 's/[[:space:]]+#.*$//; s/^\"//; s/\"$//; s/^\x27//; s/\x27$//; s/^[[:space:]]+//; s/[[:space:]]+$//')
+      continue
+    fi
+    if [[ "$line" =~ ^[[:space:]]*tag:[[:space:]]*(.*)$ ]]; then
+      current_tag=${BASH_REMATCH[1]}
+      current_tag=$(echo "$current_tag" | sed -E 's/[[:space:]]+#.*$//; s/^\"//; s/\"$//; s/^\x27//; s/\x27$//; s/^[[:space:]]+//; s/[[:space:]]+$//')
+    fi
+
+    if [[ -n "$current_repo" && -n "$current_tag" ]]; then
+      repo=$(echo "$current_repo" | sed -E 's/^\"//; s/\"$//; s/^\x27//; s/\x27$//')
+      tag=$(echo "$current_tag" | sed -E 's/^\"//; s/\"$//; s/^\x27//; s/\x27$//')
+      if [[ -n "$repo" && -n "$tag" ]]; then
+        svc=$(basename "$repo")
+        ENTRIES+=("$svc $tag")
       fi
+      current_repo=""
+      current_tag=""
     fi
   done < "$VALUES_FILE"
-
-  # Normalize repo/tag one more time to be safe
-  repo=$(echo "$repo" | sed -E 's/^\"//; s/\"$//; s/^\x27//; s/\x27$//')
-  tag=$(echo "$tag" | sed -E 's/^\"//; s/\"$//; s/^\x27//; s/\x27$//')
-
-  if [[ -z "$repo" || -z "$tag" ]]; then
-    continue
-  fi
-
-  # Derive service name from repo basename
-  svc=$(basename "$repo")
-  ENTRIES+=("$svc $tag")
 done
 
 if [[ ${#ENTRIES[@]} -eq 0 ]]; then

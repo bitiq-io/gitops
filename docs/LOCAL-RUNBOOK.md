@@ -198,14 +198,13 @@ APP_HOST=$(oc -n bitiq-local get route bitiq-sample-app -o jsonpath='{.spec.host
 echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
 ```
 
-## 7) Sample app image (public by default)
+## 7) Sample app images (public by default)
 
-- The sample app now uses a public image by default: `ghcr.io/traefik/whoami:v1.10.2` on port 8080 and probes `GET /` (200).
-- These are set in `charts/bitiq-sample-app/values-common.yaml`:
-  - `image.repository`, `image.tag`
-  - `service.port: 8080`
-  - `healthPath: "/"`
-- If you swap to your own image, ensure the port and probe path line up; then hard refresh:
+- The sample stack ships with two images:
+  - Backend (`toy-service`) — defaults to `quay.io/paulcapestany/toy-service` with probes on `/healthz`.
+  - Frontend (`toy-web`) — defaults to `quay.io/paulcapestany/toy-web` with probes on `/`.
+- These live in `charts/bitiq-sample-app/values-*.yaml` under `backend.image` and `frontend.image` (plus `healthPath`, `hostPrefix`, and `service.port`).
+- If you swap to your own images, ensure ports/probes line up; then hard refresh:
   ```bash
   oc -n openshift-gitops annotate application bitiq-sample-app-local argocd.argoproj.io/refresh=hard --overwrite
   ```

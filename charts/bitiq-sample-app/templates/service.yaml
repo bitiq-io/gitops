@@ -5,10 +5,10 @@ metadata:
   labels:
     app.kubernetes.io/name: bitiq-sample-app
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.backend.service.type }}
   selector:
     app.kubernetes.io/name: bitiq-sample-app
   ports:
     - name: http
-      port: {{ .Values.service.port }}
+      port: {{ .Values.backend.service.port }}
       targetPort: http

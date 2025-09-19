@@ -8,7 +8,8 @@ assertions:
   - it: builds host from hostPrefix and baseDomain
     set:
       baseDomain: apps.example.test
-      hostPrefix: svc
+      backend:
+        hostPrefix: svc
     asserts:
       - equal:
           path: spec.host

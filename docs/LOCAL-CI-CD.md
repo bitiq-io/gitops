@@ -123,7 +123,7 @@ tkn pr logs -L -f -n openshift-pipelines
 oc -n openshift-gitops logs deploy/argocd-image-updater -f
 ```
 
-- It updates `charts/bitiq-sample-app/values-local.yaml` with `image.tag: <sha>` → Argo syncs the app → Route should serve the new image.
+- It updates `charts/bitiq-sample-app/values-local.yaml` with the backend/frontend tags → Argo syncs the app → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
 
 Troubleshooting
 

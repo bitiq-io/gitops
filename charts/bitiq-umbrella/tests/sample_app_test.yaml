@@ -5,12 +5,24 @@ release:
   name: umbrella
   namespace: openshift-gitops
 assertions:
-  - it: sets deterministic tag regex
+  - it: sets multi-image annotations and env label
     set:
       env: local
     asserts:
       - equal:
-          path: metadata.annotations["argocd-image-updater.argoproj.io/app.allow-tags"]
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "backend=quay.io/paulcapestany/toy-service,frontend=quay.io/paulcapestany/toy-web"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/backend.helm.image-name"]
+          value: backend.image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/frontend.helm.image-name"]
+          value: frontend.image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/backend.allow-tags"]
+          value: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/frontend.allow-tags"]
           value: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
       - equal:
           path: metadata.labels["bitiq.io/env"]

@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: bitiq-sample-app
 spec:
-  host: {{ .Values.hostPrefix }}.{{ required "baseDomain must be set (values-<env>.yaml)" .Values.baseDomain }}
+  host: {{ .Values.backend.hostPrefix }}.{{ required "baseDomain must be set (values-<env>.yaml)" .Values.baseDomain }}
   to:
     kind: Service
     name: bitiq-sample-app
