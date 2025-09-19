@@ -17,13 +17,21 @@ lint: ## helm lint all charts
 	  fi; \
 	done
 
+hu: ## run helm-unittest suites (requires helm-unittest plugin)
+	@for c in $(CHARTS); do \
+	  if [ -d "$$c/tests" ]; then \
+	    echo "==> helm unittest $$c"; \
+	    helm unittest $$c || exit 1; \
+	  fi; \
+	done
+
 template: ## helm template sanity (local, sno, prod)
 	@for env in local sno prod; do \
 	  echo "==> argocd-apps ($$env)"; \
 	  helm template charts/argocd-apps --set envFilter=$$env >/dev/null || exit 1; \
 	done
 
-validate: ## run full validation (lint, render, schema, policy)
+validate: hu ## run full validation (lint, render, schema, policy)
 	@bash scripts/validate.sh
 
 compute-appversion: ## compute composite appVersion from values-$(ENV).yaml and update umbrella Chart (ENV=local|sno|prod)

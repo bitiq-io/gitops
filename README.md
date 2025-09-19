@@ -157,6 +157,7 @@ Secret management note: the chart does not create the webhook Secret by default 
 
 ```bash
 make lint       # helm lint all charts
+make hu         # run helm-unittest suites (helm plugin required)
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
 make dev-setup  # install local commit-msg hook for commitlint

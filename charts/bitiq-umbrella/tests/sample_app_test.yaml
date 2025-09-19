@@ -1,0 +1,23 @@
+suite: Sample app Application annotations
+templates:
+  - templates/app-bitiq-sample-app.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+assertions:
+  - it: sets deterministic tag regex
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/app.allow-tags"]
+          value: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+  - it: includes env value file layering and ignoreMissingValueFiles
+    asserts:
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-common.yaml
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-local.yaml
+      - equal:
+          path: spec.source.helm.ignoreMissingValueFiles
+          value: true

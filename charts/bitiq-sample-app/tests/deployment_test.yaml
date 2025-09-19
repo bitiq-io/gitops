@@ -1,0 +1,25 @@
+suite: Deployment container image
+templates:
+  - templates/deployment.yaml
+values:
+  - values-common.yaml
+release:
+  name: sample
+  namespace: bitiq-local
+assertions:
+  - it: uses repository + tag from values
+    set:
+      image:
+        repository: quay.io/example/sample
+        tag: v1.2.3-commit.abc1234
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/example/sample:v1.2.3-commit.abc1234
+  - it: propagates health path into readiness probe
+    set:
+      healthPath: /ping
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /ping
