@@ -145,6 +145,8 @@ Troubleshooting
   - The chart now binds the service account with a ClusterRole so it can list `applications.argoproj.io` cluster-wide; resync `image-updater` if you see `applications.argoproj.io is forbidden` after upgrades.
 - Image Updater "Invalid Semantic Version" errors:
   - Tags from the pipeline are commit SHAs, so the Application annotations pin the update strategy to `newest-build`. If a future release requires explicit tag filters, add `app.allow-tags` back with the appropriate regex.
+- Image Updater skips tags due to platform mismatch:
+  - CRC builds produce linux/amd64 images; the Application annotation now pins `app.platforms: linux/amd64` so multi-arch manifest lists are filtered correctly.
 - Image Updater write-back path resolves incorrectly:
   - `write-back-target` is relative to the Application's source path unless you prefix it with `/`. The chart now uses `/charts/bitiq-sample-app/values-<env>.yaml`; resync the umbrella app if you previously rendered a double `charts/` path.
 
