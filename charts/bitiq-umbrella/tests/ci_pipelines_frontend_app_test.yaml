@@ -1,0 +1,20 @@
+suite: CI pipelines frontend Application naming
+templates:
+  - templates/app-ci-pipelines-frontend.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+assertions:
+  - it: app name and label include env
+    set:
+      env: sno
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ci-pipelines-frontend-sno
+      - equal:
+          path: metadata.labels["bitiq.io/env"]
+          value: sno
+      - equal:
+          path: spec.destination.namespace
+          value: openshift-pipelines

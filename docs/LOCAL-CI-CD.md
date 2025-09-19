@@ -66,7 +66,7 @@ export GITHUB_WEBHOOK_SECRET=$(openssl rand -base64 32)
 make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
 ```
 
-5) Ensure ci-pipelines-${ENV} app is synced
+5) Ensure ci-pipelines-backend-${ENV} and ci-pipelines-frontend-${ENV} apps are synced
 
 The chart provides:
 - Pipeline using Tekton Hub resolver tasks (no ClusterTasks needed)
@@ -74,9 +74,12 @@ The chart provides:
 - ServiceAccount `pipeline` and RBAC (including cluster‑scope read for ClusterInterceptors)
 
 ```bash
-oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-backend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-frontend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 oc -n openshift-pipelines get pipeline bitiq-build-and-push
+oc -n openshift-pipelines get pipeline bitiq-web-build-and-push
 oc -n openshift-pipelines get eventlistener bitiq-listener
+oc -n openshift-pipelines get eventlistener bitiq-web-listener
 ```
 
 > These `oc` commands require the permissions noted in the prereqs. If you see `Forbidden`, re-run them as a cluster-admin or apply the RBAC grants above.
@@ -159,12 +162,17 @@ export QUAY_EMAIL=<your-email>
 make quay-secret
 ```
 
-Optional: point ci-pipelines-${ENV} at a feature branch for testing
+Optional: point backend or frontend pipeline at a feature branch for testing
 
 ```bash
-oc -n openshift-gitops patch application ci-pipelines-${ENV} \
+oc -n openshift-gitops patch application ci-pipelines-backend-${ENV} \
   --type merge -p '{"spec":{"source":{"targetRevision":"fix/pipelines-hub-and-sa"}}}'
-oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-backend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+
+# or for the frontend variant
+oc -n openshift-gitops patch application ci-pipelines-frontend-${ENV} \
+  --type merge -p '{"spec":{"source":{"targetRevision":"feature/frontend-tests"}}}'
+oc -n openshift-gitops annotate application ci-pipelines-frontend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 ```
 
 Links

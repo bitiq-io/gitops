@@ -13,3 +13,23 @@ targetRevision: main
 sampleAppImages:
   backend: quay.io/paulcapestany/toy-service
   frontend: quay.io/paulcapestany/toy-web
+
+pipelines:
+  backend:
+    pipelineName: bitiq-build-and-push
+    gitUrl: https://github.com/PaulCapestany/toy-service.git
+    gitRevision: main
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-service
+    eventListener: bitiq-listener
+    githubSecretName: github-webhook-secret
+  frontend:
+    pipelineName: bitiq-web-build-and-push
+    gitUrl: https://github.com/PaulCapestany/toy-web.git
+    gitRevision: main
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-web
+    eventListener: bitiq-web-listener
+    githubSecretName: github-webhook-secret

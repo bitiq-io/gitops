@@ -272,7 +272,8 @@ refresh_app() {
     err "Failed to annotate application $app"
 }
 
-refresh_app "ci-pipelines-$ENVIRONMENT"
+refresh_app "ci-pipelines-backend-$ENVIRONMENT"
+refresh_app "ci-pipelines-frontend-$ENVIRONMENT"
 refresh_app "image-updater-$ENVIRONMENT"
 refresh_app "bitiq-sample-app-$ENVIRONMENT"
 
