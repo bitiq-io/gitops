@@ -26,6 +26,9 @@ template: ## helm template sanity (local, sno, prod)
 validate: ## run full validation (lint, render, schema, policy)
 	@bash scripts/validate.sh
 
+compute-appversion: ## compute composite appVersion from values-$(ENV).yaml and update umbrella Chart (ENV=local|sno|prod)
+	@ENV=${ENV:-local} bash scripts/compute-appversion.sh $$ENV
+
 smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...])
 	@ENV=${ENV} BOOTSTRAP=${BOOTSTRAP} BASE_DOMAIN=${BASE_DOMAIN} bash scripts/smoke.sh ${ENV}
 
