@@ -38,6 +38,8 @@ make verify-release  # check appVersion vs values-<env>.yaml image tags
 make dev-setup  # install local commit-msg hook for commitlint
 ```
 
+- GitHub Actions (`.github/workflows/validate.yaml`) runs these same targets on PR/push; keep them green locally before sending changes.
+
 CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep local and CI checks aligned.
 
 If adding/altering Helm values:
