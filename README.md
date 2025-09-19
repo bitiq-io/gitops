@@ -79,10 +79,33 @@ Local notes (OpenShift Local / CRC)
 The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater** to track an image and write back **Helm values** in Git:
 
 * We use `argocd-image-updater.argoproj.io/write-back-method: git` and
-  `argocd-image-updater.argoproj.io/write-back-target: helmvalues:charts/bitiq-sample-app/values-${ENV}.yaml`. ([Argo CD Image Updater][8])
+  `argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-${ENV}.yaml` (absolute) or `helmvalues:values-${ENV}.yaml` (relative to the app path). ([Argo CD Image Updater][8])
 * We also map Helm parameters via `*.helm.image-name` and `*.helm.image-tag`. ([Argo CD Image Updater][9])
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
+
+Local bump helper (optional)
+
+You can force an update by creating a new tag in Quay that points at the current `latest` (or another `SOURCE_TAG`). The helper prefers `skopeo`, then `podman`, then `docker`.
+
+Examples:
+
+```bash
+# Create a new tag from latest (e.g., dev-20250101-120000)
+NEW_TAG=dev-$(date +%Y%m%d-%H%M%S) make bump-image
+
+# With explicit auth (recommended for private repos or if not logged in)
+QUAY_USERNAME=<user or robot> QUAY_PASSWORD=<token> \
+NEW_TAG=dev-$(date +%s) make bump-and-tail ENV=local
+```
+
+Defaults used by the helper:
+
+- `QUAY_REGISTRY=quay.io`
+- `QUAY_NAMESPACE=paulcapestany`
+- `QUAY_REPOSITORY=toy-service`
+- `SOURCE_TAG=latest`
+- `NEW_TAG=dev-<timestamp>`
 
 Token secret configuration for Image Updater
 
@@ -136,6 +159,9 @@ make lint       # helm lint all charts
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
 make dev-setup  # install local commit-msg hook for commitlint
+make smoke-image-update  # show app annotations and tail image-updater logs (ENV=<env>)
+make bump-image           # create a new tag in Quay (SOURCE_TAG->NEW_TAG)
+make bump-and-tail        # bump in Quay then tail image-updater logs
 make smoke ENV=local [BOOTSTRAP=true]  # cluster smoke checks (optional bootstrap)
 ```
 
@@ -168,7 +194,7 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 ./scripts/bootstrap.sh
 ```
 
-2. **Configure Argo CD repo creds** with write access to this Git repo (for Image Updater’s Git write-back). See Argo CD docs for repo credentials; Image Updater uses Argo CD’s API & repo creds. ([Argo CD Image Updater][10])
+2. **Configure Argo CD repo creds** with write access to this Git repo (for Image Updater’s Git write-back). See Argo CD docs for repo credentials; Image Updater uses Argo CD’s API & repo creds. If using a GitHub org, ensure your PAT/SSH key is SSO‑authorized for the org, or use an org‑installed GitHub App credential. ([Argo CD Image Updater][10])
 
 3. **(Optional) GitHub webhook**
    Grab the Route URL named `bitiq-listener` in `openshift-pipelines` (it targets service `el-bitiq-listener`) and add it as a GitHub webhook for your microservice repo (content type: JSON; secret = the value you set in `triggers.githubSecretName`). ([Red Hat][11], [Tekton][15])
