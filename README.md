@@ -16,6 +16,7 @@ It uses:
 - [SPEC](SPEC.md)
 - [TODO](TODO.md)
 - [CONVENTIONS](docs/CONVENTIONS.md) — versioning, naming, and rollback guardrails
+- [ROLLBACK](docs/ROLLBACK.md) — Git revert + Argo sync operational playbook
 - [Architecture Decision Records](docs/adr/)
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End‑to‑end local CI→CD (webhook + ngrok)
@@ -174,6 +175,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 - [SPEC.md](SPEC.md) — scope, requirements, and acceptance criteria
 - [TODO.md](TODO.md) — upcoming tasks in Conventional Commits format
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — canonical versioning & naming rules
+- [docs/ROLLBACK.md](docs/ROLLBACK.md) — revert + resync runbook
 - [AGENTS.md](AGENTS.md) — assistant-safe workflows and conventions
   - See also: `docs/adr/0002-helm-first-gitops-structure.md` for the Helm-first decision
 
@@ -188,6 +190,10 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 * Helm `valueFiles` not found? We intentionally use `ignoreMissingValueFiles: true` in Argo’s Helm source. ([Argo CD][1])
 * Image Updater RBAC: the `argocd-image-updater` ServiceAccount must be able to `get,list,watch` `secrets` and `configmaps` in the Argo CD namespace (`openshift-gitops`). The chart defines a namespaced `Role` + `RoleBinding` for this. If you see errors like “secrets is forbidden … cannot list … in the namespace openshift-gitops”, re‑sync the `image-updater` app to apply RBAC.
 * GitHub PAT shows “Never used”: ensure you log into Argo CD with `argocd login ... --sso --grpc-web` before running `argocd repo add`. Sanity-check the token with `curl -H "Authorization: Bearer $GH_PAT" https://api.github.com/repos/bitiq-io/gitops` and `git ls-remote https://<user>:$GH_PAT@github.com/bitiq-io/gitops.git`. Either call should flip the PAT to “Last used …” in GitHub’s UI.
+
+## Operations
+
+- Rollbacks: follow [`docs/ROLLBACK.md`](docs/ROLLBACK.md) for Git revert + Argo sync recovery. The playbook assumes the deterministic tag and `appVersion` conventions in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
 
 ## How to use it
 
