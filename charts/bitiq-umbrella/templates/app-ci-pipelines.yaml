@@ -1,0 +1,38 @@
+{{- $ci := .Values.ciPipelines -}}
+{{- $trigger := dict "create" true "createSecret" false "secretToken" "" "eventListenerName" $ci.eventListener.name "githubSecretName" $ci.eventListener.githubSecretName "route" ($ci.eventListener.route | default false) -}}
+{{- if $ci.eventListener.serviceAccountName }}
+{{- $_ := set $trigger "serviceAccountName" $ci.eventListener.serviceAccountName -}}
+{{- end }}
+{{- if $ci.eventListener.createSecret }}
+{{- $_ := set $trigger "createSecret" $ci.eventListener.createSecret -}}
+{{- end }}
+{{- if $ci.eventListener.secretToken }}
+{{- $_ := set $trigger "secretToken" $ci.eventListener.secretToken -}}
+{{- end }}
+{{- $chartValues := dict "env" .Values.env "appNamespace" .Values.appNamespace "serviceAccountName" ($ci.serviceAccountName | default "pipeline") "fsGroup" ($ci.fsGroup | default 0) "pipelines" $ci.pipelines "triggers" $trigger -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ci-pipelines-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/ci-pipelines
+    helm:
+      values: |
+{{ toYaml $chartValues | indent 8 }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.pipelinesNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

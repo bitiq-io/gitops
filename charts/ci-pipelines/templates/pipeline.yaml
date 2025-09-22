@@ -1,37 +1,43 @@
+{{- $pipelines := .Values.pipelines -}}
+{{- range $idx, $pipeline := $pipelines }}
+{{- if $idx }}
+---
+{{- end }}
+{{- $image := printf "%s/%s/%s" $pipeline.imageRegistry $pipeline.imageNamespace $pipeline.imageName }}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: {{ .Values.pipeline.name }}
+  name: {{ $pipeline.name }}
   namespace: openshift-pipelines
 spec:
   params:
     - name: git-url
       type: string
-      default: {{ .Values.pipeline.gitUrl | quote }}
+      default: {{ $pipeline.gitUrl | quote }}
     - name: git-revision
       type: string
-      default: {{ .Values.pipeline.gitRevision | quote }}
+      default: {{ $pipeline.gitRevision | quote }}
     - name: image
       type: string
-      default: "{{ .Values.pipeline.imageRegistry }}/{{ .Values.pipeline.imageNamespace }}/{{ .Values.pipeline.imageName }}"
+      default: {{ $image | quote }}
     - name: runTests
       type: string
-      default: {{ .Values.pipeline.runTests | default "false" | quote }}
+      default: {{ $pipeline.runTests | default "false" | quote }}
     - name: testImage
       type: string
-      default: {{ .Values.pipeline.testImage | default "" | quote }}
+      default: {{ $pipeline.testImage | default "" | quote }}
     - name: testScript
       type: string
-      default: {{ .Values.pipeline.testScript | default "" | quote }}
+      default: {{ $pipeline.testScript | default "" | quote }}
     - name: dockerfile
       type: string
-      default: {{ .Values.pipeline.dockerfile | quote }}
+      default: {{ $pipeline.dockerfile | quote }}
     - name: context
       type: string
-      default: {{ .Values.pipeline.contextDir | quote }}
+      default: {{ $pipeline.contextDir | quote }}
     - name: tlsverify
       type: string
-      default: {{ .Values.pipeline.tlsVerify | quote }}
+      default: {{ $pipeline.tlsVerify | quote }}
   workspaces:
     - name: shared-workspace
   tasks:
@@ -186,3 +192,4 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
+{{- end }}

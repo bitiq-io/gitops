@@ -10,35 +10,49 @@ pipelinesNamespace: openshift-pipelines
 repoUrl: https://github.com/bitiq-io/gitops.git
 targetRevision: main
 
+imageUpdater:
+  platforms: linux/amd64
+  pullSecret: ""
+  enableFrontend: true
+
 sampleAppImages:
   backend: quay.io/paulcapestany/toy-service
   frontend: quay.io/paulcapestany/toy-web
 
-pipelines:
-  backend:
-    pipelineName: bitiq-build-and-push
-    gitUrl: https://github.com/PaulCapestany/toy-service.git
-    gitRevision: main
-    imageRegistry: quay.io
-    imageNamespace: paulcapestany
-    imageName: toy-service
-    eventListener: bitiq-listener
+ciPipelines:
+  serviceAccountName: pipeline
+  fsGroup: 1000660000
+  eventListener:
+    name: bitiq-listener
     githubSecretName: github-webhook-secret
-    runTests: "true"
-    testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
-    testScript: |
-      go test ./...
-  frontend:
-    pipelineName: bitiq-web-build-and-push
-    gitUrl: https://github.com/PaulCapestany/toy-web.git
-    gitRevision: main
-    imageRegistry: quay.io
-    imageNamespace: paulcapestany
-    imageName: toy-web
-    eventListener: bitiq-web-listener
-    githubSecretName: github-webhook-secret
-    runTests: "true"
-    testImage: quay.io/devfile/nodejs-developer:ubi8
-    testScript: |
-      npm ci
-      npm test -- --watch=false
+    route: true
+  pipelines:
+    - name: bitiq-build-and-push
+      gitUrl: https://github.com/PaulCapestany/toy-service.git
+      gitRevision: main
+      dockerfile: Dockerfile
+      contextDir: .
+      imageRegistry: quay.io
+      imageNamespace: paulcapestany
+      imageName: toy-service
+      tlsVerify: "true"
+      repoFullName: PaulCapestany/toy-service
+      runTests: "true"
+      testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
+      testScript: |
+        go test ./...
+    - name: bitiq-web-build-and-push
+      gitUrl: https://github.com/PaulCapestany/toy-web.git
+      gitRevision: main
+      dockerfile: Dockerfile
+      contextDir: .
+      imageRegistry: quay.io
+      imageNamespace: paulcapestany
+      imageName: toy-web
+      tlsVerify: "true"
+      repoFullName: PaulCapestany/toy-web
+      runTests: "true"
+      testImage: quay.io/devfile/nodejs-developer:ubi8
+      testScript: |
+        npm ci
+        npm test -- --watch=false

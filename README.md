@@ -73,7 +73,7 @@ Local notes (OpenShift Local / CRC)
 4. The umbrella app deploys:
 
    * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-   * **ci-pipelines-backend** and **ci-pipelines-frontend** in `openshift-pipelines` (Tekton pipelines + triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
+   * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
    * **bitiq-sample-app** (toy-service backend + toy-web frontend) in a `bitiq-${ENV}` namespace with two Routes on your base domain.
 
 ### Image updates & Git write-back
@@ -213,7 +213,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 ## Operations
 
 - Rollbacks: follow [`docs/ROLLBACK.md`](docs/ROLLBACK.md) for Git revert + Argo sync recovery. The playbook assumes the deterministic tag and `appVersion` conventions in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
-- App naming: Argo Applications carry the env suffix (`bitiq-umbrella-${ENV}`, `ci-pipelines-backend-${ENV}`, `ci-pipelines-frontend-${ENV}`, `image-updater-${ENV}`, `bitiq-sample-app-${ENV}`) and are labeled `bitiq.io/env=${ENV}`. Namespaces inherit the same label for fleet queries.
+- App naming: Argo Applications carry the env suffix (`bitiq-umbrella-${ENV}`, `ci-pipelines-${ENV}`, `image-updater-${ENV}`, `bitiq-sample-app-${ENV}`) and are labeled `bitiq.io/env=${ENV}`. Namespaces inherit the same label for fleet queries.
 - CI: GitHub Actions (`.github/workflows/validate.yaml`) runs `make hu`, `make template`, `make validate`, and `make verify-release` on every PR/push to catch Helm/template regressions before they reach the cluster.
 
 ## How to use it

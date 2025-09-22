@@ -6,30 +6,52 @@
 env: local
 appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshift-pipelines
 
-pipeline:
-  # PipelineRun metadata
-  name: bitiq-build-and-push
-  # ServiceAccount used by all TaskRuns in the PipelineRun
-  serviceAccountName: pipeline
+# Default service account / fsGroup used by generated PipelineRuns
+serviceAccountName: pipeline
+fsGroup: 1000660000
 
-  # Source repository to build (set this to YOUR repo)
-  # Example: https://github.com/yourorg/your-service.git
-  gitUrl: https://github.com/paulcapestany/toy-service.git
-  gitRevision: main
+# Pipelines managed by this chart. Each entry renders:
+# - A tekton.dev/v1 Pipeline definition
+# - TriggerTemplate + TriggerBinding for GitHub webhook payloads
+# - EventListener trigger wiring (see triggers.* below)
+pipelines:
+  - name: bitiq-build-and-push
+    gitUrl: https://github.com/paulcapestany/toy-service.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "false"
+    testImage: ""
+    testScript: ""
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-service
+    tlsVerify: "true"
+    # CEL filter applied inside the EventListener trigger
+    repoFullName: PaulCapestany/toy-service
+    # Optional override per pipeline; falls back to top-level defaults when empty
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push", "pull_request"]
 
-  # Build context
-  dockerfile: Dockerfile
-  contextDir: .
-  fsGroup: 1000660000
-  runTests: "false"
-  testImage: ""
-  testScript: ""
-
-  # Image destination (Quay for local e2e)
-  imageRegistry: quay.io
-  imageNamespace: paulcapestany
-  imageName: toy-service
-  tlsVerify: "true"
+  - name: bitiq-web-build-and-push
+    gitUrl: https://github.com/paulcapestany/toy-web.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: quay.io/devfile/nodejs-developer:ubi8
+    testScript: |
+      npm ci
+      npm test -- --watch=false
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-web
+    tlsVerify: "true"
+    repoFullName: PaulCapestany/toy-web
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push", "pull_request"]
 
 triggers:
   create: true

@@ -1,5 +1,9 @@
 {{- if .Values.triggers.create }}
-{{- if .Values.triggers.createSecret }}
+{{- $root := . -}}
+{{- $defaultSA := .Values.serviceAccountName | default "pipeline" -}}
+{{- $listenerSA := .Values.triggers.serviceAccountName | default $defaultSA -}}
+{{ if .Values.triggers.createSecret }}
+---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,13 +12,16 @@ metadata:
 type: Opaque
 stringData:
   secretToken: {{ required "Set triggers.secretToken when triggers.createSecret=true" .Values.triggers.secretToken | quote }}
-{{- end }}
+{{ end }}
 
+{{ range $idx, $pipeline := .Values.pipelines }}
+{{- $pipelineSA := $pipeline.serviceAccountName | default $defaultSA -}}
+{{- $pipelineFsGroup := $pipeline.fsGroup | default $root.Values.fsGroup -}}
 ---
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
-  name: {{ .Values.pipeline.name }}-template
+  name: {{ $pipeline.name }}-template
   namespace: openshift-pipelines
 spec:
   params:
@@ -24,27 +31,27 @@ spec:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
       metadata:
-        generateName: {{ .Values.pipeline.name }}-
+        generateName: {{ $pipeline.name }}-
         namespace: openshift-pipelines
       spec:
         taskRunTemplate:
-          serviceAccountName: {{ .Values.pipeline.serviceAccountName }}
+          serviceAccountName: {{ $pipelineSA }}
           podTemplate:
             securityContext:
-              fsGroup: {{ .Values.pipeline.fsGroup }}
+              fsGroup: {{ $pipelineFsGroup }}
         pipelineRef:
-          name: {{ .Values.pipeline.name }}
+          name: {{ $pipeline.name }}
         params:
           - name: git-url
             value: $(tt.params.git-repo-url)
           - name: git-revision
             value: $(tt.params.git-revision)
           - name: runTests
-            value: {{ .Values.pipeline.runTests | default "false" | quote }}
+            value: {{ $pipeline.runTests | default "false" | quote }}
           - name: testImage
-            value: {{ .Values.pipeline.testImage | default "" | quote }}
+            value: {{ $pipeline.testImage | default "" | quote }}
           - name: testScript
-            value: {{ .Values.pipeline.testScript | default "" | quote }}
+            value: {{ $pipeline.testScript | default "" | quote }}
         workspaces:
           - name: shared-workspace
             volumeClaimTemplate:
@@ -58,7 +65,7 @@ spec:
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
-  name: {{ .Values.pipeline.name }}-binding
+  name: {{ $pipeline.name }}-binding
   namespace: openshift-pipelines
 spec:
   params:
@@ -66,34 +73,42 @@ spec:
       value: $(body.repository.clone_url)
     - name: git-revision
       value: $(body.ref)
+{{- end }}
 
+{{- $triggerAccumulator := dict "items" (list) }}
+{{- range $idx, $pipeline := .Values.pipelines }}
+{{- $events := $pipeline.eventTypes | default (list "push" "pull_request") -}}
+{{- $githubParams := list
+  (dict "name" "secretRef" "value" (dict "secretName" $root.Values.triggers.githubSecretName "secretKey" "secretToken"))
+  (dict "name" "eventTypes" "value" $events)
+}}
+{{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
+{{- if $pipeline.repoFullName }}
+  {{- $celParams := list (dict "name" "filter" "value" (printf "body.repository.full_name == \"%s\"" $pipeline.repoFullName)) }}
+  {{- $interceptors = append $interceptors (dict "ref" (dict "name" "cel") "params" $celParams) }}
+{{- end }}
+{{- $triggerName := trimSuffix "-" (trunc 63 (printf "%s-github" $pipeline.name)) }}
+{{- $trigger := dict
+  "name" $triggerName
+  "interceptors" $interceptors
+  "bindings" (list (dict "ref" (printf "%s-binding" $pipeline.name)))
+  "template" (dict "ref" (printf "%s-template" $pipeline.name))
+}}
+{{- $_ := set $triggerAccumulator "items" (append (index $triggerAccumulator "items") $trigger) }}
+{{- end }}
+
+{{- $eventListener := dict
+  "apiVersion" "triggers.tekton.dev/v1beta1"
+  "kind" "EventListener"
+  "metadata" (dict "name" .Values.triggers.eventListenerName "namespace" "openshift-pipelines")
+  "spec" (dict
+    "serviceAccountName" $listenerSA
+    "triggers" (index $triggerAccumulator "items"))
+}}
 ---
-apiVersion: triggers.tekton.dev/v1beta1
-kind: EventListener
-metadata:
-  name: {{ .Values.triggers.eventListenerName }}
-  namespace: openshift-pipelines
-spec:
-  serviceAccountName: pipeline
-  triggers:
-    - name: github-listener
-      interceptors:
-        - ref:
-            name: "github"
-          params:
-            - name: secretRef
-              value:
-                secretName: {{ .Values.triggers.githubSecretName }}
-                secretKey: secretToken
-            - name: eventTypes
-              value: ["push","pull_request"]
-        # No image tag is passed via triggers; the Pipeline computes v<semver>-commit.<shortSHA>
-      bindings:
-        - ref: {{ .Values.pipeline.name }}-binding
-      template:
-        ref: {{ .Values.pipeline.name }}-template
+{{ toYaml $eventListener }}
 
-{{- if .Values.triggers.route }}
+{{ if .Values.triggers.route }}
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -106,5 +121,5 @@ spec:
     name: el-{{ .Values.triggers.eventListenerName }}
   tls:
     termination: edge
-{{- end }}
+{{ end }}
 {{- end }}

@@ -71,21 +71,19 @@ export GITHUB_WEBHOOK_SECRET=$(openssl rand -base64 32)
 make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
 ```
 
-5) Ensure ci-pipelines-backend-${ENV} and ci-pipelines-frontend-${ENV} apps are synced
+5) Ensure ci-pipelines-${ENV} is synced
 
 The chart provides:
-- Pipeline using Tekton Hub resolver tasks (no ClusterTasks needed)
-- EventListener + TriggerBinding + TriggerTemplate
+- Two Tekton Pipelines (backend + frontend) using Hub resolver tasks (no ClusterTasks needed)
+- TriggerTemplates + TriggerBindings per pipeline, wired into a single EventListener with repo-based routing
 - ServiceAccount `pipeline` and RBAC (including cluster‑scope read for ClusterInterceptors)
-- Optional test phase driven by `pipeline.runTests`: backend runs `go test ./...`; frontend runs `npm ci && npm test -- --watch=false` using configurable builder images.
+- Optional test phase driven by each pipeline’s `runTests`: backend runs `go test ./...`; frontend runs `npm ci && npm test -- --watch=false` using configurable builder images.
 
 ```bash
-oc -n openshift-gitops annotate application ci-pipelines-backend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
-oc -n openshift-gitops annotate application ci-pipelines-frontend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 oc -n openshift-pipelines get pipeline bitiq-build-and-push
 oc -n openshift-pipelines get pipeline bitiq-web-build-and-push
 oc -n openshift-pipelines get eventlistener bitiq-listener
-oc -n openshift-pipelines get eventlistener bitiq-web-listener
 ```
 
 > These `oc` commands require the permissions noted in the prereqs. If you see `Forbidden`, re-run them as a cluster-admin or apply the RBAC grants above.
@@ -113,7 +111,7 @@ GitHub repo → Settings → Webhooks → Add webhook
 
 7) Trigger a build and watch (Quay)
 
-- Push a commit to the repo configured in `charts/ci-pipelines/values.yaml` (`pipeline.gitUrl`).
+- Push a commit to either repo configured under `pipelines[].gitUrl` in `charts/ci-pipelines/values.yaml`.
 - The Pipeline tags the image with the commit SHA and pushes to Quay (`quay.io/paulcapestany/toy-service:<sha>`).
 - Observe runs and logs:
 
@@ -171,17 +169,12 @@ export QUAY_EMAIL=<your-email>
 make quay-secret
 ```
 
-Optional: point backend or frontend pipeline at a feature branch for testing
+Optional: point the pipelines Application at a feature branch for testing
 
 ```bash
-oc -n openshift-gitops patch application ci-pipelines-backend-${ENV} \
-  --type merge -p '{"spec":{"source":{"targetRevision":"fix/pipelines-hub-and-sa"}}}'
-oc -n openshift-gitops annotate application ci-pipelines-backend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
-
-# or for the frontend variant
-oc -n openshift-gitops patch application ci-pipelines-frontend-${ENV} \
-  --type merge -p '{"spec":{"source":{"targetRevision":"feature/frontend-tests"}}}'
-oc -n openshift-gitops annotate application ci-pipelines-frontend-${ENV} argocd.argoproj.io/refresh=hard --overwrite
+oc -n openshift-gitops patch application ci-pipelines-${ENV} \
+  --type merge -p '{"spec":{"source":{"targetRevision":"feature/pipelines-updates"}}}'
+oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
 ```
 
 Links

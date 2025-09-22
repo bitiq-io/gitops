@@ -1,4 +1,14 @@
+{{- $seen := dict -}}
+{{- range $pipeline := .Values.pipelines }}
+{{- $ns := $pipeline.imageNamespace -}}
+{{- if and $ns (not (hasKey $seen $ns)) }}
+{{- if gt (len $seen) 0 }}
+---
+{{- end }}
+{{- $_ := set $seen $ns true -}}
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.pipeline.imageNamespace }}
+  name: {{ $ns }}
+{{- end }}
+{{- end }}
