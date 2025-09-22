@@ -6,7 +6,7 @@ backend:
   healthPath: "/"
   image:
     repository: quay.io/paulcapestany/toy-service
-    tag: "v0.0.0-commit.0000000"
+    tag: "v0.2.21-commit.b7791f1"
     pullPolicy: IfNotPresent
   service:
     port: 8080
