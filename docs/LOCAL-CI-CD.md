@@ -22,7 +22,7 @@ Prereqs
 Defaults worth knowing
 
 - Platform filter for Image Updater: ENV=local defaults to `linux/arm64`; ENV=sno and ENV=prod default to `linux/amd64`. These are set per env in `charts/argocd-apps/values.yaml` under `envs[].platforms` and passed into the umbrella chart. If your local cluster is x86_64, either change `local` to `linux/amd64` or publish multi‑arch images.
-- Frontend image updates are disabled by default for `local`. This avoids failures when the toy‑web Quay repo is private, which would otherwise cause the updater to error and skip committing the backend update. Re‑enable by setting `enableFrontendImageUpdate: true` in `charts/argocd-apps/values.yaml` under the `local` env, and (if needed) set `imageUpdater.pullSecret` so tag listing works.
+- Frontend image updates are enabled for `local`. Make sure the `toy-web` image is published to Quay (or set `enableFrontendImageUpdate: false` if you want to skip the frontend flow). If your repository is private, add a pull secret via `imageUpdater.pullSecret` so tag listing works.
 
 1) Bootstrap apps and operators
 

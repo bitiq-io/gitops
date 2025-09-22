@@ -13,7 +13,7 @@ envs:
     appNamespace: bitiq-local
     baseDomain: apps-crc.testing                    # OpenShift Local default
     platforms: linux/arm64
-    enableFrontendImageUpdate: false
+    enableFrontendImageUpdate: true
   - name: sno
     clusterServer: https://api.sno.example:6443
     appNamespace: bitiq-sno

@@ -1,5 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
+{{- $enableFrontendVal := default false .Values.imageUpdater.enableFrontend }}
+{{- $enableFrontend := eq (lower (printf "%v" $enableFrontendVal)) "true" }}
 metadata:
   name: bitiq-sample-app-{{ .Values.env }}
   namespace: {{ .Values.gitopsNamespace }}
@@ -8,29 +10,29 @@ metadata:
     app.kubernetes.io/part-of: bitiq-umbrella
   annotations:
     # Tell Image Updater what image to track and how to write back to Helm values
-    argocd-image-updater.argoproj.io/image-list: backend={{ .Values.sampleAppImages.backend }}{{- if .Values.imageUpdater.enableFrontend }},frontend={{ .Values.sampleAppImages.frontend }}{{- end }}
+    argocd-image-updater.argoproj.io/image-list: backend={{ .Values.sampleAppImages.backend }}{{- if $enableFrontend }},frontend={{ .Values.sampleAppImages.frontend }}{{- end }}
     argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
-    {{- if .Values.imageUpdater.enableFrontend }}
+    {{- if $enableFrontend }}
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
     {{- end }}
     argocd-image-updater.argoproj.io/backend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
-    {{- if .Values.imageUpdater.enableFrontend }}
+    {{- if $enableFrontend }}
     argocd-image-updater.argoproj.io/frontend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
     {{- end }}
     {{- if .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/backend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
-    {{- if .Values.imageUpdater.enableFrontend }}
+    {{- if $enableFrontend }}
     argocd-image-updater.argoproj.io/frontend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
     {{- end }}
     {{- end }}
     argocd-image-updater.argoproj.io/backend.helm.image-name: backend.image.repository
     argocd-image-updater.argoproj.io/backend.helm.image-tag: backend.image.tag
-    {{- if .Values.imageUpdater.enableFrontend }}
+    {{- if $enableFrontend }}
     argocd-image-updater.argoproj.io/frontend.helm.image-name: frontend.image.repository
     argocd-image-updater.argoproj.io/frontend.helm.image-tag: frontend.image.tag
     {{- end }}
     argocd-image-updater.argoproj.io/backend.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
-    {{- if .Values.imageUpdater.enableFrontend }}
+    {{- if $enableFrontend }}
     argocd-image-updater.argoproj.io/frontend.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
     {{- end }}
     argocd-image-updater.argoproj.io/write-back-method: git
