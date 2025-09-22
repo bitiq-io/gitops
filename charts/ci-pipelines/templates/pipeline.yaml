@@ -75,22 +75,35 @@ spec:
                 value: /tekton/home
             script: |
               #!/bin/sh
-              set -eu
+              set -euo pipefail
               # Force HOME to a writable path for git + creds init
               export HOME=/tekton/home
               mkdir -p "$HOME"
               cd $(workspaces.source.path)
               git config --global --add safe.directory "$(workspaces.source.path)"
-              if git describe --tags --exact-match >/dev/null 2>&1; then
-                VER=$(git describe --tags --abbrev=0)
+
+              echo "[compute-image-tag] workspace path: $(workspaces.source.path)"
+              echo "[compute-image-tag] ref: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)"
+
+              EXACT_TAG=$(git describe --tags --exact-match 2>/dev/null || true)
+              if [ -n "$EXACT_TAG" ]; then
+                VER="$EXACT_TAG"
+                echo "[compute-image-tag] exact tag match found: $VER"
               else
                 VER=$(git describe --tags --abbrev=0 2>/dev/null || true)
+                if [ -n "$VER" ]; then
+                  echo "[compute-image-tag] using most recent tag: $VER"
+                else
+                  VER="v0.0.0"
+                  echo "[compute-image-tag] no tags found; defaulting to $VER"
+                fi
               fi
-              if [ -z "${VER:-}" ]; then
-                VER="v0.0.0"
-              fi
+
               SHA=$(git rev-parse --short=7 HEAD)
+              echo "[compute-image-tag] HEAD short SHA: $SHA"
+
               TAG="${VER}-commit.${SHA}"
+              echo "[compute-image-tag] writing tag result: $TAG"
               printf "%s" "$TAG" > /tekton/results/tag
       workspaces:
         - name: source
