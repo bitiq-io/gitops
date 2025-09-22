@@ -74,6 +74,7 @@ spec:
               #!/bin/sh
               set -eu
               cd $(workspaces.source.path)
+              git config --global --add safe.directory "$(workspaces.source.path)"
               if git describe --tags --exact-match >/dev/null 2>&1; then
                 VER=$(git describe --tags --abbrev=0)
               else
