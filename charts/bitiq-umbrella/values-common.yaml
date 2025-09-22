@@ -25,7 +25,7 @@ pipelines:
     eventListener: bitiq-listener
     githubSecretName: github-webhook-secret
     runTests: "true"
-    testImage: quay.io/devfile/golang:1.20
+    testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
     testScript: |
       go test ./...
   frontend:
