@@ -70,10 +70,13 @@ spec:
         steps:
           - name: compute
             image: alpine/git:2.45.2
+            env:
+              - name: HOME
+                value: /tekton/home
             script: |
               #!/bin/sh
               set -eu
-              export HOME="${HOME:-/tekton/home}"
+              # Ensure HOME is writable for git and Tekton creds
               mkdir -p "$HOME"
               cd $(workspaces.source.path)
               git config --global --add safe.directory "$(workspaces.source.path)"
