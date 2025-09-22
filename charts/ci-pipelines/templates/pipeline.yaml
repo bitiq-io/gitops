@@ -76,7 +76,8 @@ spec:
             script: |
               #!/bin/sh
               set -eu
-              # Ensure HOME is writable for git and Tekton creds
+              # Force HOME to a writable path for git + creds init
+              export HOME=/tekton/home
               mkdir -p "$HOME"
               cd $(workspaces.source.path)
               git config --global --add safe.directory "$(workspaces.source.path)"
@@ -115,8 +116,11 @@ spec:
             script: |
               #!/bin/sh
               set -euo pipefail
-              # Ensure a writable HOME for creds and caches (Go, npm, etc.)
-              mkdir -p "$HOME"
+              # Force a writable HOME for creds and caches (Go, npm, etc.)
+              export HOME=/tekton/home
+              export XDG_CACHE_HOME="$HOME/.cache"
+              export GOCACHE="$XDG_CACHE_HOME/go-build"
+              mkdir -p "$HOME" "$XDG_CACHE_HOME" "$GOCACHE"
               cd $(workspaces.source.path)
               $(params.test-script)
       params:
