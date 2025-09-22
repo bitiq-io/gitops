@@ -84,11 +84,25 @@ The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater
   `argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-${ENV}.yaml` (absolute) or `helmvalues:values-${ENV}.yaml` (relative to the app path). ([Argo CD Image Updater][8])
 * We map Helm parameters via `backend.helm.image-name/tag` and `frontend.helm.image-name/tag` so each alias writes to the correct section of `values-${ENV}.yaml`. ([Argo CD Image Updater][9])
 
+Local env note (frontend disabled by default)
+
+* The local environment disables frontend image updates to avoid failures when the toy-web Quay repo is private or throttled. This is controlled by `imageUpdater.enableFrontend` in the umbrella chart, which the ApplicationSet sets via `enableFrontendImageUpdate` and defaults to `false` for `local`.
+* Re-enable by setting `enableFrontendImageUpdate: true` for the env in `charts/argocd-apps/values.yaml`, or by overriding the param on the ApplicationSet. If the repo is private, also set `imageUpdater.pullSecret` so Image Updater can list tags.
+
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
 Platform and private registry notes:
 - Platform filter: the umbrella chart exposes `imageUpdater.platforms` (default `linux/amd64`) used by annotations to filter manifest architectures during tag selection. By default, env mapping is: `local -> linux/arm64`, `sno/prod -> linux/amd64` (configured in `charts/argocd-apps/values.yaml` under `envs[].platforms`). Set to match your cluster nodes, or push multi‑arch tags.
 - Private Quay repos: set `imageUpdater.pullSecret` to a Secret visible to the Argo CD namespace to allow Image Updater to list tags for private repos (annotation `*.pull-secret` is rendered when set). The secret can be referenced as `name` (in `openshift-gitops`) or `namespace/name`.
+  Example (secret in openshift-gitops):
+  ```bash
+  oc -n openshift-gitops create secret docker-registry quay-creds \
+    --docker-server=quay.io \
+    --docker-username=<user or robot> \
+    --docker-password=<token> \
+    --docker-email=noreply@example.com
+  # then set imageUpdater.pullSecret: quay-creds
+  ```
 
 Local bump helper (optional)
 

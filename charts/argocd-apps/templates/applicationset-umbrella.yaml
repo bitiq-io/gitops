@@ -42,8 +42,10 @@ spec:
               value: {{ .Values.repoUrl | quote }}
             - name: targetRevision
               value: {{ .Values.targetRevision | quote }}
-            - name: imageUpdater.platforms
-              value: '{{ "{{ .platforms }}" }}'
+          - name: imageUpdater.platforms
+            value: '{{ "{{ .platforms }}" }}'
+            - name: imageUpdater.enableFrontend
+              value: '{{ "{{ .enableFrontendImageUpdate | default true }}" }}'
       destination:
         server: '{{ "{{ .cluster }}" }}'
         namespace: '{{ "{{ .appNamespace }}" }}'

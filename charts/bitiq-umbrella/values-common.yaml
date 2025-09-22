@@ -15,6 +15,9 @@ imageUpdater:
   platforms: linux/amd64
   # Optional: registry auth secret for tag discovery (format: "<ns>/<secret>" or just name in openshift-gitops)
   pullSecret: ""
+  # Control whether Image Updater manages frontend image (toy-web) annotations
+  # Defaults to true; can be disabled per-env via ApplicationSet params
+  enableFrontend: true
 
 # Sample app images (Image Updater watches these)
 # Use Quay for easier public tag discovery in local e2e
