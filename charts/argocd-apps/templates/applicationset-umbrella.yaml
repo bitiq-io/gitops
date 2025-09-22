@@ -41,6 +41,8 @@ spec:
               value: {{ .Values.repoUrl | quote }}
             - name: targetRevision
               value: {{ .Values.targetRevision | quote }}
+            - name: imageUpdater.platforms
+              value: '{{ "{{ .platforms }}" }}'
       destination:
         server: '{{ "{{ .cluster }}" }}'
         namespace: '{{ "{{ .appNamespace }}" }}'

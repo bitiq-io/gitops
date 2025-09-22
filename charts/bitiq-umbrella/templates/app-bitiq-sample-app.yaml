@@ -11,8 +11,12 @@ metadata:
     argocd-image-updater.argoproj.io/image-list: backend={{ .Values.sampleAppImages.backend }},frontend={{ .Values.sampleAppImages.frontend }}
     argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/backend.platforms: linux/amd64
-    argocd-image-updater.argoproj.io/frontend.platforms: linux/amd64
+    argocd-image-updater.argoproj.io/backend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
+    argocd-image-updater.argoproj.io/frontend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
+    {{- if .Values.imageUpdater.pullSecret }}
+    argocd-image-updater.argoproj.io/backend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
+    argocd-image-updater.argoproj.io/frontend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
+    {{- end }}
     argocd-image-updater.argoproj.io/backend.helm.image-name: backend.image.repository
     argocd-image-updater.argoproj.io/backend.helm.image-tag: backend.image.tag
     argocd-image-updater.argoproj.io/frontend.helm.image-name: frontend.image.repository

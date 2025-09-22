@@ -19,6 +19,10 @@ Prereqs
 - This repo cloned and your shell in the repo root
 - `argocd`, `helm`, and `ngrok` (or `cloudflared`) available locally
 
+Defaults worth knowing
+
+- Platform filter for Image Updater: ENV=local defaults to `linux/arm64`; ENV=sno and ENV=prod default to `linux/amd64`. These are set per env in `charts/argocd-apps/values.yaml` under `envs[].platforms` and passed into the umbrella chart. If your local cluster is x86_64, either change `local` to `linux/amd64` or publish multi‑arch images.
+
 1) Bootstrap apps and operators
 
 ```bash
@@ -150,7 +154,10 @@ Troubleshooting
 - Image Updater "Invalid Semantic Version" errors:
   - Tags from the pipeline are commit SHAs, so the Application annotations pin the update strategy to `newest-build`. If a future release requires explicit tag filters, add `app.allow-tags` back with the appropriate regex.
 - Image Updater skips tags due to platform mismatch:
-  - CRC builds produce linux/amd64 images; the Application annotation now pins `app.platforms: linux/amd64` so multi-arch manifest lists are filtered correctly.
+  - The umbrella chart now exposes `imageUpdater.platforms` (default `linux/amd64`). If you build on Apple Silicon and push arm64-only tags, either:
+    - Publish multi-arch images: use `scripts/buildx-multiarch.sh` to push `linux/amd64,linux/arm64`, or
+    - Override the platform for your env by setting `imageUpdater.platforms: linux/arm64` in the umbrella chart values for that environment.
+  - Keeping the filter aligned with your cluster node arch avoids pods failing with `no matching manifest for linux/amd64`.
 - Image Updater write-back path resolves incorrectly:
   - `write-back-target` is relative to the Application's source path unless you prefix it with `/`. The chart now uses `/charts/bitiq-sample-app/values-<env>.yaml`; resync the umbrella app if you previously rendered a double `charts/` path.
 

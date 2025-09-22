@@ -3,16 +3,23 @@ targetRevision: main
 argocdNamespace: openshift-gitops
 envFilter: ""   # if set to local/sno/prod, only that env is generated
 
+# Defaults for child umbrella chart
+imageUpdater:
+  platforms: linux/amd64
+
 envs:
   - name: local
     clusterServer: https://kubernetes.default.svc   # in-cluster
     appNamespace: bitiq-local
     baseDomain: apps-crc.testing                    # OpenShift Local default
+    platforms: linux/arm64
   - name: sno
     clusterServer: https://api.sno.example:6443
     appNamespace: bitiq-sno
     baseDomain: apps.sno.example
+    platforms: linux/amd64
   - name: prod
     clusterServer: https://api.prod.example:6443
     appNamespace: bitiq-prod
     baseDomain: apps.prod.example
+    platforms: linux/amd64

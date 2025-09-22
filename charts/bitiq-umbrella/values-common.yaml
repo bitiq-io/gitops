@@ -8,6 +8,14 @@ pipelinesNamespace: openshift-pipelines
 repoUrl: https://github.com/bitiq-io/gitops.git
 targetRevision: main
 
+# Image Updater defaults (platform filter)
+imageUpdater:
+  # Set to the node architecture of your cluster
+  # Common values: linux/amd64 (default CRC on x86_64), linux/arm64 (Apple Silicon)
+  platforms: linux/amd64
+  # Optional: registry auth secret for tag discovery (format: "<ns>/<secret>" or just name in openshift-gitops)
+  pullSecret: ""
+
 # Sample app images (Image Updater watches these)
 # Use Quay for easier public tag discovery in local e2e
 sampleAppImages:
