@@ -9,6 +9,8 @@ appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshi
 pipeline:
   # PipelineRun metadata
   name: bitiq-build-and-push
+  # ServiceAccount used by all TaskRuns in the PipelineRun
+  serviceAccountName: pipeline
 
   # Source repository to build (set this to YOUR repo)
   # Example: https://github.com/yourorg/your-service.git

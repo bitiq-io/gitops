@@ -28,6 +28,7 @@ spec:
         namespace: openshift-pipelines
       spec:
         taskRunTemplate:
+          serviceAccountName: {{ .Values.pipeline.serviceAccountName }}
           podTemplate:
             securityContext:
               fsGroup: {{ .Values.pipeline.fsGroup }}
