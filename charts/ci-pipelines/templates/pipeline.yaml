@@ -73,6 +73,8 @@ spec:
             script: |
               #!/bin/sh
               set -eu
+              export HOME="${HOME:-/tekton/home}"
+              mkdir -p "$HOME"
               cd $(workspaces.source.path)
               git config --global --add safe.directory "$(workspaces.source.path)"
               if git describe --tags --exact-match >/dev/null 2>&1; then
