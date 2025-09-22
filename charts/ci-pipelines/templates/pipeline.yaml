@@ -109,9 +109,14 @@ spec:
         steps:
           - name: tests
             image: $(params.test-image)
+            env:
+              - name: HOME
+                value: /tekton/home
             script: |
               #!/bin/sh
               set -euo pipefail
+              # Ensure a writable HOME for creds and caches (Go, npm, etc.)
+              mkdir -p "$HOME"
               cd $(workspaces.source.path)
               $(params.test-script)
       params:
