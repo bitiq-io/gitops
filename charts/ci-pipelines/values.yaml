@@ -51,10 +51,11 @@ pipelines:
         npm install --no-save jest-environment-jsdom@^29
       fi
       if [ -f jest.config.js ]; then
-        npm test -- --config=jest.config.js --watch=false
+        npm pkg set scripts.test="jest --config=jest.config.js --watch=false"
       else
-        npm test -- --watch=false
+        npm pkg set scripts.test="jest --watch=false"
       fi
+      npm test
     imageRegistry: quay.io
     imageNamespace: paulcapestany
     imageName: toy-web
