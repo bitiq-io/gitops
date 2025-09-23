@@ -47,6 +47,9 @@ pipelines:
       else
         npm install
       fi
+      if ! npm ls jest-environment-jsdom >/dev/null 2>&1; then
+        npm install --no-save jest-environment-jsdom@^29
+      fi
       if [ -f jest.config.js ]; then
         npm test -- --config=jest.config.js --watch=false
       else
