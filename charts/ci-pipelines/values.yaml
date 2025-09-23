@@ -42,7 +42,11 @@ pipelines:
     runTests: "true"
     testImage: registry.access.redhat.com/ubi9/nodejs-20:1-1758500456
     testScript: |
-      npm ci
+      if [ -f package-lock.json ]; then
+        npm ci
+      else
+        npm install
+      fi
       npm test -- --watch=false
     imageRegistry: quay.io
     imageNamespace: paulcapestany
