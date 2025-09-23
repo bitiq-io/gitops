@@ -47,6 +47,7 @@ ciPipelines:
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |
         go test ./...
+      eventTypes: ["push"]
     - name: bitiq-web-build-and-push
       gitUrl: https://github.com/PaulCapestany/toy-web.git
       gitRevision: main
@@ -74,3 +75,4 @@ ciPipelines:
           npm pkg set scripts.test="jest --watch=false"
         fi
         npm test
+      eventTypes: ["push"]

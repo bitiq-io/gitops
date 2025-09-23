@@ -32,7 +32,7 @@ pipelines:
     # Optional override per pipeline; falls back to top-level defaults when empty
     serviceAccountName: ""
     fsGroup: ""
-    eventTypes: ["push", "pull_request"]
+    eventTypes: ["push"]
 
   - name: bitiq-web-build-and-push
     gitUrl: https://github.com/paulcapestany/toy-web.git
@@ -63,7 +63,7 @@ pipelines:
     repoFullName: PaulCapestany/toy-web
     serviceAccountName: ""
     fsGroup: ""
-    eventTypes: ["push", "pull_request"]
+    eventTypes: ["push"]
 
 triggers:
   create: true
