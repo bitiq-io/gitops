@@ -40,7 +40,7 @@ pipelines:
     dockerfile: Dockerfile
     contextDir: .
     runTests: "true"
-    testImage: quay.io/devfile/nodejs-developer:ubi8
+    testImage: registry.access.redhat.com/ubi9/nodejs-20:1-1758500456
     testScript: |
       npm ci
       npm test -- --watch=false
