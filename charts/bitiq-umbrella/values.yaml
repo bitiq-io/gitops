@@ -60,10 +60,11 @@ ciPipelines:
           npm install
         fi
         if ! npm ls jest-environment-jsdom >/dev/null 2>&1; then
-          npm install --no-save jest-environment-jsdom@^29
+          npm install --save-dev jest-environment-jsdom@^29
         fi
         if [ -f jest.config.js ]; then
-          npm test -- --config=jest.config.js --watch=false
+          npm pkg set scripts.test="jest --config=jest.config.js --watch=false"
         else
-          npm test -- --watch=false
+          npm pkg set scripts.test="jest --watch=false"
         fi
+        npm test
