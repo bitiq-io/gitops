@@ -47,7 +47,11 @@ pipelines:
       else
         npm install
       fi
-      npm test -- --watch=false
+      if [ -f jest.config.js ]; then
+        npm test -- --config=jest.config.js --watch=false
+      else
+        npm test -- --watch=false
+      fi
     imageRegistry: quay.io
     imageNamespace: paulcapestany
     imageName: toy-web
