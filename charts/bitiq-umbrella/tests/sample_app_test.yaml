@@ -4,7 +4,7 @@ templates:
 release:
   name: umbrella
   namespace: openshift-gitops
-assertions:
+tests:
   - it: sets multi-image annotations and env label
     set:
       env: local

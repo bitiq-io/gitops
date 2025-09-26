@@ -4,7 +4,7 @@ templates:
 release:
   name: umbrella
   namespace: openshift-gitops
-assertions:
+tests:
   - it: aggregates both pipelines under a single Argo CD Application
     set:
       env: sno
@@ -15,12 +15,12 @@ assertions:
       - equal:
           path: metadata.labels["bitiq.io/env"]
           value: sno
-      - contains:
+      - matchRegex:
           path: spec.source.helm.values
-          content: "eventListenerName: bitiq-listener"
-      - contains:
+          pattern: "eventListenerName: bitiq-listener"
+      - matchRegex:
           path: spec.source.helm.values
-          content: "- name: bitiq-build-and-push"
-      - contains:
+          pattern: "name: bitiq-build-and-push"
+      - matchRegex:
           path: spec.source.helm.values
-          content: "- name: bitiq-web-build-and-push"
+          pattern: "name: bitiq-web-build-and-push"

@@ -4,7 +4,7 @@ templates:
 release:
   name: umbrella
   namespace: openshift-gitops
-assertions:
+tests:
   - it: creates namespace with env label
     set:
       env: prod

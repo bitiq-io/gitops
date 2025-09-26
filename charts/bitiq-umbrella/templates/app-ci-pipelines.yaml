@@ -9,7 +9,10 @@
 {{- if $ci.eventListener.secretToken }}
 {{- $_ := set $trigger "secretToken" $ci.eventListener.secretToken -}}
 {{- end }}
-{{- $chartValues := dict "env" .Values.env "appNamespace" .Values.appNamespace "serviceAccountName" ($ci.serviceAccountName | default "pipeline") "fsGroup" ($ci.fsGroup | default 0) "pipelines" $ci.pipelines "triggers" $trigger -}}
+{{- $chartValues := dict "env" .Values.env "appNamespace" .Values.appNamespace "serviceAccountName" ($ci.serviceAccountName | default "pipeline") "pipelines" $ci.pipelines "triggers" $trigger -}}
+{{- if not (empty $ci.fsGroup) }}
+{{- $_ := set $chartValues "fsGroup" $ci.fsGroup -}}
+{{- end }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

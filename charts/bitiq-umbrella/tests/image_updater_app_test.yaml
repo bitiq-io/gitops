@@ -4,7 +4,7 @@ templates:
 release:
   name: umbrella
   namespace: openshift-gitops
-assertions:
+tests:
   - it: app name and label include env
     set:
       env: sno

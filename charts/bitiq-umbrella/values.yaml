@@ -21,7 +21,7 @@ sampleAppImages:
 
 ciPipelines:
   serviceAccountName: pipeline
-  fsGroup: 1000660000
+  fsGroup: ""
   eventListener:
     name: bitiq-listener
     githubSecretName: github-webhook-secret

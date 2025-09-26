@@ -12,7 +12,7 @@ spec:
 {{- if or (eq $.Values.envFilter "" ) (eq $.Values.envFilter $e.name) }}
           - env: {{ $e.name }}
             cluster: {{ $e.clusterServer | quote }}
-            baseDomain: {{ $e.baseDomain | quote }}
+            baseDomain: {{ default $e.baseDomain $.Values.baseDomainOverride | quote }}
             appNamespace: {{ $e.appNamespace | quote }}
             platforms: {{ $e.platforms | quote }}
 {{- end }}

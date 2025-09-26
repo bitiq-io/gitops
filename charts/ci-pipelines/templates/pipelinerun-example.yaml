@@ -13,9 +13,12 @@ metadata:
 spec:
   taskRunTemplate:
     serviceAccountName: {{ $pipeline.serviceAccountName | default $.Values.serviceAccountName }}
+{{- $exampleFsGroup := coalesce $pipeline.fsGroup $.Values.fsGroup }}
+{{- if $exampleFsGroup }}
     podTemplate:
       securityContext:
-        fsGroup: {{ $pipeline.fsGroup | default $.Values.fsGroup }}
+        fsGroup: {{ $exampleFsGroup }}
+{{- end }}
   pipelineRef:
     name: {{ $pipeline.name }}
   params:

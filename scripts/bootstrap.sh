@@ -82,6 +82,7 @@ helm upgrade --install argocd-apps charts/argocd-apps \
   --namespace openshift-gitops \
   --set-string repoUrl="${GIT_REPO_URL}" \
   --set-string targetRevision="${TARGET_REV}" \
+  --set-string baseDomainOverride="${BASE_DOMAIN}" \
   --set-string envFilter="${ENV}" \
   --wait --timeout 5m
 

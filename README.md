@@ -64,6 +64,17 @@ Local notes (OpenShift Local / CRC)
 - Login to the cluster: oc login -u kubeadmin -p <PASSWORD> https://api.crc.testing:6443
 
 
+Single-Node OpenShift (SNO) notes
+
+- Export `ENV=sno` and set `BASE_DOMAIN=apps.<cluster-domain>` before running `scripts/bootstrap.sh`; the script now propagates the value to the ApplicationSet via `baseDomainOverride` so Routes render correctly.
+- When Argo CD runs inside the SNO cluster, the generated umbrella Application targets `https://kubernetes.default.svc`. If you operate a central Argo CD instance instead, keep the external API URL in `charts/argocd-apps/values.yaml` and register the SNO cluster with `argocd cluster add` before syncing.
+- Provision required secrets manually (never commit credentials):
+  - GitHub webhook token for Tekton: `oc -n openshift-pipelines create secret generic github-webhook-secret --from-literal=secretToken=<token>` (or enable the chart’s `triggers.createSecret` flag with env-injected values).
+  - Argo CD Image Updater token: `ARGOCD_TOKEN=<argocd-api-token> make image-updater-secret` (creates/updates `openshift-gitops/argocd-image-updater-secret`).
+- Optional: if the cluster requires a specific fsGroup for Tekton pods, set `ciPipelines.fsGroup` when invoking the umbrella chart or adjust `charts/ci-pipelines/values.yaml`; otherwise the chart relies on SCC defaults.
+- Run `make smoke ENV=sno BASE_DOMAIN=apps.<cluster-domain>` (set `BOOTSTRAP=true` for first-time installs) to verify operator readiness, Argo CD sync status, and sample app Routes.
+
+
 **What happens:**
 
 1. Installs/ensures **OpenShift GitOps** and **OpenShift Pipelines** via OLM Subscriptions.

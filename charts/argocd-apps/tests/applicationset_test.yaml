@@ -1,12 +1,10 @@
 suite: ApplicationSet naming and sync options
 templates:
   - templates/applicationset-umbrella.yaml
-values:
-  - values.yaml
 release:
   name: argocd-apps
   namespace: openshift-gitops
-assertions:
+tests:
   - it: sets umbrella application name and env label
     asserts:
       - equal:
