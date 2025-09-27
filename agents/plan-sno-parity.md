@@ -1,137 +1,83 @@
-# ENV=sno Parity Execution Plan (for Codex Agents)
+# ENV=sno Parity Execution Plan (Agent‑Actionable)
 
-Purpose: Bring ENV=sno to parity with ENV=local across Argo CD, Tekton, and sample app flows, with minimal, scoped changes and clear validation.
+Purpose: Achieve end‑to‑end parity for ENV=sno with ENV=local across Argo CD, Tekton, and sample application flows. Plan is structured for Codex agents to implement, validate, and commit in small PRs.
+
+## Current State (verified in repo)
+- SNO destination server set to in‑cluster: charts/argocd-apps/values.yaml (sno.clusterServer=https://kubernetes.default.svc)
+- BASE_DOMAIN plumbed through bootstrap → ApplicationSet via `baseDomainOverride`: scripts/bootstrap.sh, charts/argocd-apps/templates/applicationset-umbrella.yaml
+- Tekton fsGroup already optional: charts/ci-pipelines/values.yaml (fsGroup:""), templates guard in triggers.yaml
+- Image namespace creation gated: charts/ci-pipelines/values.yaml (createImageNamespaces:false)
+- README contains SNO notes, but there is no full SNO runbook covering cluster provisioning and preflight checks.
+
+Conclusion: Most chart plumbing for ENV=sno is done. Remaining gap is a reproducible SNO setup/runbook and a lightweight preflight to catch common issues before bootstrap.
 
 ## Branching & Commit
 - Branch: docs/sno-parity-plan
-- Commit style: Conventional Commits
-- PR scope: one purpose per PR; keep changes small and verifiable
+- Style: Conventional Commits, one purpose per PR
+- Validation before PR: `make lint`, `make hu`, `make template`, `make validate`
 
-## Implementation Order
-1) Align SNO cluster destination
-2) Wire BASE_DOMAIN through bootstrap/ApplicationSet
-3) Gate Tekton image namespace creation
-4) Make Tekton fsGroup optional/safe
-5) Ensure required secrets (webhook + image-updater)
-6) Validate rendering and smoke checks
-7) Document SNO runbook notes
+## Work Plan (small, verifiable PRs)
 
----
+1) Add SNO Runbook (docs)
+- Change: Create docs/SNO-RUNBOOK.md with copy‑pastable steps to provision SNO and bootstrap this repo.
+- Must include: prerequisites, Assisted/Agent install links, DNS and BASE_DOMAIN guidance, storage default, oc login, bootstrap, secrets (webhook, Image Updater, Quay), smoke tests, central ArgoCD variant, disconnected notes, troubleshooting.
+- Files: docs/SNO-RUNBOOK.md
+- Commit: docs(sno): add SNO runbook for ENV=sno
+- Acceptance: Document renders locally; commands are self‑contained; links point to OCP 4.18/GitOps/Pipelines 1.16 and Image Updater docs.
 
-## 1) Align SNO cluster destination
-Objective: Ensure the umbrella Application targets the correct cluster when ENV=sno.
+2) Update README to point to Runbook
+- Change: Replace the current SNO notes block with a concise summary and a prominent link to docs/SNO-RUNBOOK.md. Keep quick‑start commands (ENV, BASE_DOMAIN, bootstrap, make smoke) in README.
+- Files: README.md
+- Commit: docs(readme): link SNO runbook and streamline SNO notes
+- Acceptance: README quick‑start remains accurate; `make smoke ENV=sno` guidance visible.
 
-- Files to update:
-  - charts/argocd-apps/values.yaml
-- Change:
-  - If Argo CD runs in the same SNO cluster, set `envs[].clusterServer` for `sno` to `https://kubernetes.default.svc`.
-  - If using a central Argo CD to manage an external SNO, leave as actual API URL but ensure the SNO cluster is registered in Argo CD prior to sync.
-- Steps:
-  - Edit `charts/argocd-apps/values.yaml` sno item.
-  - Commit: `fix(argocd-apps): set sno clusterServer to in-cluster or document external cluster prereq`
-- Validation:
-  - `helm template charts/argocd-apps --set envFilter=sno | rg 'destination:.*server:' -n`
-  - Confirm destination server is correct for your topology.
+3) Add preflight script for SNO
+- Change: Add scripts/sno-preflight.sh to verify cluster readiness before bootstrap.
+- Checks: oc login; exactly 1 Ready node; default StorageClass present; Operators (GitOps + Pipelines) CSVs Succeeded; BASE_DOMAIN provided; wildcard DNS (or named Routes) for BASE_DOMAIN resolves; show ArgoCD route if present.
+- Exit: non‑zero on blockers, zero if all good; print remediation hints.
+- Files: scripts/sno-preflight.sh (executable)
+- Commit: feat(scripts): add SNO preflight checks (login/node/storage/DNS/operators)
+- Acceptance: Running script on a SNO cluster reports PASS/FAIL for each check and returns appropriate code.
 
-## 2) Wire BASE_DOMAIN through bootstrap/ApplicationSet
-Objective: Ensure sample app Routes use the real SNO base domain without manual edits in chart values.
+4) Optional: Add SNO smoke wrapper (non‑disruptive)
+- Change: Create scripts/sno-smoke.sh that enforces ENV=sno, validates BASE_DOMAIN, runs preflight, then delegates to scripts/smoke.sh.
+- Files: scripts/sno-smoke.sh (executable)
+- Commit: chore(scripts): add sno-smoke wrapper around smoke.sh
+- Acceptance: Wrapper prints route URL and Application health; exits non‑zero on missing BASE_DOMAIN or failed preflight.
 
-- Options (choose one):
-  A) Pass a runtime override from bootstrap
-     - In `scripts/bootstrap.sh`, add `--set-string envs[?].baseDomain="$BASE_DOMAIN"` when `ENV=sno`.
-       - Preferred: avoid hard-coded index by matching `name=sno` via `--set-json`/value file; simple approach may target index if stable.
-  B) Add `baseDomainOverride` to `charts/argocd-apps/values.yaml` and in the ApplicationSet template use `default .Values.baseDomainOverride .baseDomain`.
-     - Then in bootstrap: `--set-string baseDomainOverride="$BASE_DOMAIN"`.
-  C) Add an env-specific overlay file (e.g., `charts/argocd-apps/values-sno-local.yaml`) and have bootstrap pass `-f` when ENV=sno.
+5) Enrich AGENTS guidance
+- Change: Add a Golden Path note pointing to SNO runbook and preflight in AGENTS.md.
+- Files: AGENTS.md
+- Commit: docs(agents): add SNO runbook and preflight to Golden Paths
+- Acceptance: Clear instructions for contributors/agents to validate SNO locally before PRs.
 
-- Files to update:
-  - scripts/bootstrap.sh (Option A or C)
-  - charts/argocd-apps/templates/applicationset-umbrella.yaml (Option B)
-  - charts/argocd-apps/values.yaml (Option B default field)
-- Commit:
-  - `feat(bootstrap): plumb BASE_DOMAIN into ApplicationSet for sno`
-  - `feat(argocd-apps): support baseDomainOverride (optional)`
-- Validation:
-  - `helm template charts/argocd-apps --set envFilter=sno --set baseDomainOverride=apps.<your-sno-domain> | rg 'baseDomain'`
-  - After sync, sample Routes: `svc-api.${BASE_DOMAIN}`, `svc-web.${BASE_DOMAIN}`.
+6) Final validation and docs pass
+- Commands: `make template`, `make validate`, open docs in IDE preview, run preflight and smoke on a SNO cluster.
+- Commit (if any small fixes): chore(docs): polish SNO runbook examples
+- Acceptance: All validations green; runbook steps executed successfully on an actual SNO cluster.
 
-## 3) Gate Tekton image namespace creation
-Objective: Avoid creating stray Kubernetes Namespaces for external registry orgs (e.g., `paulcapestany`).
+## Execution Checklist (per task)
+- Create a feature branch per task.
+- Make minimal, scoped changes to the files listed.
+- Run local validation: `make lint`, `make hu`, `make template`, `make validate`.
+- If scripts added: shellcheck locally (if available) and run on a target cluster when possible.
+- Open PR with scope and ENV impact noted; link to SNO runbook if applicable.
 
-- Files to update:
-  - charts/ci-pipelines/values.yaml
-  - charts/ci-pipelines/templates/namespace-target.yaml
-- Change:
-  - Add `createImageNamespaces: false` (default).
-  - Wrap `namespace-target.yaml` with `{{- if .Values.createImageNamespaces }}` … `{{- end }}`.
-- Commit: `feat(ci-pipelines): gate creation of image namespaces (default off)`
-- Validation:
-  - `helm template charts/ci-pipelines | rg '^kind: Namespace' -n` → none by default.
-  - Set `--set createImageNamespaces=true` to test behavior.
+## Acceptance Criteria (parity)
+- A new user can provision SNO using linked docs, run preflight, bootstrap with ENV=sno and BASE_DOMAIN, and complete CI→CD flow:
+  - ArgoCD Application bitiq-umbrella-sno is Healthy/Synced.
+  - Sample app Routes resolve on BASE_DOMAIN and serve traffic.
+  - Tekton PipelineRun builds/pushes images successfully.
+  - Argo CD Image Updater detects new tags and writes back to charts/bitiq-sample-app/values-sno.yaml.
+- No unintended Namespaces created by ci-pipelines chart; templates render cleanly for sno.
 
-## 4) Make Tekton fsGroup optional/safe
-Objective: Reduce cluster-specific UID/GID coupling that can break on SNO.
+## Non‑Goals / Out of Scope
+- Automating SNO provisioning itself (use Assisted/Agent installer docs).
+- Managing credentials/secrets in Git; use manual creation or opt‑in flags.
+- Changing operator channels or cluster‑level policies without explicit approval.
 
-- Files to update:
-  - charts/ci-pipelines/values.yaml
-  - charts/bitiq-umbrella/values-common.yaml
-  - charts/ci-pipelines/templates/triggers.yaml (uses `.Values.fsGroup` in podTemplate via TriggerTemplate)
-  - charts/ci-pipelines/templates/pipelinerun-example.yaml
-- Change:
-  - Default `fsGroup: ""` (unset). Only apply in templates when non-empty.
-  - In templates where `fsGroup` is used, guard with `{{- if $pipelineFsGroup }}` blocks or set podTemplate only when set.
-- Commit: `fix(ci-pipelines): make fsGroup optional; rely on SCC defaults when unset`
-- Validation:
-  - `helm template charts/ci-pipelines | rg 'fsGroup' -n` → absent by default.
-  - Run Pipeline on SNO; ensure Tasks complete without mount permission errors.
-
-## 5) Ensure required secrets (webhook + image-updater)
-Objective: Make it clear and reproducible to provision secrets on SNO.
-
-- GitHub webhook Secret in `openshift-pipelines`:
-  - Option 1: Set `triggers.createSecret=true` and provide `triggers.secretToken` in a secure way (not committed).
-  - Option 2: Create via `oc`: `oc -n openshift-pipelines create secret generic github-webhook-secret --from-literal=secretToken=<token>`.
-- Image Updater token Secret in `openshift-gitops`:
-  - Use: `ARGOCD_TOKEN=<token> make image-updater-secret`.
-- Commit (docs only): `docs(ci): add SNO secret setup notes`
-- Validation:
-  - EventListener responds 200 to webhook with valid signature.
-  - Image Updater logs show successful ArgoCD API auth and write-back.
-
-## 6) Validate rendering and smoke checks
-Objective: Keep local and CI validations green for sno.
-
-- Commands:
-  - `make template` (includes local, sno, prod)
-  - `make validate`
-  - Optional cluster smoke: `make smoke ENV=sno BOOTSTRAP=true BASE_DOMAIN=apps.<your-sno-domain>`
-- Acceptance:
-  - No template/schema errors for sno.
-  - Umbrella app `bitiq-umbrella-sno` becomes Healthy/Synced; sample Routes resolve.
-
-## 7) Document SNO runbook notes
-Objective: Add concise, SNO-focused instructions.
-
-- Files to update:
-  - README.md (SNO notes section)
-- Content:
-  - Export `ENV=sno` and `BASE_DOMAIN=apps.<domain>`; run `scripts/bootstrap.sh`.
-  - Clarify destination model (in-cluster vs central Argo CD) and corresponding `clusterServer` value.
-  - Secret provisioning one-liners (webhook + image-updater).
-  - Pointer to `make smoke` for verification.
-- Commit: `docs(readme): add SNO runbook notes`
-
----
-
-## Notes & Risks
-- If using external (central) Argo CD, ensure the SNO cluster is registered (`argocd cluster add ...`) before syncing ApplicationSet for ENV=sno.
-- README note about local frontend image updates may be stale; verify `enableFrontendImageUpdate` values vs desired behavior.
-- Do not commit secrets; use manual creation or an opt-in chart flag with env-injected values.
-
-## Definition of Done
-- ApplicationSet for sno renders correct destination server and baseDomain.
-- Sample app Routes use `${BASE_DOMAIN}` and serve traffic.
-- Tekton PipelineRun on sno builds/pushes successfully; webhook trigger verified.
-- Image Updater detects tags and writes back to `charts/bitiq-sample-app/values-sno.yaml`.
-- No unintended Namespaces created by ci-pipelines chart.
-- All validations pass: `make template`, `make validate`, and optional `make smoke`.
+## References (OCP 4.18 / current)
+- Installing on a Single Node (SNO): https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/installing_on_a_single_node
+- OpenShift GitOps (Argo CD): https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/gitops
+- OpenShift Pipelines 1.16: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.16
+- Argo CD Image Updater: https://argocd-image-updater.readthedocs.io/en/stable/

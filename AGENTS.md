@@ -42,6 +42,8 @@ make dev-setup  # install local commit-msg hook for commitlint
 
 CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep local and CI checks aligned.
 
+For Single-Node OpenShift parity work, follow `docs/SNO-RUNBOOK.md` and run `./scripts/sno-preflight.sh` before invoking `scripts/bootstrap.sh`.
+
 If adding/altering Helm values:
 
 ```bash
@@ -76,4 +78,5 @@ Notes for agents (local e2e):
 - Ecosystem standards and templates: https://github.com/PaulCapestany/ecosystem
 - Canonical repo conventions: docs/CONVENTIONS.md
 - Rollback runbook: docs/ROLLBACK.md
+- SNO runbook & preflight: docs/SNO-RUNBOOK.md, scripts/sno-preflight.sh
 - Argo CD, Pipelines, Image Updater links are in this repo’s README.
