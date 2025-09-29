@@ -191,7 +191,91 @@ Notes:
 - Enable Argo CD audit logging (`spec.controller.metrics.enabled: true`) if not already configured.
 - Periodically review group membership and rotate Image Updater tokens.
 
-## 9. Validate the deployment
+## 9. Tekton hardening (prod)
+
+Tekton pipelines run in the `openshift-pipelines` namespace by default. Apply the following guardrails before granting production access.
+
+### 9.1 ServiceAccount and permissions
+
+- Keep the default `pipeline` ServiceAccount but scope permissions to the namespaces it needs:
+
+  ```bash
+  oc policy add-role-to-user system:image-pusher \
+    system:serviceaccount:openshift-pipelines:pipeline -n bitiq-prod
+  oc policy add-role-to-user edit \
+    system:serviceaccount:openshift-pipelines:pipeline -n bitiq-prod
+  ```
+
+- Avoid granting `cluster-admin` or broad roles. If multiple app namespaces exist, grant namespace-scoped roles explicitly.
+
+### 9.2 Secrets and image pulls
+
+- Use ESO/Vault (see [PROD-SECRETS](PROD-SECRETS.md)) to materialize registry and webhook secrets.
+- Link the Quay secret to the ServiceAccount for both pull and mount usage:
+
+  ```bash
+  oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount
+  ```
+
+- If building to the internal registry, replace Quay-specific annotations with `image-registry.openshift-image-registry.svc:5000` and grant `system:image-builder` as needed.
+
+### 9.3 Resource quotas and runtimes
+
+- Set namespace limits to prevent noisy-neighbor issues:
+
+  ```bash
+  oc -n openshift-pipelines apply -f - <<'YAML'
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tekton-build-quota
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 32Gi
+    limits.cpu: "16"
+    limits.memory: 64Gi
+    persistentvolumeclaims: "10"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tekton-defaults
+spec:
+  limits:
+  - type: Container
+    defaultRequest:
+      cpu: 250m
+      memory: 512Mi
+    default:
+      cpu: 2
+      memory: 4Gi
+YAML
+```
+
+- Tailor the values to your cluster capacity. Use separate quotas per namespace if you isolate pipelines.
+
+### 9.4 TektonConfig tuning
+
+- Confirm the cluster-wide `TektonConfig` (installed by the operator) has reasonable defaults:
+  - `spec.pipeline.metrics.pipelinerun.duration-type: histogram`
+  - `spec.pipeline.default-timeout-minutes`: e.g., `60`
+  - `spec.chain`: disable if not using Tekton Chains.
+- Apply overrides via `oc patch tektonconfig config --type merge -p '{...}'` as needed.
+
+### 9.5 Observability and retention
+
+- Enable log retention by forwarding Tekton namespaces to your logging stack or OpenShift Logging.
+- Use `tkn pipelinerun list -n openshift-pipelines` regularly to spot lingering runs.
+- Consider pruning old PipelineRuns: `tkn pipelinerun delete --keep 20 -n openshift-pipelines` (script as a CronJob if policy allows).
+
+### 9.6 Build tools and images
+
+- Validate that container images used for builds (Go, NodeJS, Buildah) come from trusted registries.
+- Mirror images to an internal registry for disconnected clusters and update `charts/ci-pipelines/values.yaml` accordingly.
+- Where possible, enforce signed images and supply chain policies (e.g., Tekton Chains, Sigstore) in future iterations.
+
+## 10. Validate the deployment
 
 1. **Local chart validation**
    ```bash
@@ -220,7 +304,7 @@ Notes:
    ```
    - Ensure commits land in `charts/bitiq-sample-app/values-prod.yaml` on the tracked branch.
 
-## 10. Operations & troubleshooting
+## 11. Operations & troubleshooting
 
 - **Namespace or permission errors**: Confirm Argo CD has permission in `bitiq-prod` and `openshift-pipelines` (cluster-admin handles this by default).
 - **Routes unreachable**: Check ingress controller status, wildcard DNS, and firewall rules.

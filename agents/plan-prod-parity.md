@@ -77,10 +77,11 @@ We will implement the in‑cluster model by default and document the central mod
   - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 8).
 
 7) Tekton hardening (prod)
-- Change (docs): quotas and security context guidance for `openshift-pipelines`; linking secrets; optional PVC template sizing; TLS verify set appropriately; use of internal registry if desired.
-- Optional: Add `ciPipelines.fsGroup` and per‑pipeline overrides already exist; document prod‑safe values.
-- Commit: `docs(pipelines): add prod guidance for SA, creds, and quotas`
-- Acceptance: Pipelines run in prod with proper permissions and registry access.
+ - Change (docs): quotas and security context guidance for `openshift-pipelines`; linking secrets; optional PVC template sizing; TLS verify set appropriately; use of internal registry if desired.
+  - Optional: Add `ciPipelines.fsGroup` and per‑pipeline overrides already exist; document prod‑safe values.
+  - Commit: `docs(pipelines): add prod guidance for SA, creds, and quotas`
+  - Acceptance: Pipelines run in prod with proper permissions and registry access.
+  - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 9).
 
 8) Central Argo (documentation only, no code now)
 - Change: Document an advanced “central Argo” model in the PROD runbook: registering clusters with `argocd cluster add`, credential scope/rotation, network requirements, and capacity considerations.
