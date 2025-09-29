@@ -41,7 +41,7 @@ jobs:
       - name: Show tool versions
         run: |
           helm version
-          helm unittest --version
+          helm plugin list || true
           kubeconform --version
           conftest --version
           yamllint --version
