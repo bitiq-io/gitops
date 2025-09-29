@@ -304,16 +304,7 @@ YAML
    ```
    - Ensure commits land in `charts/bitiq-sample-app/values-prod.yaml` on the tracked branch.
 
-## 11. Operations & troubleshooting
-
-- **Namespace or permission errors**: Confirm Argo CD has permission in `bitiq-prod` and `openshift-pipelines` (cluster-admin handles this by default).
-- **Routes unreachable**: Check ingress controller status, wildcard DNS, and firewall rules.
-- **Pipeline image pushes fail**: Validate registry credentials and that the service account has the `system:image-pusher` role for the target namespace.
-- **Image Updater push errors**: Ensure Git credentials have write access and that the token is not expired.
-- **Operator upgrades**: Coordinate GitOps/Pipelines operator channel bumps; test in staging first.
-- **Disaster recovery**: Follow `docs/ROLLBACK.md` for Git-driven rollbacks; avoid manual cluster edits.
-
-## 10. Advanced: Central Argo CD (documentation only)
+## 11. Advanced: Central Argo CD (documentation only)
 
 If you later choose to manage prod from a central Argo CD instance:
 - Register the prod cluster with `argocd cluster add` and store credentials securely (consider ESO/SealedSecrets).
@@ -324,7 +315,15 @@ If you later choose to manage prod from a central Argo CD instance:
 
 No chart changes for central Argo are included in this branch; treat this section as future guidance only.
 
-## 11. References (September 2025)
+## 12. Operations & troubleshooting
+- **Namespace or permission errors**: Confirm Argo CD has permission in `bitiq-prod` and `openshift-pipelines` (cluster-admin handles this by default).
+- **Routes unreachable**: Check ingress controller status, wildcard DNS, and firewall rules.
+- **Pipeline image pushes fail**: Validate registry credentials and that the service account has the `system:image-pusher` role for the target namespace.
+- **Image Updater push errors**: Ensure Git credentials have write access and that the token is not expired.
+- **Operator upgrades**: Coordinate GitOps/Pipelines operator channel bumps; test in staging first.
+- **Disaster recovery**: Follow `docs/ROLLBACK.md` for Git-driven rollbacks; avoid manual cluster edits.
+
+## 13. References (September 2025)
 
 - OCP 4.19 docs: https://docs.redhat.com/en/documentation/openshift_container_platform/4.19
 - OpenShift GitOps documentation: https://docs.openshift.com/gitops/latest/

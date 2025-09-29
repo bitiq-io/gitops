@@ -84,18 +84,21 @@ We will implement the in‑cluster model by default and document the central mod
   - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 9).
 
 8) Central Argo (documentation only, no code now)
-- Change: Document an advanced “central Argo” model in the PROD runbook: registering clusters with `argocd cluster add`, credential scope/rotation, network requirements, and capacity considerations.
-- No chart changes or feature flags now. Revisit only if we explicitly decide to adopt central control.
+ - Change: Document an advanced “central Argo” model in the PROD runbook: registering clusters with `argocd cluster add`, credential scope/rotation, network requirements, and capacity considerations.
+ - No chart changes or feature flags now. Revisit only if we explicitly decide to adopt central control.
+ - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 11).
 
-9) Smoke & validation for prod
+ 9) Smoke & validation for prod
 - Change: Add `make smoke ENV=prod BASE_DOMAIN=...` docs; optionally add `scripts/prod-smoke.sh` wrapper that calls preflight, then tails app health and image‑updater logs.
 - Commit: `chore(scripts): add prod smoke wrapper` (optional)
 - Acceptance: One‑liner smoke works post‑bootstrap.
+ - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 10).
 
 10) README updates
 - Change: Add a concise prod section pointing to the runbook, with quick‑start and secrets notes.
 - Commit: `docs(readme): add prod quick path and link runbook`
 - Acceptance: Clear path from README to full prod docs.
+ - Status: ✅ Completed in branch `feat/prod-parity` (README.md, docs/PROD-SECRETS.md link).
 
 ## Execution Checklist (per task)
 - Create a focused branch per task; keep PRs small.
