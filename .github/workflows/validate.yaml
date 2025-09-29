@@ -42,7 +42,7 @@ jobs:
         run: |
           helm version
           helm plugin list || true
-          kubeconform --version
+          kubeconform -v
           conftest --version
           yamllint --version
 
