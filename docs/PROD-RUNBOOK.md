@@ -124,7 +124,74 @@ Fallback options (if ESO/Vault is not yet available):
 
 Always document the system-of-record for each credential and ensure API tokens grant the minimum required permissions.
 
-## 8. Validate the deployment
+## 8. Argo CD RBAC & SSO hardening
+
+Strengthen access to the `openshift-gitops` Argo CD instance before granting production access.
+
+### 8.1 Create OpenShift groups
+
+Define admin and read-only groups mapped to Argo CD roles:
+
+```bash
+oc adm groups new argocd-admins
+oc adm groups new argocd-viewers
+
+# Add platform admins to argocd-admins; add delivery team users to argocd-viewers
+oc adm groups add-users argocd-admins <admin-user-1> <admin-user-2>
+oc adm groups add-users argocd-viewers <viewer-user-1> <viewer-user-2>
+```
+
+### 8.2 Patch the Argo CD CR
+
+Apply RBAC policy and enable the dedicated `argocd-image-updater` account:
+
+```bash
+cat <<'YAML' | oc apply -n openshift-gitops -f -
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: openshift-gitops
+spec:
+  rbac:
+    policy: |
+      g, argocd-admins, role:admin
+      g, argocd-viewers, role:readonly
+      g, system:cluster-admins, role:admin
+      p, role:readonly, applications, get, */*, allow
+      p, role:readonly, applications, sync, */*, deny
+    scopes: '[groups,sub,preferred_username,email]'
+  extraConfig:
+    accounts.argocd-image-updater: apiKey
+    admin.enabled: "false"
+YAML
+```
+
+Notes:
+
+- `admin.enabled: false` disables the legacy local `admin` user.
+- `role:readonly` grants dashboard visibility without sync permissions. Adjust policies to match your org’s needs.
+- Keeping `system:cluster-admins` mapped to `role:admin` ensures cluster-admins retain emergency access.
+
+### 8.3 Configure ServiceAccounts and tokens
+
+- Create a ServiceAccount for Vault auth (if using ESO) and give it the `argocd-image-updater` account token via `PROD-SECRETS.md` steps.
+- Generate API tokens for automation:
+
+  ```bash
+  argocd login $(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}') \
+    --sso --grpc-web
+  argocd account generate-token --account argocd-image-updater --grpc-web
+  ```
+
+- Never share human SSO tokens with automation; prefer dedicated Argo CD accounts scoped by policy.
+
+### 8.4 Audit and monitor
+
+- Use `oc -n openshift-gitops get application` to verify permissions (admins can sync, viewers cannot).
+- Enable Argo CD audit logging (`spec.controller.metrics.enabled: true`) if not already configured.
+- Periodically review group membership and rotate Image Updater tokens.
+
+## 9. Validate the deployment
 
 1. **Local chart validation**
    ```bash
@@ -153,7 +220,7 @@ Always document the system-of-record for each credential and ensure API tokens g
    ```
    - Ensure commits land in `charts/bitiq-sample-app/values-prod.yaml` on the tracked branch.
 
-## 9. Operations & troubleshooting
+## 10. Operations & troubleshooting
 
 - **Namespace or permission errors**: Confirm Argo CD has permission in `bitiq-prod` and `openshift-pipelines` (cluster-admin handles this by default).
 - **Routes unreachable**: Check ingress controller status, wildcard DNS, and firewall rules.

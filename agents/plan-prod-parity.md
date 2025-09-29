@@ -69,11 +69,12 @@ We will implement the in‑cluster model by default and document the central mod
 - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-SECRETS.md, charts/eso-vault-examples, docs/PROD-RUNBOOK.md section 7, AGENTS.md, README.md).
 
 6) Argo CD hardening (prod)
-- Change (docs + values guidance):
-  - Optionally set `disableDefaultInstance: true` and create a managed `ArgoCD` CR with RBAC and SSO guidance.
-  - Recommend dedicated Argo CD account for Image Updater with minimal permissions; include CLI steps to generate token and store it via the chosen secrets approach.
-- Commit: `docs(gitops): add prod RBAC/SSO guidance and image-updater account`
-- Acceptance: Runbook contains concrete commands; no defaults changed without approval.
+ - Change (docs + values guidance):
+    - Optionally set `disableDefaultInstance: true` and create a managed `ArgoCD` CR with RBAC and SSO guidance.
+    - Recommend dedicated Argo CD account for Image Updater with minimal permissions; include CLI steps to generate token and store it via the chosen secrets approach.
+  - Commit: `docs(gitops): add prod RBAC/SSO guidance and image-updater account`
+  - Acceptance: Runbook contains concrete commands; no defaults changed without approval.
+  - Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-RUNBOOK.md section 8).
 
 7) Tekton hardening (prod)
 - Change (docs): quotas and security context guidance for `openshift-pipelines`; linking secrets; optional PVC template sizing; TLS verify set appropriately; use of internal registry if desired.
