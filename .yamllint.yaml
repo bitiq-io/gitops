@@ -1,11 +1,8 @@
 extends: default
-rules:
-  line-length:
-    max: 140
-    level: warning
-  truthy:
-    level: warning
 
-# Avoid linting raw Helm templates which are not valid YAML pre-render
-ignore: |
-  charts/**/templates/**
+rules:
+  # Many Helm-maintained YAML files (Chart.yaml, values.yaml, tests) intentionally
+  # omit the leading document marker. Treat missing '---' as acceptable.
+  document-start: disable
+
+  # Keep defaults for other rules; adjust incrementally if needed.
