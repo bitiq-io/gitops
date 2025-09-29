@@ -19,7 +19,10 @@ It uses:
 - [ROLLBACK](docs/ROLLBACK.md) — Git revert + Argo sync operational playbook
 - [Architecture Decision Records](docs/adr/)
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
-- [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End‑to‑end local CI→CD (webhook + ngrok)
+- [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook + ngrok)
+- [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
+- [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
+- [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with ESO + Vault
 
 ## Prereqs
 
@@ -62,6 +65,23 @@ Local notes (OpenShift Local / CRC)
 - Ensure CRC is fully ready before bootstrapping (run: crc setup && crc start).
 - Get kubeadmin credentials with: crc console --credentials
 - Login to the cluster: oc login -u kubeadmin -p <PASSWORD> https://api.crc.testing:6443
+
+
+Single-Node OpenShift (SNO) quick path
+
+- Follow the detailed checklist in [`docs/SNO-RUNBOOK.md`](docs/SNO-RUNBOOK.md) to provision the cluster, configure storage/DNS, and prepare secrets.
+- Validate cluster readiness before bootstrapping:
+  ```bash
+  export BASE_DOMAIN=apps.<cluster-domain>
+  ./scripts/sno-preflight.sh
+  ```
+- Bootstrap GitOps:
+  ```bash
+  export ENV=sno
+  ENV=sno BASE_DOMAIN="$BASE_DOMAIN" ./scripts/bootstrap.sh
+  ```
+- If Argo CD manages the SNO cluster from within the cluster, no extra change is needed (`clusterServer=https://kubernetes.default.svc`). For a central Argo CD instance, keep the sno `clusterServer` pointed at the external API URL and register the cluster with `argocd cluster add` before syncing.
+- After secrets are in place (`make image-updater-secret`, optional GitHub/quay secrets), run `make smoke ENV=sno BASE_DOMAIN="$BASE_DOMAIN"` to verify operator readiness, Argo CD sync, and sample Routes.
 
 
 **What happens:**
@@ -135,7 +155,7 @@ Token secret configuration for Image Updater
   - `secret.name`: Secret name to reference (default `argocd-image-updater-secret`).
   - `secret.key`: Secret key containing the token (default `argocd.token`).
   - If `secret.create=true`, set `argocd.token` to the token value (or pass via `--set`).
-  - For production, prefer SealedSecrets/External Secrets and set `secret.create=false` with `secret.name` pointing to the managed Secret.
+  - For production, prefer ESO + Vault as documented in [PROD-SECRETS](docs/PROD-SECRETS.md); set `secret.create=false` with `secret.name` pointing to the managed Secret.
 
 CLI helper for local e2e:
 

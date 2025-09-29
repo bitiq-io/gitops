@@ -20,6 +20,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
+- `charts/eso-vault-examples/` — Optional ESO + Vault ExternalSecret examples (disabled by default)
 - `charts/bitiq-sample-app/` — Example app used for end-to-end flow
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
 - `scripts/validate.sh` — Local validation (render + schema + policy)
@@ -41,6 +42,10 @@ make dev-setup  # install local commit-msg hook for commitlint
 - GitHub Actions (`.github/workflows/validate.yaml`) runs these same targets on PR/push; keep them green locally before sending changes.
 
 CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep local and CI checks aligned.
+
+For Single-Node OpenShift parity work, follow `docs/SNO-RUNBOOK.md` and run `./scripts/sno-preflight.sh` before invoking `scripts/bootstrap.sh`.
+
+For production secrets management, follow `docs/PROD-SECRETS.md` and enable `charts/eso-vault-examples` only after ESO + Vault are configured.
 
 If adding/altering Helm values:
 
@@ -76,4 +81,5 @@ Notes for agents (local e2e):
 - Ecosystem standards and templates: https://github.com/PaulCapestany/ecosystem
 - Canonical repo conventions: docs/CONVENTIONS.md
 - Rollback runbook: docs/ROLLBACK.md
+- SNO runbook & preflight: docs/SNO-RUNBOOK.md, scripts/sno-preflight.sh
 - Argo CD, Pipelines, Image Updater links are in this repo’s README.

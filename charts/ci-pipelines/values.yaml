@@ -6,9 +6,13 @@
 env: local
 appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshift-pipelines
 
-# Default service account / fsGroup used by generated PipelineRuns
+# Default service account used by generated PipelineRuns
 serviceAccountName: pipeline
-fsGroup: 1000660000
+# Optional fsGroup override; leave empty to use cluster SCC defaults
+fsGroup: ""
+
+# Control creation of Namespace resources that match pipeline imageNamespace values
+createImageNamespaces: false
 
 # Pipelines managed by this chart. Each entry renders:
 # - A tekton.dev/v1 Pipeline definition

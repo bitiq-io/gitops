@@ -17,12 +17,8 @@
 ### chore: Maintenance
 - chore(ci): enable docs-check workflow (.github/workflows/docs-check.yml)
 
-### feat: Features
-- feat(umbrella): add optional app for secrets management (when decided)
-
 ### security: Secrets strategy
-- feat(secrets): optional External Secrets Operator (disabled by default) + `charts/vault-secrets` example (Vault/ESO)
-- docs(secrets): document ESO/Vault integration and Argo repo credential handling
+
 
 ### local-e2e: hardening
 - ci(tekton): stop creating webhook Secret by default; gate via `triggers.createSecret` (done)

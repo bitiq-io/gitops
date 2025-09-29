@@ -1,6 +1,6 @@
 operators:
   gitops:
-    channel: latest             # or gitops-1.13, gitops-1.17, etc. See docs.
+    channel: gitops-1.18        # Compatible with OCP 4.19 (see GitOps 1.18 release notes)
     name: openshift-gitops-operator
     source: redhat-operators
     sourceNamespace: openshift-marketplace
@@ -10,7 +10,7 @@ operators:
     disableDefaultInstance: false  # set true if you want to create your own ArgoCD instance
 
   pipelines:
-    channel: latest             # or pipelines-1.14, etc.
+    channel: pipelines-1.20     # Compatible with OCP 4.19 (see Pipelines 1.20 release notes)
     name: openshift-pipelines-operator-rh
     source: redhat-operators
     sourceNamespace: openshift-marketplace

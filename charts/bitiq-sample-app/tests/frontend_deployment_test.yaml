@@ -2,11 +2,11 @@ suite: Frontend deployment image
 templates:
   - templates/frontend-deployment.yaml
 values:
-  - values-common.yaml
+  - ../values-common.yaml
 release:
   name: sample
   namespace: bitiq-local
-assertions:
+tests:
   - it: renders frontend deployment when enabled
     asserts:
       - equal:

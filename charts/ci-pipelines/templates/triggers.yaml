@@ -16,7 +16,7 @@ stringData:
 
 {{ range $idx, $pipeline := .Values.pipelines }}
 {{- $pipelineSA := $pipeline.serviceAccountName | default $defaultSA -}}
-{{- $pipelineFsGroup := $pipeline.fsGroup | default $root.Values.fsGroup -}}
+{{- $pipelineFsGroup := coalesce $pipeline.fsGroup $root.Values.fsGroup -}}
 ---
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
@@ -36,9 +36,11 @@ spec:
       spec:
         taskRunTemplate:
           serviceAccountName: {{ $pipelineSA }}
+{{- if $pipelineFsGroup }}
           podTemplate:
             securityContext:
               fsGroup: {{ $pipelineFsGroup }}
+{{- end }}
         pipelineRef:
           name: {{ $pipeline.name }}
         params:

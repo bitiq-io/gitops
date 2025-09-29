@@ -3,6 +3,9 @@ targetRevision: main
 argocdNamespace: openshift-gitops
 envFilter: ""   # if set to local/sno/prod, only that env is generated
 
+# Optional global override applied to generated env baseDomain values
+baseDomainOverride: ""
+
 # Defaults for child umbrella chart
 imageUpdater:
   platforms: linux/amd64
@@ -15,12 +18,12 @@ envs:
     platforms: linux/arm64
     enableFrontendImageUpdate: true
   - name: sno
-    clusterServer: https://api.sno.example:6443
+    clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno
     baseDomain: apps.sno.example
     platforms: linux/amd64
   - name: prod
-    clusterServer: https://api.prod.example:6443
+    clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
     baseDomain: apps.prod.example
     platforms: linux/amd64
