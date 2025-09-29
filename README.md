@@ -21,6 +21,8 @@ It uses:
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook + ngrok)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
+- [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
+- [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with ESO + Vault
 
 ## Prereqs
 
@@ -153,7 +155,7 @@ Token secret configuration for Image Updater
   - `secret.name`: Secret name to reference (default `argocd-image-updater-secret`).
   - `secret.key`: Secret key containing the token (default `argocd.token`).
   - If `secret.create=true`, set `argocd.token` to the token value (or pass via `--set`).
-  - For production, prefer SealedSecrets/External Secrets and set `secret.create=false` with `secret.name` pointing to the managed Secret.
+  - For production, prefer ESO + Vault as documented in [PROD-SECRETS](docs/PROD-SECRETS.md); set `secret.create=false` with `secret.name` pointing to the managed Secret.
 
 CLI helper for local e2e:
 

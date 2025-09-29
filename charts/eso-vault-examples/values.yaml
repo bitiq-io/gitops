@@ -1,0 +1,63 @@
+enabled: false
+
+# Controls whether a ClusterSecretStore is rendered.
+# Disable if you already manage the store out-of-band.
+secretStore:
+  enabled: false
+  name: vault-global
+  provider:
+    vault:
+      server: https://vault.example.com
+      # Path to the Vault namespace (Enterprise) or leave empty for OSS.
+      namespace: ""
+      path: secret
+      version: v2
+      auth:
+        method: kubernetes
+        mount: kubernetes
+        role: gitops-prod
+        serviceAccountRef:
+          name: vault-auth
+          namespace: openshift-gitops
+
+# ExternalSecret definitions. Each block is gated by its own enabled flag.
+argocdToken:
+  enabled: false
+  targetSecretName: argocd-image-updater-secret
+  targetNamespace: openshift-gitops
+  refreshInterval: 1m
+  data:
+    - secretKey: argocd.token
+      remoteRef:
+        key: gitops/data/argocd/image-updater
+        property: token
+
+quayCredentials:
+  enabled: false
+  targetSecretName: quay-auth
+  targetNamespace: openshift-pipelines
+  refreshInterval: 5m
+  data:
+    - secretKey: .dockerconfigjson
+      remoteRef:
+        key: gitops/data/registry/quay
+        property: dockerconfigjson
+  secretType: kubernetes.io/dockerconfigjson
+
+webhookSecret:
+  enabled: false
+  targetSecretName: github-webhook-secret
+  targetNamespace: openshift-pipelines
+  refreshInterval: 1m
+  data:
+    - secretKey: secretToken
+      remoteRef:
+        key: gitops/data/github/webhook
+        property: token
+
+# Common fields applied to ExternalSecret resources.
+externalSecretDefaults:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-global
+  creationPolicy: Owner

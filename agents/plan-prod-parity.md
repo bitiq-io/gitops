@@ -63,9 +63,10 @@ We will implement the in‑cluster model by default and document the central mod
   - Argo CD Image Updater token (`openshift-gitops/argocd-image-updater-secret`).
   - Quay registry creds for the `pipeline` SA in `openshift-pipelines`.
   - GitHub webhook secret (`openshift-pipelines/github-webhook-secret`).
-- Optional: Add a new chart `charts/secrets-examples/` with disabled‑by‑default examples using ESO or SealedSecrets (no real data, placeholders only).
+- Optional: Add a new chart `charts/eso-vault-examples/` with disabled-by-default ESO + Vault examples (no real data, placeholders only).
 - Commit: `docs(secrets): add prod secrets guidance (+ optional examples chart)`
 - Acceptance: Clear, safe paths to manage secrets without committing sensitive data.
+- Status: ✅ Completed in branch `feat/prod-parity` (docs/PROD-SECRETS.md, charts/eso-vault-examples, docs/PROD-RUNBOOK.md section 7, AGENTS.md, README.md).
 
 6) Argo CD hardening (prod)
 - Change (docs + values guidance):

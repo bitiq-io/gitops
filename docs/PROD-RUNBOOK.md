@@ -107,41 +107,22 @@ oc -n bitiq-prod get routes
 
 ## 7. Configure production secrets & credentials
 
-Production workloads should manage secrets via sealed or externalized workflows. Options:
+Production workloads should manage secrets via sealed or externalized workflows. The recommended approach for prod is **External Secrets Operator (ESO) + Vault**, documented in [PROD-SECRETS](PROD-SECRETS.md). High-level steps:
 
-1. **Argo CD repo credentials (write access)**
-   - Prefer a dedicated robot account or deploy key limited to this repo.
-   - Store credentials via SealedSecrets/ESO in `openshift-gitops`, or manually add with `argocd repo add`.
+1. Install ESO, provision a Vault policy/role, and populate Vault paths with the required credentials.
+2. Enable the optional Helm chart `charts/eso-vault-examples` to render a `ClusterSecretStore` and `ExternalSecret` resources for:
+   - `openshift-gitops/argocd-image-updater-secret`
+   - `openshift-pipelines/quay-auth`
+   - `openshift-pipelines/github-webhook-secret`
+3. Link the generated secrets to the Tekton `pipeline` ServiceAccount (`oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount`).
+4. Rotate credentials directly in Vault; ESO reconciles the in-cluster secrets on the configured refresh intervals.
 
-2. **Argo CD Image Updater token**
-   - Create a dedicated Argo CD account with `apiKey` capability and `role:admin` scoped to the project.
-   - Manage the token as a SealedSecret or ESO Secret (`argocd-image-updater-secret` containing `argocd.token`).
-   - Update `imageUpdater.pullSecret` if you use private registries.
+Fallback options (if ESO/Vault is not yet available):
 
-3. **Container registry push credentials**
-   - For Quay.io:
-     ```bash
-     oc -n openshift-pipelines create secret docker-registry quay-auth \
-       --docker-server=quay.io \
-       --docker-username=<robot-user> \
-       --docker-password=<token> \
-       --docker-email=<email>
-     oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite
-     oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount
-     ```
-   - Replace with your internal registry if pushing to OpenShift’s integrated registry.
+- Use SealedSecrets to store encrypted secrets in Git (scope them per namespace).
+- Create secrets manually via `oc create secret ...` (short-term only; document the manual steps and rotate frequently).
 
-4. **GitHub webhook secret for Tekton triggers**
-   ```bash
-   oc -n openshift-pipelines create secret generic github-webhook-secret \
-     --from-literal=secretToken='<random value>'
-   ```
-   - Point your repo webhook to the listener route once created (`oc -n openshift-pipelines get route el-bitiq-listener`).
-
-5. **Certificate and TLS secrets**
-   - If you terminate TLS with custom certificates, ensure they are distributed to the ingress controller or Routes via annotations.
-
-Document each secret’s source-of-truth in your operations runbook.
+Always document the system-of-record for each credential and ensure API tokens grant the minimum required permissions.
 
 ## 8. Validate the deployment
 
