@@ -23,7 +23,7 @@ envs:
     baseDomain: apps.sno.example
     platforms: linux/amd64
   - name: prod
-    clusterServer: https://api.prod.example:6443
+    clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
     baseDomain: apps.prod.example
     platforms: linux/amd64
