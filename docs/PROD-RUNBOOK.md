@@ -16,13 +16,14 @@ This runbook documents how to bootstrap the `gitops` repository onto a productio
 
 ## 2. Decide operator channels (GitOps & Pipelines)
 
-OpenShift GitOps and OpenShift Pipelines are installed via `charts/bootstrap-operators`. Before bootstrapping, confirm the recommended channels for OCP 4.19:
+OpenShift GitOps and OpenShift Pipelines are installed via `charts/bootstrap-operators`. The repo pins channels known to support OCP 4.19:
 
-1. Review release notes:
-   - [OpenShift GitOps release notes](https://docs.openshift.com/gitops/latest/release_notes/op-ReleaseNotes.html)
-   - [OpenShift Pipelines 1.17 release notes](https://docs.openshift.com/pipelines/1.17/about/whats-new.html)
-2. Update `charts/bootstrap-operators/values.yaml` if you need to pin `operators.gitops.channel` or `operators.pipelines.channel` (e.g., `gitops-1.13`, `pipelines-1.17`).
-3. Document any channel changes in your PR (per `AGENTS.md`).
+1. GitOps channel `gitops-1.18` (supports OCP 4.14, 4.16-4.19 per [GitOps 1.18 compatibility matrix][gitops-1-18]).
+2. Pipelines channel `pipelines-1.20` (supports OCP 4.15-4.19 per [Pipelines 1.20 compatibility matrix][pipelines-1-20]).
+3. If Red Hat publishes newer GA channels for OCP 4.19, update `charts/bootstrap-operators/values.yaml` accordingly and document the change in your PR (per `AGENTS.md`).
+
+[gitops-1-18]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/release_notes/gitops-release-notes#GitOps-compatibility-support-matrix_gitops-release-notes
+[pipelines-1-20]: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/release_notes/op-release-notes-1-20#compatibility-support-matrix_op-release-notes
 
 ## 3. Cluster readiness checklist
 

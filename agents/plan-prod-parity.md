@@ -52,10 +52,11 @@ We will implement the in‑cluster model by default and document the central mod
   - Status: ✅ Completed in branch `feat/prod-parity` (charts/argocd-apps/values.yaml).
 
 4) Pin operator channels for OCP 4.19
-- Change: Update `charts/bootstrap-operators/values.yaml` to pin `operators.gitops.channel` and `operators.pipelines.channel` to versions compatible with OCP 4.19 (see References). Add release note links in a doc comment.
+- Change: Update `charts/bootstrap-operators/values.yaml` to pin `operators.gitops.channel=gitops-1.18` and `operators.pipelines.channel=pipelines-1.20`, citing Red Hat compatibility matrices.
 - Commit: `chore(operators): pin GitOps & Pipelines channels for OCP 4.19`
 - Acceptance: Subscriptions install specific channels; preflight confirms.
 - Gate: Per AGENTS.md, do not change operator channels without explicit approval. Will include rationale + references in PR body.
+- Status: ✅ Completed in branch `feat/prod-parity` (charts/bootstrap-operators/values.yaml, docs/PROD-RUNBOOK.md).
 
 5) Secrets management for prod (doc + optional charts)
 - Change: Document recommended approaches: External Secrets Operator (ESO) or SealedSecrets. Provide minimal examples for:
