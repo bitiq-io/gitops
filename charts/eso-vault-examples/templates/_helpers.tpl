@@ -16,9 +16,16 @@ spec:
   target:
     name: {{ $cfg.targetSecretName | quote }}
     creationPolicy: {{ $cfg.creationPolicy | default $root.Values.externalSecretDefaults.creationPolicy | default "Owner" | quote }}
-    {{- if $cfg.secretType }}
+    {{- if or $cfg.secretType $cfg.annotations }}
     template:
+      {{- if $cfg.secretType }}
       type: {{ $cfg.secretType | quote }}
+      {{- end }}
+      {{- with $cfg.annotations }}
+      metadata:
+        annotations:
+{{ toYaml . | indent 10 }}
+      {{- end }}
     {{- end }}
   data:
   {{- range $item := $cfg.data }}
