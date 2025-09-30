@@ -31,6 +31,8 @@ argocdToken:
       remoteRef:
         key: gitops/data/argocd/image-updater
         property: token
+  # Optional annotations for the generated Secret
+  annotations: {}
 
 quayCredentials:
   enabled: false
@@ -43,6 +45,10 @@ quayCredentials:
         key: gitops/data/registry/quay
         property: dockerconfigjson
   secretType: kubernetes.io/dockerconfigjson
+  # Optional annotations for the generated Secret (e.g., Tekton credential helper)
+  # annotations:
+  #   tekton.dev/docker-0: https://quay.io
+  annotations: {}
 
 webhookSecret:
   enabled: false
@@ -54,6 +60,8 @@ webhookSecret:
       remoteRef:
         key: gitops/data/github/webhook
         property: token
+  # Optional annotations for the generated Secret
+  annotations: {}
 
 # Common fields applied to ExternalSecret resources.
 externalSecretDefaults:

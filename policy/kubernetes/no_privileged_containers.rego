@@ -1,6 +1,6 @@
 package kubernetes.security
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   c := input.spec.template.spec.containers[i]

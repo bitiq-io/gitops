@@ -22,7 +22,7 @@ jobs:
           sudo apt-get install -y yamllint jq
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz \
             | sudo tar -xz -C /usr/local/bin kubeconform
-          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.52.0/conftest_0.52.0_Linux_x86_64.tar.gz \
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz \
             | sudo tar -xz -C /usr/local/bin conftest
 
       - name: Install helm-unittest plugin

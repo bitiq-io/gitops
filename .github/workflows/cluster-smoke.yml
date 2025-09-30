@@ -28,7 +28,6 @@ jobs:
           sudo apt-get install -y jq curl
           curl -sSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz \
             | sudo tar -xz -C /usr/local/bin oc kubectl
-      
       - name: Set up Helm
         uses: azure/setup-helm@v4
 
@@ -56,7 +55,8 @@ jobs:
             oc login -u "$OC_USER" -p "$OC_PASSWORD" "$OC_URL" --insecure-skip-tls-verify=true
             exit 0
           fi
-          echo "No cluster credentials provided. Set KUBECONFIG_B64 or OC_URL + OC_TOKEN/OC_USER+OC_PASSWORD in repo/organization secrets." >&2
+          echo "No cluster credentials provided." >&2
+          echo "Set KUBECONFIG_B64 or OC_URL + OC_TOKEN/OC_USER+OC_PASSWORD in repo/organization secrets." >&2
           exit 1
 
       - name: Run smoke checks
@@ -66,4 +66,3 @@ jobs:
           BASE_DOMAIN: apps-crc.testing
         run: |
           bash scripts/smoke.sh "$ENV"
-

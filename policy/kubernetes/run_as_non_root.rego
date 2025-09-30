@@ -1,13 +1,13 @@
 package kubernetes.security
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   sc := input.spec.template.spec.securityContext
   not sc.runAsNonRoot
   msg := "pod securityContext.runAsNonRoot must be true"
 }
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   c := input.spec.template.spec.containers[i]
