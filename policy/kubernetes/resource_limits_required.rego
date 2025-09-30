@@ -1,6 +1,6 @@
 package kubernetes.resources
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   c := input.spec.template.spec.containers[i]
@@ -8,7 +8,7 @@ deny[msg] {
   msg := sprintf("container %q missing resources", [c.name])
 }
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   c := input.spec.template.spec.containers[i]
@@ -16,7 +16,7 @@ deny[msg] {
   msg := sprintf("container %q missing resource limits", [c.name])
 }
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   c := input.spec.template.spec.containers[i]

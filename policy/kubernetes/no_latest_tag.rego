@@ -1,6 +1,6 @@
 package kubernetes.image
 
-deny[msg] {
+deny contains msg if {
   input.kind == "Deployment"
   some i
   container := input.spec.template.spec.containers[i]
