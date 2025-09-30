@@ -115,6 +115,11 @@ We will implement the in‑cluster model by default and document the central mod
 - Operator channels pinned and documented; preflight passes on a fresh 4.19 cluster.
 - Alternative central‑Argo path documented (and optionally implemented behind a flag).
 
+## Delta Fixes (remaining)
+- docs(PROD-RUNBOOK): Align the header “component baselines” with the pinned channels already used in `charts/bootstrap-operators/values.yaml` (GitOps 1.18+, Pipelines 1.20+; keep OCP 4.19). Acceptance: header matches pinned channels and links to the same compatibility matrices already referenced in section 2.
+- docs(README): Add a tiny “Prod quick path” just like SNO, pointing to `./scripts/prod-preflight.sh`, export `ENV=prod`, and linking to `docs/PROD-RUNBOOK.md`. Acceptance: README shows a concise prod snippet and defers details to the runbook.
+- Optional/docs(PROD-SECRETS): Note the ESO subscription channel (stable) and that production deployments should review operator lifecycle policies. Acceptance: brief note added under prerequisites without prescribing a channel change.
+
 ## References (OCP 4.19 / current)
 - OCP 4.19 product docs: https://docs.redhat.com/en/documentation/openshift_container_platform/4.19
 - OpenShift GitOps docs: https://docs.openshift.com/gitops/latest/ (redirects to the latest GitOps guide)

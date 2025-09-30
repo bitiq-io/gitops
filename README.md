@@ -84,6 +84,25 @@ Single-Node OpenShift (SNO) quick path
 - After secrets are in place (`make image-updater-secret`, optional GitHub/quay secrets), run `make smoke ENV=sno BASE_DOMAIN="$BASE_DOMAIN"` to verify operator readiness, Argo CD sync, and sample Routes.
 
 
+Production (ENV=prod) quick path
+
+- See the full runbook in `docs/PROD-RUNBOOK.md` for prerequisites and operations hardening.
+- Validate cluster readiness before bootstrapping:
+  ```bash
+  export BASE_DOMAIN=apps.<cluster-domain>
+  ./scripts/prod-preflight.sh
+  ```
+- Bootstrap GitOps:
+  ```bash
+  export ENV=prod
+  ENV=prod BASE_DOMAIN="$BASE_DOMAIN" ./scripts/bootstrap.sh
+  ```
+- After secrets are in place (recommended: ESO + Vault per `docs/PROD-SECRETS.md`), you can run:
+  ```bash
+  ./scripts/prod-smoke.sh
+  ```
+
+
 **What happens:**
 
 1. Installs/ensures **OpenShift GitOps** and **OpenShift Pipelines** via OLM Subscriptions.

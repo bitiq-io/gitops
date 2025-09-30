@@ -43,6 +43,8 @@ oc get csv -n external-secrets-operator -w
 
 ESO installs cluster-scoped CRDs such as `ClusterSecretStore` and `ExternalSecret`.
 
+Note: The example uses the `stable` channel with `installPlanApproval: Automatic`. For production, review your organization’s operator lifecycle policy — you may prefer `Manual` approvals to control upgrades and coordinate with change windows. Pinning or mirroring catalog sources may also be required in regulated or disconnected environments.
+
 ### 1.2 Create a Vault Policy and Role
 
 Enable the Kubernetes auth method in Vault (if not already configured):
