@@ -45,6 +45,18 @@ ESO installs cluster-scoped CRDs such as `ClusterSecretStore` and `ExternalSecre
 
 Note: The example uses the `stable` channel with `installPlanApproval: Automatic`. For production, review your organization’s operator lifecycle policy — you may prefer `Manual` approvals to control upgrades and coordinate with change windows. Pinning or mirroring catalog sources may also be required in regulated or disconnected environments.
 
+#### 1.1.1 Create Kubernetes ServiceAccount for Vault auth
+
+The example `ClusterSecretStore` references a ServiceAccount that Vault uses to validate projected tokens during Kubernetes auth. Create it in the namespace you plan to reference (defaults to `openshift-gitops/vault-auth` in this repo’s values):
+
+```bash
+oc -n openshift-gitops create sa vault-auth || true
+```
+
+Notes:
+- This ServiceAccount is only used for Vault authentication. It does not need cluster-wide permissions or access to Argo CD resources.
+- If you choose a different namespace/name, update `secretStore.provider.vault.auth.serviceAccountRef` accordingly in the chart values.
+
 ### 1.2 Create a Vault Policy and Role
 
 Enable the Kubernetes auth method in Vault (if not already configured):
@@ -119,6 +131,15 @@ Key fields to review:
 - `secretStore.provider.vault.auth.serviceAccountRef`: ServiceAccount that ESO will impersonate.
 - `argocdToken/quayCredentials/webhookSecret.data[].remoteRef.key`: Vault KV paths.
 - `quayCredentials.secretType`: defaults to `kubernetes.io/dockerconfigjson` to ensure Tekton interprets the secret correctly.
+
+Optional (Tekton credential helper): annotate the generated Quay secret so Tekton auto-detects it for `https://quay.io`.
+
+```yaml
+quayCredentials:
+  enabled: true
+  annotations:
+    tekton.dev/docker-0: https://quay.io
+```
 
 ### 2.2 Install the chart
 

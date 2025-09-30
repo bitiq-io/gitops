@@ -124,6 +124,8 @@ Fallback options (if ESO/Vault is not yet available):
 
 Always document the system-of-record for each credential and ensure API tokens grant the minimum required permissions.
 
+Note (private registries): if your registries are private, configure an image pull secret for Image Updater and set `imageUpdater.pullSecret` in the umbrella chart values (refer to charts/bitiq-umbrella/values-common.yaml:16) or manage it via ESO with a separate ExternalSecret in `openshift-gitops`.
+
 ## 8. Argo CD RBAC & SSO hardening
 
 Strengthen access to the `openshift-gitops` Argo CD instance before granting production access.
@@ -174,7 +176,7 @@ Notes:
 
 ### 8.3 Configure ServiceAccounts and tokens
 
-- Create a ServiceAccount for Vault auth (if using ESO) and give it the `argocd-image-updater` account token via `PROD-SECRETS.md` steps.
+- Create a ServiceAccount for Vault Kubernetes auth (if using ESO), for example `openshift-gitops/vault-auth`, to match the `ClusterSecretStore` in the examples. This ServiceAccount is unrelated to the Argo CD token and requires no special RBAC. See `PROD-SECRETS.md` for details.
 - Generate API tokens for automation:
 
   ```bash
