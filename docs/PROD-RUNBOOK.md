@@ -1,6 +1,6 @@
 # Production OCP (ENV=prod) Runbook
 
-This runbook documents how to bootstrap the `gitops` repository onto a production-grade OpenShift Container Platform (OCP) 4.19 cluster using the in-cluster Argo CD model. It parallels the local and SNO flows so that `ENV=prod` reaches full CI/CD parity. Current component baselines (September 29, 2025): OCP 4.19, OpenShift GitOps 1.13+, OpenShift Pipelines 1.17+, Argo CD Image Updater v0.16.
+This runbook documents how to bootstrap the `gitops` repository onto a production-grade OpenShift Container Platform (OCP) 4.19 cluster using the in-cluster Argo CD model. It parallels the local and SNO flows so that `ENV=prod` reaches full CI/CD parity. Current component baselines (September 29, 2025): OCP 4.19, OpenShift GitOps 1.18+, OpenShift Pipelines 1.20+, Argo CD Image Updater v0.16.
 
 ## 1. Audience & Prerequisites
 
