@@ -4,9 +4,9 @@ baseDomain: apps.sno.example
 backend:
   image:
     repository: quay.io/paulcapestany/toy-service
-    tag: v0.2.24-commit.b4f00ee
+    tag: v0.2.33-commit.5cf34a2
 
 frontend:
   image:
     repository: quay.io/paulcapestany/toy-web
-    tag: v0.1.0-commit.1a2b3c4
+    tag: v0.1.8-commit.a064058
