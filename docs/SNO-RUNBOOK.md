@@ -2,6 +2,12 @@
 
 This runbook walks through provisioning a Single-Node OpenShift (SNO) cluster and bootstrapping the `gitops` repository so that `ENV=sno` reaches the same CI/CD functionality as `ENV=local`. It assumes OpenShift Container Platform (OCP) 4.18, OpenShift GitOps 1.12+, and OpenShift Pipelines 1.16 (current as of 2025-09-26).
 
+Important limitations
+
+- SNO requires ignition/discovery ISO and day‑1 install assets created outside this repository (Assisted Installer or Agent‑based installer). This repo does not provision clusters or generate ignition.
+- Because SNO cannot be emulated locally like CRC, we cannot “quick sanity‑check” `ENV=sno` without access to a real SNO cluster. Local and CI validation only cover chart/template correctness (`make template`, `make validate`).
+- Treat this runbook as post‑install guidance. Provision the SNO cluster first, then use `./scripts/sno-preflight.sh` and the steps below.
+
 ## 1. Audience & Prerequisites
 
 - **Use cases**: lab/demo clusters, edge deployments, or pre-prod environments where a single control-plane/worker node is acceptable.
@@ -196,4 +202,3 @@ Run these steps after the cluster is reachable.
 - **OpenShift Pipelines 1.16**: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.16
 - **Argo CD Image Updater**: https://argocd-image-updater.readthedocs.io/en/stable/
 - **OpenShift Data Foundation 4.18**: https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.18
-

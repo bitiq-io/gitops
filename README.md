@@ -69,6 +69,8 @@ Local notes (OpenShift Local / CRC)
 
 Single-Node OpenShift (SNO) quick path
 
+Important: SNO requires an already-provisioned OpenShift cluster (Assisted/Agent-based install) and out‑of‑band ignition/discovery ISO assets. This repo does not generate ignition or perform cluster installs. As such, SNO is not a quick “try it locally” path and cannot be sanity‑checked without a real SNO cluster. For quick iteration and validation, prefer `ENV=local`.
+
 - Follow the detailed checklist in [`docs/SNO-RUNBOOK.md`](docs/SNO-RUNBOOK.md) to provision the cluster, configure storage/DNS, and prepare secrets.
 - Validate cluster readiness before bootstrapping:
   ```bash

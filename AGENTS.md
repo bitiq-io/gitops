@@ -44,6 +44,7 @@ make dev-setup  # install local commit-msg hook for commitlint
 CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep local and CI checks aligned.
 
 For Single-Node OpenShift parity work, follow `docs/SNO-RUNBOOK.md` and run `./scripts/sno-preflight.sh` before invoking `scripts/bootstrap.sh`.
+Note: SNO requires out‑of‑band ignition/discovery ISO and cannot be sanity‑checked locally like CRC. Prefer `ENV=local` for quick validation.
 
 For production secrets management, follow `docs/PROD-SECRETS.md` and enable `charts/eso-vault-examples` only after ESO + Vault are configured.
 
