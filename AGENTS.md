@@ -64,6 +64,8 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 - Creating PRs via GitHub CLI:
   - Prefer `gh pr create --fill` to use the PR template and commit body
   - If providing a custom body, use `--body-file <file>` to avoid literal `\n`
+ - For multi-line commit messages, avoid literal `\n` in `git commit -m`.
+   Use `git commit -F <file>` or a heredoc (e.g., `git commit -F- <<'EOF' ... EOF`) so newlines render correctly.
 
 ## Safety & Out of Scope
 
