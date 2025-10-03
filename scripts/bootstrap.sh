@@ -12,10 +12,11 @@ usage() {
 gitops bootstrap
 
 Environment variables:
-  ENV            : local | sno | prod   (default: local)
-  BASE_DOMAIN    : base DNS for app routes (default: apps-crc.testing for local; REQUIRED for sno/prod)
-  GIT_REPO_URL   : this repo URL (default: autodetect via 'git remote get-url origin', else prompts)
-  TARGET_REV     : Git revision Argo should track (default: main)
+  ENV                : local | sno | prod   (default: local)
+  BASE_DOMAIN        : base DNS for app routes (default: apps-crc.testing for local; REQUIRED for sno/prod)
+  GIT_REPO_URL       : this repo URL (default: autodetect via 'git remote get-url origin', else prompts)
+  TARGET_REV         : Git revision Argo should track (default: main)
+  PLATFORMS_OVERRIDE : optional imageUpdater platform override for the selected ENV (e.g., linux/arm64)
 
 Examples:
   ENV=local ./scripts/bootstrap.sh
@@ -50,6 +51,20 @@ esac
 
 log "ENV=${ENV}  BASE_DOMAIN=${BASE_DOMAIN}  GIT_REPO_URL=${GIT_REPO_URL}  TARGET_REV=${TARGET_REV}"
 
+# Optional platforms override (helps when node architecture differs from defaults)
+PLATFORMS_OVERRIDE="${PLATFORMS_OVERRIDE:-}"
+PLATFORM_ARGS=()
+if [[ -n "$PLATFORMS_OVERRIDE" ]]; then
+  case "$ENV" in
+    local) env_index=0 ;;
+    sno)   env_index=1 ;;
+    prod)  env_index=2 ;;
+    *)     env_index=0 ;; # guard already ensured valid ENV
+  esac
+  log "Overriding envs[${env_index}].platforms to ${PLATFORMS_OVERRIDE}"
+  PLATFORM_ARGS=(--set-string "envs[${env_index}].platforms=${PLATFORMS_OVERRIDE}")
+fi
+
 # Sanity checks: cluster login
 oc whoami >/dev/null || { log "FATAL: oc not logged in"; exit 1; }
 oc api-resources >/dev/null || { log "FATAL: cannot reach cluster"; exit 1; }
@@ -78,13 +93,19 @@ done
 
 # 3) Install ApplicationSet that renders ONE umbrella app for the selected ENV
 log "Installing ApplicationSet (argocd-apps) for ENV=${ENV}…"
-helm upgrade --install argocd-apps charts/argocd-apps \
-  --namespace openshift-gitops \
-  --set-string repoUrl="${GIT_REPO_URL}" \
-  --set-string targetRevision="${TARGET_REV}" \
-  --set-string baseDomainOverride="${BASE_DOMAIN}" \
-  --set-string envFilter="${ENV}" \
-  --wait --timeout 5m
+helm_args=(
+  --namespace openshift-gitops
+  --set-string repoUrl="${GIT_REPO_URL}"
+  --set-string targetRevision="${TARGET_REV}"
+  --set-string baseDomainOverride="${BASE_DOMAIN}"
+  --set-string envFilter="${ENV}"
+)
+if [[ ${#PLATFORM_ARGS[@]} -gt 0 ]]; then
+  helm_args+=("${PLATFORM_ARGS[@]}")
+fi
+helm_args+=(--wait --timeout 5m)
+
+helm upgrade --install argocd-apps charts/argocd-apps "${helm_args[@]}"
 
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
