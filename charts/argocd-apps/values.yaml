@@ -15,7 +15,7 @@ envs:
     clusterServer: https://kubernetes.default.svc   # in-cluster
     appNamespace: bitiq-local
     baseDomain: apps-crc.testing                    # OpenShift Local default
-    platforms: linux/arm64
+    platforms: linux/amd64
     enableFrontendImageUpdate: true
   - name: sno
     clusterServer: https://kubernetes.default.svc

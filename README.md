@@ -133,7 +133,7 @@ Local env note (frontend disabled by default)
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
 Platform and private registry notes:
-- Platform filter: the umbrella chart exposes `imageUpdater.platforms` (default `linux/amd64`) used by annotations to filter manifest architectures during tag selection. By default, env mapping is: `local -> linux/arm64`, `sno/prod -> linux/amd64` (configured in `charts/argocd-apps/values.yaml` under `envs[].platforms`). Set to match your cluster nodes, or push multi‑arch tags.
+- Platform filter: the umbrella chart exposes `imageUpdater.platforms` (default `linux/amd64`) used by annotations to filter manifest architectures during tag selection. All environments map to `linux/amd64` by default (configured in `charts/argocd-apps/values.yaml` under `envs[].platforms`). Override to `linux/arm64` if your cluster nodes are arm64 (for example, Apple Silicon CRC).
 - Private Quay repos: set `imageUpdater.pullSecret` to a Secret visible to the Argo CD namespace to allow Image Updater to list tags for private repos (annotation `*.pull-secret` is rendered when set). The secret can be referenced as `name` (in `openshift-gitops`) or `namespace/name`.
   Example (secret in openshift-gitops):
   ```bash
