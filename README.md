@@ -18,7 +18,8 @@ It uses:
 - [CONVENTIONS](docs/CONVENTIONS.md) — versioning, naming, and rollback guardrails
 - [ROLLBACK](docs/ROLLBACK.md) — Git revert + Argo sync operational playbook
 - [Architecture Decision Records](docs/adr/)
-- [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local
+- [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local (macOS)
+- [LOCAL-RUNBOOK-UBUNTU](docs/LOCAL-RUNBOOK-UBUNTU.md) — Remote Ubuntu/CRC runbook for ENV=local
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook + ngrok)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
