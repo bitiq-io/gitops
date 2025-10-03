@@ -24,6 +24,12 @@ Defaults worth knowing
 - Platform filter for Image Updater: ENV=local, ENV=sno, and ENV=prod now default to `linux/amd64`. These are set per env in `charts/argocd-apps/values.yaml` under `envs[].platforms` and passed into the umbrella chart. If your local cluster is arm64 (for example, Apple Silicon CRC), either publish multi‑arch images or override `local` to `linux/arm64`. During bootstrap you can set `PLATFORMS_OVERRIDE=linux/arm64 ENV=local ./scripts/bootstrap.sh` instead of editing the chart.
 - Frontend image updates are enabled for `local`. Make sure the `toy-web` image is published to Quay (or set `enableFrontendImageUpdate: false` if you want to skip the frontend flow). If your repository is private, add a pull secret via `imageUpdater.pullSecret` so tag listing works.
 
+Remote server notes
+
+- CRC Routes resolve only on the host; to test them from elsewhere use SSH port forwarding (e.g., `ssh -L 8443:svc-api.apps-crc.testing:443`).
+- Run port-forward + tunnel commands (ngrok/cloudflared) directly on the server so GitHub can reach the Tekton EventListener.
+- The Ubuntu-specific runbook (`docs/LOCAL-RUNBOOK-UBUNTU.md`) covers headless setup, CLI installs, and remote webhook tips in more detail.
+
 1) Bootstrap apps and operators
 
 ```bash
