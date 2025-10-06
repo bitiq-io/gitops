@@ -13,7 +13,8 @@ crc config set disk-size 120
 crc setup && crc start
 
 # Login
-oc login -u kubeadmin -p $(crc console --credentials | awk '/kubeadmin/ {print $2}') https://api.crc.testing:6443
+# Extract kubeadmin password reliably from CRC credentials output
+oc login -u kubeadmin -p "$(crc console --credentials | awk -F': *' '/Password/ {print $2; exit}')" https://api.crc.testing:6443
 ```
 
 ## 1) Bootstrap GitOps apps (local)
