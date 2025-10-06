@@ -38,11 +38,15 @@ This guide walks through running the full ENV=local GitOps workflow on a remote 
 
 ## 1) Install CLI tooling
 
-- **OpenShift CLI (`oc`)**: download the matching release from Red Hat. Example (4.15):
+- **OpenShift CLI (`oc`)**: download the matching release from Red Hat. Example (4.19):
 
   ```bash
-  curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/oc-linux.tar.gz
-  tar -xzf oc-linux.tar.gz oc kubectl
+  curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest-4.19/openshift-client-linux.tar.gz
+  # Validate the archive looks correct (optional but recommended)
+  file openshift-client-linux.tar.gz
+  tar -tzf openshift-client-linux.tar.gz | grep -E '^(oc|kubectl)$'
+  # Extract the oc and kubectl binaries
+  tar -xzf openshift-client-linux.tar.gz oc kubectl
   sudo mv oc kubectl /usr/local/bin/
   oc version
   ```
@@ -223,4 +227,3 @@ make validate
 - **Git webhook timeouts**: confirm the ngrok tunnel is running and your server allows outbound HTTPS.
 
 Refer back to `README.md`, `docs/LOCAL-CI-CD.md`, and `docs/LOCAL-SETUP.md` for deeper troubleshooting and background.
-
