@@ -14,7 +14,7 @@ Start OpenShift Local
   - `crc setup && crc start`
   - `eval $(crc oc-env)`
 - Login to the cluster:
-  - `oc login -u kubeadmin -p $(crc console --credentials | awk '/kubeadmin/ {print $2}')`
+  - `oc login -u kubeadmin -p "$(crc console --credentials | awk -F': *' '/Password/ {print $2; exit}')"`
 
 CRC domains & TLS
 - API endpoint: `https://api.crc.testing:6443` (self-signed cert).

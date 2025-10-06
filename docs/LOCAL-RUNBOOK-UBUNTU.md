@@ -107,7 +107,9 @@ This guide walks through running the full ENV=local GitOps workflow on a remote 
 
    ```bash
    eval "$(crc oc-env)"
-   oc login -u kubeadmin -p $(crc console --credentials | awk '/kubeadmin/ {print $2}') https://api.crc.testing:6443
+   # Extract kubeadmin password from CRC credentials output
+   KUBEADMIN_PASSWORD=$(crc console --credentials | awk -F': *' '/Password/ {print $2; exit}')
+   oc login -u kubeadmin -p "$KUBEADMIN_PASSWORD" https://api.crc.testing:6443
    ```
 
 ## 3) Clone the GitOps repo
