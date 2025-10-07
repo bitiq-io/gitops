@@ -121,9 +121,7 @@ oc -n openshift-gitops patch argocd openshift-gitops \
         "accounts.argocd-image-updater":"apiKey"
       },
       "rbac":{
-        "policy":"g, kubeadmin, role:admin\n"
-                 "g, argocd-image-updater, role:admin\n"
-                 "p, role:admin, *, *, *, allow\n",
+        "policy":"g, kubeadmin, role:admin\ng, argocd-image-updater, role:admin\np, role:admin, *, *, *, allow\n",
         "scopes":"[groups, sub, preferred_username, email]"
       }
     }
