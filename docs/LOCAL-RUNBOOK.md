@@ -96,6 +96,11 @@ oc new-project bitiq-local || true
 oc -n bitiq-local create rolebinding argocd-app-admin \
   --clusterrole=admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
+
+# Also grant Argo CD controller admin in openshift-pipelines so it can create Tekton resources
+oc -n openshift-pipelines create rolebinding argocd-app-admin \
+  --clusterrole=admin \
+  --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
 ```
 
 ## 4) Seed Image Updater token (dev)

@@ -170,6 +170,14 @@ export ENV=local
    make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
    ```
 
+   Grant Argo CD permission to create Tekton resources in `openshift-pipelines` (prevents Forbidden errors while syncing `ci-pipelines-local`):
+
+   ```bash
+   oc -n openshift-pipelines create rolebinding argocd-app-admin \
+     --clusterrole=admin \
+     --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
+   ```
+
 2. Expose the EventListener from the remote host (choose one):
 
    Option A — Dynamic DNS (no tunnel; recommended on a remote server)

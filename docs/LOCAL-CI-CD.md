@@ -38,11 +38,16 @@ export ENV=local BASE_DOMAIN=apps-crc.testing
 ./scripts/bootstrap.sh
 ```
 
-2) Allow Argo CD to manage app namespaces (dev convenience)
+2) Allow Argo CD to manage namespaces (dev convenience)
 
 ```bash
 oc new-project bitiq-local || true
 oc -n bitiq-local create rolebinding argocd-app-admin \
+  --clusterrole=admin \
+  --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
+
+# Also grant Argo CD controller admin in openshift-pipelines so it can create Tekton resources
+oc -n openshift-pipelines create rolebinding argocd-app-admin \
   --clusterrole=admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
 ```
