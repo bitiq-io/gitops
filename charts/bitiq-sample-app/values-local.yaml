@@ -3,7 +3,7 @@ backend:
   healthPath: "/healthz"
   image:
     repository: quay.io/paulcapestany/toy-service
-    tag: v0.2.33-commit.5cf34a2
+    tag: v0.2.24-commit.b4f00ee
 frontend:
   image:
     repository: quay.io/paulcapestany/toy-web
