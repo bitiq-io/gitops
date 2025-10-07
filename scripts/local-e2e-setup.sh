@@ -87,6 +87,19 @@ oc -n bitiq-local create rolebinding argocd-app-admin \
   --clusterrole=admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller >/dev/null 2>&1 || true
 
+# Allow Argo CD application-controller to manage Tekton resources in openshift-pipelines
+# This prevents Forbidden errors when syncing the ci-pipelines Application (EventListener, Triggers, Pipelines, Route)
+oc -n openshift-pipelines create rolebinding argocd-app-admin \
+  --clusterrole=admin \
+  --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller >/dev/null 2>&1 || true
+
+# Sanity-check that the Argo CD SA can create Tekton Triggers in openshift-pipelines
+if [[ "$(oc auth can-i create eventlisteners.triggers.tekton.dev -n openshift-pipelines \
+        --as=system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller)" != "yes" ]]; then
+  err "Argo CD SA still lacks permissions in openshift-pipelines; RBAC may be restricted in your env"
+  err "Try: oc adm policy add-role-to-user admin system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n openshift-pipelines"
+fi
+
 log "Ensuring Tekton image namespace and permissions"
 oc new-project bitiq-ci >/dev/null 2>&1 || true
 oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci >/dev/null 2>&1 || true
