@@ -108,14 +108,16 @@ Option A — Dynamic DNS (no tunnel)
 
 ```bash
 # Bind the port-forward to all interfaces (run on the server)
-oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080
+# Choose a host port (default 8080). If 8080 is in use (e.g., nginx), pick another like 18080.
+HOST_PORT=8080   # or 18080
+oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener ${HOST_PORT}:8080
 
 # Get the webhook secret value
 oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.secretToken}' | base64 -d; echo
 ```
 
 GitHub repo → Settings → Webhooks → Add webhook
-- Payload URL: http://<your-ddns-hostname>:8080
+- Payload URL: http://<your-ddns-hostname>:<HOST_PORT>
 - Content type: application/json
 - Secret: the secret printed above
 - Events: “Just the push event” (PRs are also supported)
@@ -123,11 +125,12 @@ GitHub repo → Settings → Webhooks → Add webhook
 Option B — Tunnel (ngrok or cloudflared)
 
 ```bash
-# Terminal A: forward the EL service locally
-oc -n openshift-pipelines port-forward svc/el-bitiq-listener 8080:8080
+# Terminal A: forward the EL service locally (choose HOST_PORT if 8080 is in use)
+HOST_PORT=8080   # or 18080
+oc -n openshift-pipelines port-forward svc/el-bitiq-listener ${HOST_PORT}:8080
 
 # Terminal B: expose via ngrok (or cloudflared)
-ngrok http 8080   # copy the HTTPS URL shown
+ngrok http ${HOST_PORT}   # copy the HTTPS URL shown
 
 # Get the webhook secret value
 oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.secretToken}' | base64 -d; echo

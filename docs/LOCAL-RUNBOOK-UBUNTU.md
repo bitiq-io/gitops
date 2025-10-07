@@ -183,14 +183,15 @@ export ENV=local
    Option A — Dynamic DNS (no tunnel; recommended on a remote server)
 
    ```bash
-   # Allow inbound traffic to port 8080 on the host (adjust if using ufw/firewalld/security groups)
-   sudo ufw allow 8080/tcp || true
+   # Choose a host port (default 8080). If 8080 is in use (e.g., nginx), pick another like 18080.
+   HOST_PORT=8080   # or 18080
+   sudo ufw allow ${HOST_PORT}/tcp || true
 
    # Bind the port-forward to all interfaces so GitHub can reach it via your DDNS name
-   oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080
+   oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener ${HOST_PORT}:8080
    ```
 
-   - Payload URL in your GitHub webhook: `http://<your-ddns-name>:8080`
+   - Payload URL in your GitHub webhook: `http://<your-ddns-name>:<HOST_PORT>`
    - Content type: `application/json`
    - Secret: `$GITHUB_WEBHOOK_SECRET`
    - Note: GitHub accepts HTTP. If your org enforces HTTPS, front port 8080 with a reverse proxy (e.g., Caddy/NGINX) that terminates TLS and proxies to `127.0.0.1:8080`.
@@ -198,14 +199,15 @@ export ENV=local
    Option B — Tunnel (ngrok or cloudflared)
 
    ```bash
-   # Terminal A (server): forward the service locally
-   oc -n openshift-pipelines port-forward svc/el-bitiq-listener 8080:8080
+   # Terminal A (server): forward the service locally (change HOST_PORT if 8080 is in use)
+   HOST_PORT=8080   # or 18080
+   oc -n openshift-pipelines port-forward svc/el-bitiq-listener ${HOST_PORT}:8080
 
    # Terminal B (server): run the tunnel and copy the HTTPS URL
    ngrok http 8080
    ```
 
-   - Payload URL in your GitHub webhook: the ngrok/cloudflared HTTPS URL
+   - Payload URL in your GitHub webhook: the ngrok/cloudflared HTTPS URL that forwards to `<HOST_PORT>`
    - Content type: `application/json`
    - Secret: `$GITHUB_WEBHOOK_SECRET`
 
