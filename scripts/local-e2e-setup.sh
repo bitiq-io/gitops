@@ -279,8 +279,10 @@ refresh_app "bitiq-sample-app-$ENVIRONMENT"
 cat <<'EONOTES'
 ---
 Manual follow-up:
-- Expose the Tekton EventListener (port-forward svc/el-bitiq-listener and tunnel via ngrok/cloudflared).
-- Add the webhook to your toy-service repo using the tunnel URL and github-webhook-secret value.
+- Expose the Tekton EventListener:
+  - Dynamic DNS: oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080
+    • Use http://<your-ddns-hostname>:8080 in the GitHub webhook (content type JSON, secret = github-webhook-secret)
+  - or Tunnel: port-forward locally and run ngrok/cloudflared; use the tunnel URL in the GitHub webhook
 - Push a commit to trigger the PipelineRun and watch with 'oc -n openshift-pipelines get pipelineruns' or 'tkn pr logs'.
 - Tail argocd-image-updater logs to confirm tag detection and Git write-back.
 ---

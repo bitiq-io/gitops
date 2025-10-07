@@ -2,7 +2,7 @@
 
 This guide walks through running the full ENV=local GitOps workflow on a remote Ubuntu Server (22.04 or 24.04) by installing **OpenShift Local (CRC)** directly on the host. It includes virtualization prerequisites, CLI setup, bootstrap steps, and remote-friendly tips for webhooks and Route access.
 
-> This mirrors the macOS guide (`docs/LOCAL-RUNBOOK.md`) but is tuned for headless Ubuntu hosts. CRC must still meet Red Hat’s hardware requirements: 4+ vCPUs, 12–16 GiB RAM, and ~50 GiB free disk.
+> This mirrors the macOS guide (`docs/LOCAL-RUNBOOK.md`) and is tuned for Ubuntu Server. CRC must still meet Red Hat’s hardware requirements: 4+ vCPUs, 12–16 GiB RAM, and ~50 GiB free disk.
 
 ## 0) Host prerequisites
 
@@ -66,15 +66,18 @@ This guide walks through running the full ENV=local GitOps workflow on a remote 
   argocd version --client
   ```
 
-- **ngrok** or **cloudflared** (for GitHub webhooks). Example using ngrok:
+- Webhook exposure: choose one
+  - Dynamic DNS on your server (recommended): no extra tool needed. You will bind the port-forward to `0.0.0.0` and open port `8080/tcp` on the host firewall.
+  - Tunneling tool (optional alternative): **ngrok** or **cloudflared**.
+
+  Example ngrok install (only if you opt for a tunnel):
 
   ```bash
   curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
   echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
   sudo apt update && sudo apt install -y ngrok
+  ngrok config add-authtoken <token>
   ```
-
-  Authenticate ngrok with `ngrok config add-authtoken <token>` (from the ngrok dashboard).
 
 ## 2) Install and start OpenShift Local (CRC)
 
@@ -156,7 +159,9 @@ export ENV=local
    make image-updater-secret
    ```
 
-## 6) Tekton prerequisites and webhook tunnel
+
+
+## 6) Tekton prerequisites and webhook exposure
 
 1. Create the CI namespace, grant image pusher rights, and set the GitHub webhook secret (reuse existing helpers):
 
@@ -165,17 +170,36 @@ export ENV=local
    make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
    ```
 
-2. Expose the EventListener route from the remote host:
+2. Expose the EventListener from the remote host (choose one):
+
+   Option A — Dynamic DNS (no tunnel; recommended on a remote server)
 
    ```bash
-   # Terminal A (server):
+   # Allow inbound traffic to port 8080 on the host (adjust if using ufw/firewalld/security groups)
+   sudo ufw allow 8080/tcp || true
+
+   # Bind the port-forward to all interfaces so GitHub can reach it via your DDNS name
+   oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080
+   ```
+
+   - Payload URL in your GitHub webhook: `http://<your-ddns-name>:8080`
+   - Content type: `application/json`
+   - Secret: `$GITHUB_WEBHOOK_SECRET`
+   - Note: GitHub accepts HTTP. If your org enforces HTTPS, front port 8080 with a reverse proxy (e.g., Caddy/NGINX) that terminates TLS and proxies to `127.0.0.1:8080`.
+
+   Option B — Tunnel (ngrok or cloudflared)
+
+   ```bash
+   # Terminal A (server): forward the service locally
    oc -n openshift-pipelines port-forward svc/el-bitiq-listener 8080:8080
 
-   # Terminal B (server):
+   # Terminal B (server): run the tunnel and copy the HTTPS URL
    ngrok http 8080
    ```
 
-   Copy the HTTPS URL into your GitHub webhook (content type JSON, secret = `$GITHUB_WEBHOOK_SECRET`).
+   - Payload URL in your GitHub webhook: the ngrok/cloudflared HTTPS URL
+   - Content type: `application/json`
+   - Secret: `$GITHUB_WEBHOOK_SECRET`
 
 3. To tail pipeline runs remotely:
 
@@ -226,6 +250,8 @@ make validate
 - **`oc login` certificate warnings**: CRC uses self-signed certs; use `--insecure-skip-tls-verify` or trust the CA.
 - **Pipeline image push forbidden**: rerun `make tekton-setup`; verify the `pipeline` service account has `system:image-pusher` in `bitiq-ci`.
 - **Image Updater skips tags**: confirm the platform filter matches your architecture (override via `PLATFORMS_OVERRIDE`).
-- **Git webhook timeouts**: confirm the ngrok tunnel is running and your server allows outbound HTTPS.
+- **Git webhook timeouts**:
+  - Dynamic DNS path: ensure the port-forward is listening on `0.0.0.0:8080` and the host firewall/security group allows inbound `8080/tcp`.
+  - Tunnel path: confirm the tunnel is running and the copied URL matches your webhook.
 
 Refer back to `README.md`, `docs/LOCAL-CI-CD.md`, and `docs/LOCAL-SETUP.md` for deeper troubleshooting and background.

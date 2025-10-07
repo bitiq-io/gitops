@@ -4,7 +4,7 @@ Purpose: Enable a full ENV=local end‑to‑end workflow (Argo CD + Tekton + Ima
 
 ## Current State (repo readiness)
 - ENV=local is designed for OpenShift Local (CRC). Defaults (Routes, domains, namespaces) are wired and bootstrap works via `scripts/bootstrap.sh`.
-- Inbound GitHub webhooks for CRC are documented via port‑forward + ngrok/cloudflared (docs/LOCAL-CI-CD.md), which fits a remote server scenario.
+- Inbound GitHub webhooks for CRC are documented via port‑forward + dynamic DNS (preferred on remote servers) or ngrok/cloudflared as an alternative (docs/LOCAL-CI-CD.md).
 - Image Updater platform filter is passed from the ApplicationSet to the umbrella chart. Today `local.platforms` defaults to `linux/arm64` (charts/argocd-apps/values.yaml:18), which mismatches typical Ubuntu servers (`linux/amd64`).
 - Mac‑focused setup docs exist; a Linux/Ubuntu path is not consolidated. Bootstrap doesn’t expose a simple knob to override the local platform.
 
@@ -26,7 +26,7 @@ Conclusion: The stack largely works, but running ENV=local on a remote Ubuntu se
   - `make template` and `make validate` pass.
 
 2) Add Ubuntu runbook for CRC + remote e2e
-- Change: New Linux‑specific runbook with copy/paste steps to install CRC, `oc`, `helm`, `argocd` CLIs on Ubuntu; enable KVM/libvirt; bootstrap ENV=local; set up webhook port‑forward + ngrok on the server; basic smoke checks. Include SSH tunnel tips (optional) and notes on apps‑crc.testing being internal to CRC.
+- Change: New Linux‑specific runbook with copy/paste steps to install CRC, `oc`, `helm`, `argocd` CLIs on Ubuntu; enable KVM/libvirt; bootstrap ENV=local; set up webhook exposure via dynamic DNS (port‑forward with `--address 0.0.0.0`) or ngrok on the server; basic smoke checks. Include SSH tunnel tips (optional) and notes on apps‑crc.testing being internal to CRC.
 - Files: docs/LOCAL-RUNBOOK-UBUNTU.md
 - Commit: docs(local): add Ubuntu (CRC) runbook for ENV=local
 - Acceptance:
@@ -46,7 +46,7 @@ Conclusion: The stack largely works, but running ENV=local on a remote Ubuntu se
 
 4) Update local CI/CD doc with remote usage callouts
 - Change: Add a short “Remote server” section to docs/LOCAL-CI-CD.md with:
-  - How to run `oc port-forward` + `ngrok` on the server, and validate GitHub webhook deliveries.
+- How to run `oc port-forward --address 0.0.0.0` on the server with dynamic DNS (or use `ngrok`), and validate GitHub webhook deliveries.
   - Reminder that `apps-crc.testing` is only reachable from the CRC host (use curl on the server or SSH tunnel to test Routes).
 - Files: docs/LOCAL-CI-CD.md
 - Commit: docs(local): add remote server webhook and access notes
@@ -68,7 +68,7 @@ Conclusion: The stack largely works, but running ENV=local on a remote Ubuntu se
 - On Ubuntu 22.04/24.04 with virtualization enabled, a user can:
   - Install CRC + CLIs per docs/LOCAL-RUNBOOK-UBUNTU.md.
   - Run `ENV=local ./scripts/bootstrap.sh` and see `bitiq-umbrella-local` Healthy/Synced in Argo CD.
-  - Configure repo creds and Image Updater token; push a commit and trigger a Tekton PipelineRun via port‑forward + ngrok.
+  - Configure repo creds and Image Updater token; push a commit and trigger a Tekton PipelineRun via dynamic DNS + port‑forward (or ngrok).
   - Image Updater detects new tags and writes back to `charts/bitiq-sample-app/values-local.yaml`.
   - Routes function from the server (curl to `svc-api.apps-crc.testing/healthz`).
 
@@ -77,4 +77,3 @@ Conclusion: The stack largely works, but running ENV=local on a remote Ubuntu se
 - Keep secrets out of Git; use the existing `make image-updater-secret`, `make tekton-setup` flows.
 - Validate charts locally (`make validate`) and keep CI green.
 - Prefer small PRs with clear scopes per the plan above.
-

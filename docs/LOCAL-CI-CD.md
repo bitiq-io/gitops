@@ -2,7 +2,7 @@
 
 This guide captures the exact steps that work for running the full CI→CD flow on OpenShift Local (CRC): Tekton builds and pushes an image, Argo CD Image Updater writes the new tag back to Helm values, and Argo deploys the sample app.
 
-Short on time? Run `make local-e2e` for an interactive helper that walks through the automation-friendly portions (bootstrap, RBAC, secrets) and leaves you only the external bits (webhook tunnel, git push).
+Short on time? Run `make local-e2e` for an interactive helper that walks through the automation-friendly portions (bootstrap, RBAC, secrets) and leaves you only the external bits (webhook exposure, git push).
 
 When it prompts for the Git repo, it defaults to this GitOps repository URL (from `git remote get-url origin`). Only change it if Argo CD should track a fork or alternate remote.
 
@@ -17,7 +17,8 @@ Prereqs
   ```
 
 - This repo cloned and your shell in the repo root
-- `argocd`, `helm`, and `ngrok` (or `cloudflared`) available locally
+- `argocd` and `helm` available locally
+- Webhook exposure: either a dynamic DNS hostname pointing to your server with port `8080/tcp` open, or a tunneling tool (ngrok/cloudflared)
 
 Defaults worth knowing
 
@@ -27,8 +28,8 @@ Defaults worth knowing
 Remote server notes
 
 - CRC Routes resolve only on the host; to test them from elsewhere use SSH port forwarding (e.g., `ssh -L 8443:svc-api.apps-crc.testing:443`).
-- Run port-forward + tunnel commands (ngrok/cloudflared) directly on the server so GitHub can reach the Tekton EventListener.
-- The Ubuntu-specific runbook (`docs/LOCAL-RUNBOOK-UBUNTU.md`) covers headless setup, CLI installs, and remote webhook tips in more detail.
+- Run the port-forward directly on the server so GitHub can reach the Tekton EventListener. With dynamic DNS, bind to `0.0.0.0` and open port `8080/tcp`; otherwise use a tunnel (ngrok/cloudflared).
+- The Ubuntu-specific runbook (`docs/LOCAL-RUNBOOK-UBUNTU.md`) covers CLI installs and remote webhook tips in more detail.
 
 1) Bootstrap apps and operators
 
@@ -96,7 +97,25 @@ oc -n openshift-pipelines get eventlistener bitiq-listener
 
 6) Expose the EventListener to GitHub (CRC)
 
-GitHub cannot reach CRC directly. Use a tunnel and port‑forward:
+GitHub cannot reach CRC Routes directly. Choose one option to expose the EventListener:
+
+Option A — Dynamic DNS (no tunnel)
+
+```bash
+# Bind the port-forward to all interfaces (run on the server)
+oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080
+
+# Get the webhook secret value
+oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.secretToken}' | base64 -d; echo
+```
+
+GitHub repo → Settings → Webhooks → Add webhook
+- Payload URL: http://<your-ddns-hostname>:8080
+- Content type: application/json
+- Secret: the secret printed above
+- Events: “Just the push event” (PRs are also supported)
+
+Option B — Tunnel (ngrok or cloudflared)
 
 ```bash
 # Terminal A: forward the EL service locally
@@ -110,7 +129,7 @@ oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.s
 ```
 
 GitHub repo → Settings → Webhooks → Add webhook
-- Payload URL: the ngrok HTTPS URL
+- Payload URL: the tunnel HTTPS URL
 - Content type: application/json
 - Secret: the secret printed above
 - Events: “Just the push event” (PRs are also supported)

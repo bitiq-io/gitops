@@ -20,7 +20,7 @@ It uses:
 - [Architecture Decision Records](docs/adr/)
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local (macOS)
 - [LOCAL-RUNBOOK-UBUNTU](docs/LOCAL-RUNBOOK-UBUNTU.md) — Remote Ubuntu/CRC runbook for ENV=local
-- [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook + ngrok)
+- [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook via dynamic DNS or tunnel)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
 - [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with ESO + Vault
