@@ -18,6 +18,7 @@ spec:
             baseDomain: {{ default $e.baseDomain $.Values.baseDomainOverride | quote }}
             appNamespace: {{ $e.appNamespace | quote }}
             platforms: {{ $e.platforms | quote }}
+            tektonFsGroup: {{ $e.tektonFsGroup | quote }}
 {{- end }}
 {{- end }}
   template:
