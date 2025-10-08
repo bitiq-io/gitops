@@ -179,6 +179,10 @@ Troubleshooting
   - Ensure Argo synced the latest chart revision; the Tekton manifests commit the pod security context via `taskRunTemplate.podTemplate.securityContext`.
   - The `pipeline` service account must be bound to the `pipelines-scc` SCC so Tekton’s affinity assistant can start.
   - Match `pipeline.fsGroup` in `charts/ci-pipelines/values.yaml` to the namespace `supplemental-groups` range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`).
+- git-clone fails with "/workspace/.../.git: Permission denied":
+  - Cause: Tekton Task pods run as a random UID under the OpenShift restricted SCC. If the workspace PVC isn’t group‑writable, the `git-clone` Task can’t create `.git`.
+  - Fix: `scripts/bootstrap.sh` now auto‑detects an allowed fsGroup for the `openshift-pipelines` namespace and passes it to the pipelines chart. If needed, override explicitly: `TEKTON_FSGROUP=<gid> ./scripts/bootstrap.sh`.
+  - Manual check: `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'` and use the first number of the `<start>/<size>` or `<start>-<end>` range.
 - CRC/HostPath PVCs balloon to ~cluster disk size (e.g., 499Gi):
   - On OpenShift Local (CRC), the `crc-csi-hostpath-provisioner` may provision PVs with a very large capacity. You might see the Tekton Results Postgres PVC and even ephemeral PipelineRun PVCs show ~the entire CRC disk size.
   - These PVs are typically thin‑provisioned. However, they consume the quota visually and are inconvenient for local runs.

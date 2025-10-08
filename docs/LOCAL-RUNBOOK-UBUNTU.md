@@ -263,6 +263,10 @@ make validate
 - **`oc login` certificate warnings**: CRC uses self-signed certs; use `--insecure-skip-tls-verify` or trust the CA.
 - **Pipeline image push forbidden**: rerun `make tekton-setup`; verify the `pipeline` service account has `system:image-pusher` in `bitiq-ci`.
 - **Image Updater skips tags**: confirm the platform filter matches your architecture (override via `PLATFORMS_OVERRIDE`).
+- **Tekton git-clone fails with `/workspace/output/.git: Permission denied`**:
+  - Cause: the Task pod runs with a random UID under OpenShift’s restricted SCC. The workspace PVC needs a writable fsGroup.
+  - Fix: `./scripts/bootstrap.sh` auto‑detects a valid fsGroup for the `openshift-pipelines` namespace and applies it to the pipelines chart. Re‑run bootstrap after installing operators.
+  - Override (if needed): `TEKTON_FSGROUP=<gid> ./scripts/bootstrap.sh`. To find a valid value, run `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'` and use the first number of the printed range.
 - **Git webhook timeouts**:
   - Dynamic DNS path: ensure the port-forward is listening on `0.0.0.0:8080` and the host firewall/security group allows inbound `8080/tcp`.
   - Tunnel path: confirm the tunnel is running and the copied URL matches your webhook.
