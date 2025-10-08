@@ -133,6 +133,9 @@ export ENV=local
 
 - Defaults now set Image Updater’s platform filter to `linux/amd64`, which matches Ubuntu hosts.
 - If you ever need to target `linux/arm64`, set `PLATFORMS_OVERRIDE=linux/arm64` when running the script.
+- Tekton Results is disabled by default on ENV=local (via `TektonConfig.spec.result.disabled=true`) to avoid CRC’s HostPath PVs allocating ~all disk for the Results Postgres PVC. If you need Results locally, opt in:
+  - Keep Results: `TEKTON_RESULTS=true ./scripts/bootstrap.sh`
+  - Optionally shrink storage (if supported by your operator): `TEKTON_RESULTS=true TEKTON_RESULTS_STORAGE=5Gi ./scripts/bootstrap.sh`
 
 ## 5) Configure repo credentials and Image Updater token
 

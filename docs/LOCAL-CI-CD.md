@@ -179,6 +179,35 @@ Troubleshooting
   - Ensure Argo synced the latest chart revision; the Tekton manifests commit the pod security context via `taskRunTemplate.podTemplate.securityContext`.
   - The `pipeline` service account must be bound to the `pipelines-scc` SCC so Tekton’s affinity assistant can start.
   - Match `pipeline.fsGroup` in `charts/ci-pipelines/values.yaml` to the namespace `supplemental-groups` range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`).
+- CRC/HostPath PVCs balloon to ~cluster disk size (e.g., 499Gi):
+  - On OpenShift Local (CRC), the `crc-csi-hostpath-provisioner` may provision PVs with a very large capacity. You might see the Tekton Results Postgres PVC and even ephemeral PipelineRun PVCs show ~the entire CRC disk size.
+  - These PVs are typically thin‑provisioned. However, they consume the quota visually and are inconvenient for local runs.
+  - If you don’t need Tekton Results locally, disable it and delete its DB PVC:
+    1) Find the `TektonConfig` (namespace may vary):
+       ```bash
+       oc get tektonconfigs.operator.tekton.dev -A
+       ```
+    2) Disable Results (OpenShift Pipelines 1.20+):
+       ```bash
+       # Many clusters use a cluster-scoped TektonConfig named 'config'
+       oc patch tektonconfig config --type merge -p '{"spec":{"result":{"disabled":true}}}'
+       # If your TektonConfig is namespaced, add -n <ns>
+       ```
+    3) Remove the Results DB StatefulSet and PVCs (recreated only if Results is re‑enabled):
+       ```bash
+       oc -n openshift-pipelines delete statefulset -l app.kubernetes.io/name=tekton-results-postgres || true
+       oc -n openshift-pipelines delete pvc -l app.kubernetes.io/name=tekton-results-postgres || true
+       ```
+  - If you do want Results, reduce its storage before installation or after by editing the corresponding CR (fields vary by operator). Some operators accept storage via `addon.params` on the TektonConfig; set it small (e.g., 1–5Gi), then delete/recreate the StatefulSet to pick up the new size:
+    ```bash
+    oc patch tektonconfig config --type merge -p '{"spec":{"addon":{"params":[{"name":"tekton-results-postgres-storage","value":"5Gi"}]}}}' || true
+    oc -n openshift-pipelines delete statefulset -l app.kubernetes.io/name=tekton-results-postgres
+    ```
+  - Some clusters use a separate `TektonResult` CR named `result`. Deleting that CR disables Results until re-enabled by the operator:
+    ```bash
+    oc delete tektonresults.operator.tekton.dev result || oc delete tektonresults result
+    ```
+  - For PipelineRun workspace PVCs created via this repo’s chart, the request is already small (2Gi). If a bound PV shows ~499Gi on CRC, it is a quirk of the HostPath provisioner and not the request from the PipelineRun. You can safely delete leftover `pvc-<random>` claims once the run completes.
 - Image Updater CrashLoopBackOff with flag errors (`--log-level`, `--applications-namespace`, `--argocd-server`):
   - Ensure the deployment args include the `run` subcommand and only supported flags (`args: ["run", "--loglevel=…", "--argocd-server-addr=…"]`). The chart now uses the current flag names; resync the app if your pod still restarts.
 - Image Updater forbidden on Applications:

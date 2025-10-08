@@ -75,6 +75,75 @@ helm upgrade --install bootstrap-operators charts/bootstrap-operators \
   --namespace openshift-operators --create-namespace \
   --wait --timeout 10m
 
+# Optionally tune Tekton Results for local envs before creating any PipelineRuns
+configure_tekton_results() {
+  local want_results=${TEKTON_RESULTS:-}
+  if [[ "$ENV" != "local" ]]; then
+    return 0
+  fi
+  if [[ "$want_results" == "true" ]]; then
+    log "ENV=local but TEKTON_RESULTS=true; leaving Tekton Results enabled"
+    if [[ -n "${TEKTON_RESULTS_STORAGE:-}" ]]; then
+      log "Attempting to set Tekton Results storage to ${TEKTON_RESULTS_STORAGE} (if supported)"
+    fi
+  else
+    log "ENV=local: disabling Tekton Results addon by default (set TEKTON_RESULTS=true to keep it)"
+  fi
+
+  # Wait for TektonConfig CRD to exist (operator install may lag)
+  for i in {1..60}; do
+    if oc get crd tektonconfigs.operator.tekton.dev >/dev/null 2>&1; then
+      break
+    fi
+    sleep 5
+  done
+  if ! oc get crd tektonconfigs.operator.tekton.dev >/dev/null 2>&1; then
+    log "TektonConfig CRD not found; skipping Tekton Results configuration"
+    return 0
+  fi
+
+  # Detect scope and location of the TektonConfig named 'config'
+  local name="config"
+  local ns=""
+  if oc get tektonconfig "$name" >/dev/null 2>&1; then
+    ns=""  # cluster-scoped
+  else
+    ns=$(oc get tektonconfigs.operator.tekton.dev -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' | awk '$2=="config" {print $1; exit}')
+  fi
+
+  local patch_scope=(tektonconfig "$name")
+  if [[ -n "$ns" ]]; then
+    patch_scope=(-n "$ns" tektonconfig "$name")
+  fi
+
+  # Apply desired settings
+  if [[ "$want_results" == "true" ]]; then
+    # Ensure Results is enabled at the TektonConfig layer for clusters that gate it there
+    oc "${patch_scope[@]}" patch --type merge -p '{"spec":{"result":{"disabled":false}}}' >/dev/null 2>&1 || true
+    # Optional: attempt storage tuning via TektonConfig params if supported
+    if [[ -n "${TEKTON_RESULTS_STORAGE:-}" ]]; then
+      oc "${patch_scope[@]}" patch --type merge -p '{"spec":{"addon":{"params":[{"name":"tekton-results-postgres-storage","value":"'"${TEKTON_RESULTS_STORAGE}"'"}]}}}' >/dev/null 2>&1 || true
+    fi
+  else
+    # Primary: disable via TektonConfig.spec.result.disabled when available (OCP Pipelines 1.20+)
+    oc "${patch_scope[@]}" patch --type merge -p '{"spec":{"result":{"disabled":true}}}' >/dev/null 2>&1 || true
+    # Fallbacks for older operators (ignore errors if unsupported)
+    oc "${patch_scope[@]}" patch --type merge -p '{"spec":{"addon":{"params":[{"name":"enable-tekton-results","value":"false"}]}}}' >/dev/null 2>&1 || true
+    oc "${patch_scope[@]}" patch --type merge -p '{"spec":{"addon":{"enableResults":false}}}' >/dev/null 2>&1 || true
+    # Best-effort cleanup to reclaim space on CRC
+    oc -n openshift-pipelines delete statefulset -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
+    oc -n openshift-pipelines delete pvc -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
+    # Also stop API/watch deployments if present
+    oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-api --replicas=0 >/dev/null 2>&1 || true
+    oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-watcher --replicas=0 >/dev/null 2>&1 || true
+    # And remove the TektonResult CR if created by the operator
+    oc delete tektonresults.operator.tekton.dev result >/dev/null 2>&1 || true
+    oc delete tektonresults result >/dev/null 2>&1 || true
+  fi
+}
+
+configure_tekton_results
+
 # 2) Wait for ArgoCD default instance route to be ready (if operator creates one)
 log "Waiting for Argo CD server route in 'openshift-gitops'…"
 if ! oc get ns openshift-gitops >/dev/null 2>&1; then

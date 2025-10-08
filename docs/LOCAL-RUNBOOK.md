@@ -27,6 +27,13 @@ export ENV=local BASE_DOMAIN=apps-crc.testing
 
 This installs GitOps + Pipelines operators (OLM) and an ApplicationSet that generates one umbrella Application for `local`.
 
+Notes for local storage usage (CRC):
+- The bootstrap now disables Tekton Results by default on ENV=local using `TektonConfig.spec.result.disabled=true` to prevent the Results Postgres PVC from consuming ~all CRC disk. Override with `TEKTON_RESULTS=true` if you need Results locally.
+  - Examples:
+    - Keep Results: `TEKTON_RESULTS=true ./scripts/bootstrap.sh`
+    - Default (Results disabled): `./scripts/bootstrap.sh`
+  - If supported by your operator build, you can also shrink storage via `TEKTON_RESULTS_STORAGE=5Gi`.
+
 ## 2) Limit AppSet to local (already done by bootstrap)
 
 Bootstrap passes `envFilter=local`. If you ever need to reapply the AppSet manually:
