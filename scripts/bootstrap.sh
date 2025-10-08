@@ -224,5 +224,36 @@ fi
 log "Labeling ${app_ns} with argocd.argoproj.io/managed-by=openshift-gitops"
 oc label ns "${app_ns}" argocd.argoproj.io/managed-by=openshift-gitops --overwrite >/dev/null 2>&1 || true
 
+# 4) Wait for umbrella Application to appear and become Healthy/Synced
+umbrella_app="bitiq-umbrella-${ENV}"
+log "Waiting for Application ${umbrella_app} to appear in openshift-gitops…"
+for i in {1..60}; do
+  if oc -n openshift-gitops get application "${umbrella_app}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
+
+if ! oc -n openshift-gitops get application "${umbrella_app}" >/dev/null 2>&1; then
+  log "WARNING: ${umbrella_app} not found yet; controller may still be reconciling."
+else
+  log "Waiting for ${umbrella_app} to reach Synced/Healthy…"
+  timeout=600
+  interval=10
+  elapsed=0
+  while (( elapsed < timeout )); do
+    health=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+    sync=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+    if [[ "$health" == "Healthy" && "$sync" == "Synced" ]]; then
+      log "${umbrella_app}: health=${health} sync=${sync}"
+      break
+    fi
+    sleep ${interval}; elapsed=$((elapsed+interval))
+  done
+  if (( elapsed >= timeout )); then
+    log "WARNING: ${umbrella_app} did not become Healthy/Synced within $timeout seconds (health=${health} sync=${sync})."
+  fi
+fi
+
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
