@@ -176,6 +176,18 @@ Troubleshooting
   - If you explicitly set an SA (e.g., `pipeline`), you must grant it Triggers permissions; otherwise the EventListener will receive webhooks but fail to create PipelineRuns. Example one-liner:
     `oc -n openshift-pipelines create rolebinding el-bitiq-listener-pipeline --clusterrole=tekton-triggers-eventlistener-clusterrole --serviceaccount=openshift-pipelines:pipeline || true`
   - After changing RBAC or the SA, restart the EventListener: `oc -n openshift-pipelines rollout restart deploy/el-bitiq-listener`.
+  
+- Webhook received but no PipelineRun created (Trigger started/done logged):
+  - Symptom: You see events like `dev.tekton.event.triggers.started/done` on the EventListener, and GitHub shows the webhook as delivered, but no `PipelineRun` appears.
+  - Likely cause: The `TriggerBinding` for the target pipeline is missing. The EventListener references `<pipeline.name>-binding`; without it, params won’t pass into the `TriggerTemplate`.
+  - Verify:
+    - `oc -n openshift-pipelines get triggerbinding`
+    - Ensure both `bitiq-build-and-push-binding` and `bitiq-web-build-and-push-binding` exist (or bindings for any new pipelines you add).
+    - `oc -n openshift-pipelines get eventlistener bitiq-listener -o yaml | rg -n 'bindings:|ref: .*binding'`
+  - Fix:
+    - The chart now renders a `TriggerBinding` per pipeline from `charts/ci-pipelines/templates/trigger-bindings.yaml`.
+    - If you added a new pipeline, ensure it’s listed under `.Values.pipelines` with a unique `name`. The binding `<name>-binding` will be generated automatically.
+    - Resync `ci-pipelines-${ENV}` and retry the push.
 - Buildah permission errors:
   - The chart binds the `pipeline` service account to the `privileged` SCC for local CRC builds. If you see `privileged: Invalid value: true`, ensure Argo synced the latest manifests or run `oc -n openshift-pipelines get rolebinding pipeline-privileged-scc`.
 - Internal registry tag listing (Image Updater):
