@@ -218,6 +218,19 @@ Troubleshooting
   - The chart now binds the service account with a ClusterRole so it can list `applications.argoproj.io` cluster-wide; resync `image-updater` if you see `applications.argoproj.io is forbidden` after upgrades.
 - Image Updater "Invalid Semantic Version" errors:
   - Tags from the pipeline are commit SHAs, so the Application annotations pin the update strategy to `newest-build`. If a future release requires explicit tag filters, add `app.allow-tags` back with the appropriate regex.
+
+FsGroup verification for git-clone
+
+- After re‑running `./scripts/bootstrap.sh`, confirm fsGroup propagates end‑to‑end:
+  - ApplicationSet generator includes `tektonFsGroup`:
+    `oc -n openshift-gitops get applicationset bitiq-umbrella-by-env -o yaml | rg -n 'tektonFsGroup'`
+  - `ci-pipelines-<env>` Application Helm values include `ciPipelines.fsGroup`:
+    `oc -n openshift-gitops get app ci-pipelines-local -o yaml | rg -n 'ciPipelines.fsGroup'`
+  - TriggerTemplate sets `taskRunTemplate.podTemplate.securityContext.fsGroup`:
+    `oc -n openshift-pipelines get triggertemplate bitiq-web-build-and-push-template -o yaml | rg -n 'taskRunTemplate|podTemplate|fsGroup'`
+
+- Workaround (if you cannot re‑bootstrap yet):
+  `oc -n openshift-pipelines patch triggertemplate bitiq-web-build-and-push-template --type='json' -p='[{"op":"add","path":"/spec/resourcetemplates/0/spec/taskRunTemplate/podTemplate/securityContext","value":{"fsGroup":1000660000}}]'`
 - Image Updater skips tags due to platform mismatch:
   - The umbrella chart now exposes `imageUpdater.platforms` (default `linux/amd64`). If you build on Apple Silicon and push arm64-only tags, either:
     - Publish multi-arch images: use `scripts/buildx-multiarch.sh` to push `linux/amd64,linux/arm64`, or

@@ -272,3 +272,18 @@ make validate
   - Tunnel path: confirm the tunnel is running and the copied URL matches your webhook.
 
 Refer back to `README.md`, `docs/LOCAL-CI-CD.md`, and `docs/LOCAL-SETUP.md` for deeper troubleshooting and background.
+
+### Tekton git-clone fsGroup — Verification & Workaround
+
+- End‑to‑end verification (after re‑running `./scripts/bootstrap.sh`):
+  - ApplicationSet has the generator field:
+    `oc -n openshift-gitops get applicationset bitiq-umbrella-by-env -o yaml | rg -n 'tektonFsGroup'`
+  - Umbrella → ci-pipelines Application includes the Helm value:
+    `oc -n openshift-gitops get app ci-pipelines-local -o yaml | rg -n 'ciPipelines.fsGroup'`
+  - TriggerTemplate injects `fsGroup` into TaskRun pods:
+    `oc -n openshift-pipelines get triggertemplate bitiq-web-build-and-push-template -o yaml | rg -n 'taskRunTemplate|podTemplate|fsGroup'`
+
+- Immediate workaround (if you cannot re‑bootstrap yet):
+  `oc -n openshift-pipelines patch triggertemplate bitiq-web-build-and-push-template --type='json' -p='[{"op":"add","path":"/spec/resourcetemplates/0/spec/taskRunTemplate/podTemplate/securityContext","value":{"fsGroup":1000660000}}]'`
+
+- Note: Older repo revisions missed wiring `tektonFsGroup` in the ApplicationSet generator, which prevented `fsGroup` from reaching Tekton. Pull latest, rerun `./scripts/bootstrap.sh`, and re‑trigger your PipelineRun.
