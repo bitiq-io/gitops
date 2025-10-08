@@ -3,6 +3,9 @@ kind: ApplicationSet
 metadata:
   name: bitiq-umbrella-by-env
   namespace: {{ .Values.argocdNamespace }}
+  labels:
+    # Ensure the ApplicationSet controller for this Argo CD instance reconciles this resource
+    argocd.argoproj.io/instance: {{ .Values.argocdInstanceName | quote }}
 spec:
   goTemplate: true
   generators:
