@@ -171,6 +171,11 @@ Troubleshooting
   - Fixed by cluster-scope RBAC included in the chart (`pipeline` SA can list `clusterinterceptors.triggers.tekton.dev`).
 - Pipeline “custom task ref must specify apiVersion”:
   - Fixed by switching to Tekton Hub resolver tasks (no ClusterTasks needed).
+- EventListener ServiceAccount & RBAC:
+  - Default behavior: the chart now lets Tekton Triggers auto-manage the EventListener ServiceAccount and bind the required RBAC. Do not set `triggers.serviceAccountName` unless you know you need a specific SA.
+  - If you explicitly set an SA (e.g., `pipeline`), you must grant it Triggers permissions; otherwise the EventListener will receive webhooks but fail to create PipelineRuns. Example one-liner:
+    `oc -n openshift-pipelines create rolebinding el-bitiq-listener-pipeline --clusterrole=tekton-triggers-eventlistener-clusterrole --serviceaccount=openshift-pipelines:pipeline || true`
+  - After changing RBAC or the SA, restart the EventListener: `oc -n openshift-pipelines rollout restart deploy/el-bitiq-listener`.
 - Buildah permission errors:
   - The chart binds the `pipeline` service account to the `privileged` SCC for local CRC builds. If you see `privileged: Invalid value: true`, ensure Argo synced the latest manifests or run `oc -n openshift-pipelines get rolebinding pipeline-privileged-scc`.
 - Internal registry tag listing (Image Updater):

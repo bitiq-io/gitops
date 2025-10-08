@@ -181,6 +181,13 @@ export ENV=local
      --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
    ```
 
+   EventListener ServiceAccount note:
+
+   - By default, the chart lets Tekton Triggers auto-manage the EventListener ServiceAccount and bind the required RBAC. This is recommended for local runs.
+   - If you explicitly set `triggers.serviceAccountName` (e.g., to `pipeline`), grant it Triggers permissions or the EventListener will receive webhooks but not create PipelineRuns:
+     `oc -n openshift-pipelines create rolebinding el-bitiq-listener-pipeline --clusterrole=tekton-triggers-eventlistener-clusterrole --serviceaccount=openshift-pipelines:pipeline || true`
+   - After changing RBAC/SA, restart the EventListener: `oc -n openshift-pipelines rollout restart deploy/el-bitiq-listener`.
+
 2. Expose the EventListener from the remote host (choose one):
 
    Option A — Dynamic DNS (no tunnel; recommended on a remote server)
