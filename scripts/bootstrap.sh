@@ -212,7 +212,8 @@ if [[ -n "$TEKTON_FS_GROUP" ]]; then
 fi
 helm_args+=(--wait --timeout 5m)
 
-helm upgrade --install argocd-apps charts/argocd-apps "${helm_args[@]}"
+helm upgrade --install argocd-apps charts/argocd-apps \
+  --reset-values -f charts/argocd-apps/values.yaml "${helm_args[@]}"
 
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
