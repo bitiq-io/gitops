@@ -215,5 +215,14 @@ helm_args+=(--wait --timeout 5m)
 helm upgrade --install argocd-apps charts/argocd-apps \
   --reset-values -f charts/argocd-apps/values.yaml "${helm_args[@]}"
 
+# Ensure destination namespace exists and is managed by this Argo CD instance
+app_ns="bitiq-${ENV}"
+if ! oc get ns "${app_ns}" >/dev/null 2>&1; then
+  log "Creating destination namespace ${app_ns}"
+  oc create ns "${app_ns}"
+fi
+log "Labeling ${app_ns} with argocd.argoproj.io/managed-by=openshift-gitops"
+oc label ns "${app_ns}" argocd.argoproj.io/managed-by=openshift-gitops --overwrite >/dev/null 2>&1 || true
+
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
