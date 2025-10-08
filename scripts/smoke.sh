@@ -43,6 +43,18 @@ done
 log "Checking Argo CD namespace"
 oc -n openshift-gitops get pods || true
 
+# Ensure destination namespace exists and is labeled for OpenShift GitOps RBAC
+ns="bitiq-${ENVIRONMENT}"
+if ! oc get ns "${ns}" >/dev/null 2>&1; then
+  log "Creating destination namespace ${ns}"
+  oc create ns "${ns}" >/dev/null 2>&1 || true
+fi
+managed_label=$(oc get ns "${ns}" -o jsonpath='{.metadata.labels.argocd\.argoproj\.io/managed-by}' 2>/dev/null || echo "")
+if [[ "${managed_label}" != "openshift-gitops" ]]; then
+  log "Labeling ${ns} with argocd.argoproj.io/managed-by=openshift-gitops"
+  oc label ns "${ns}" argocd.argoproj.io/managed-by=openshift-gitops --overwrite >/dev/null 2>&1 || true
+fi
+
 app_name="bitiq-umbrella-${ENVIRONMENT}"
 log "Waiting for Application ${app_name} to appear"
 elapsed=0
@@ -71,4 +83,3 @@ else
 fi
 
 log "Smoke test completed."
-
