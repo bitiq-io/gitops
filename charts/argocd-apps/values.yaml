@@ -21,7 +21,7 @@ envs:
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
     # Leave empty to use cluster defaults/SCC.
-    tektonFsGroup: ""
+    tektonFsGroup: "1000660000"
   - name: sno
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno

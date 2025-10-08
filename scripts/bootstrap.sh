@@ -92,13 +92,6 @@ detect_fsgroup() {
   echo ""
 }
 
-TEKTON_FS_GROUP="$(detect_fsgroup)"
-if [[ -n "$TEKTON_FS_GROUP" ]]; then
-  log "Detected Tekton fsGroup for openshift-pipelines: ${TEKTON_FS_GROUP}"
-else
-  log "Tekton fsGroup not detected; proceeding with cluster defaults"
-fi
-
 # Sanity checks: cluster login
 oc whoami >/dev/null || { log "FATAL: oc not logged in"; exit 1; }
 oc api-resources >/dev/null || { log "FATAL: cannot reach cluster"; exit 1; }
@@ -108,6 +101,22 @@ log "Installing/ensuring OpenShift GitOps & Pipelines operators via OLM Subscrip
 helm upgrade --install bootstrap-operators charts/bootstrap-operators \
   --namespace openshift-operators --create-namespace \
   --wait --timeout 10m
+
+# Wait for the openshift-pipelines namespace to exist (created by the operator)
+for i in {1..60}; do
+  if oc get ns openshift-pipelines >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
+
+# Detect fsGroup only after Tekton namespace exists so initial bootstrap works
+TEKTON_FS_GROUP="$(detect_fsgroup)"
+if [[ -n "$TEKTON_FS_GROUP" ]]; then
+  log "Detected Tekton fsGroup for openshift-pipelines: ${TEKTON_FS_GROUP}"
+else
+  log "Tekton fsGroup not detected; proceeding with cluster defaults"
+fi
 
 # Optionally tune Tekton Results for local envs before creating any PipelineRuns
 configure_tekton_results() {
