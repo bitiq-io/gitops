@@ -15,9 +15,11 @@ stringData:
 {{ end }}
 
 {{ range $idx, $pipeline := .Values.pipelines }}
+{{ if $idx }}
+---
+{{ end }}
 {{- $pipelineSA := $pipeline.serviceAccountName | default $defaultSA -}}
 {{- $pipelineFsGroup := coalesce $pipeline.fsGroup $root.Values.fsGroup -}}
----
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
