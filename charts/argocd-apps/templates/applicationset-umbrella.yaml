@@ -46,6 +46,8 @@ spec:
               value: '{{ "{{ .platforms }}" }}'
             - name: imageUpdater.enableFrontend
               value: '{{ "{{ .enableFrontendImageUpdate | default true }}" }}'
+            - name: ciPipelines.fsGroup
+              value: '{{ "{{ .tektonFsGroup }}" }}'
       destination:
         server: '{{ "{{ .cluster }}" }}'
         namespace: '{{ "{{ .appNamespace }}" }}'

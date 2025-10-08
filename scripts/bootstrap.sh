@@ -17,6 +17,7 @@ Environment variables:
   GIT_REPO_URL       : this repo URL (default: autodetect via 'git remote get-url origin', else prompts)
   TARGET_REV         : Git revision Argo should track (default: main)
   PLATFORMS_OVERRIDE : optional imageUpdater platform override for the selected ENV (e.g., linux/arm64)
+  TEKTON_FSGROUP     : optional override for Tekton TaskRun fsGroup (auto-detected on OpenShift if unset)
 
 Examples:
   ENV=local ./scripts/bootstrap.sh
@@ -54,15 +55,48 @@ log "ENV=${ENV}  BASE_DOMAIN=${BASE_DOMAIN}  GIT_REPO_URL=${GIT_REPO_URL}  TARGE
 # Optional platforms override (helps when node architecture differs from defaults)
 PLATFORMS_OVERRIDE="${PLATFORMS_OVERRIDE:-}"
 PLATFORM_ARGS=()
+# Determine env index for overrides propagated via ApplicationSet
+case "$ENV" in
+  local) env_index=0 ;;
+  sno)   env_index=1 ;;
+  prod)  env_index=2 ;;
+  *)     env_index=0 ;;
+esac
 if [[ -n "$PLATFORMS_OVERRIDE" ]]; then
-  case "$ENV" in
-    local) env_index=0 ;;
-    sno)   env_index=1 ;;
-    prod)  env_index=2 ;;
-    *)     env_index=0 ;; # guard already ensured valid ENV
-  esac
   log "Overriding envs[${env_index}].platforms to ${PLATFORMS_OVERRIDE}"
   PLATFORM_ARGS=(--set-string "envs[${env_index}].platforms=${PLATFORMS_OVERRIDE}")
+fi
+
+# Optional: auto-detect a suitable fsGroup for Tekton workspaces (PVCs)
+# On OpenShift, pods run with a random UID from a namespace range; ensuring the
+# workspace PVC is group-writable avoids git-clone permission errors.
+detect_fsgroup() {
+  # Allow explicit override
+  if [[ -n "${TEKTON_FSGROUP:-}" ]]; then
+    echo "$TEKTON_FSGROUP"
+    return 0
+  fi
+  # Try OpenShift Project annotation first, then Namespace
+  local ann; ann=$(oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}' 2>/dev/null || true)
+  if [[ -z "$ann" ]]; then
+    ann=$(oc get ns openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}' 2>/dev/null || true)
+  fi
+  if [[ -n "$ann" ]]; then
+    # Supported formats: "<start>/<size>" or "<start>-<end>"
+    if [[ "$ann" =~ ^([0-9]+)[/\-] ]]; then
+      echo "${BASH_REMATCH[1]}"
+      return 0
+    fi
+  fi
+  # Fallback: empty (let SCC/defaults apply)
+  echo ""
+}
+
+TEKTON_FS_GROUP="$(detect_fsgroup)"
+if [[ -n "$TEKTON_FS_GROUP" ]]; then
+  log "Detected Tekton fsGroup for openshift-pipelines: ${TEKTON_FS_GROUP}"
+else
+  log "Tekton fsGroup not detected; proceeding with cluster defaults"
 fi
 
 # Sanity checks: cluster login
@@ -171,6 +205,10 @@ helm_args=(
 )
 if [[ ${#PLATFORM_ARGS[@]} -gt 0 ]]; then
   helm_args+=("${PLATFORM_ARGS[@]}")
+fi
+if [[ -n "$TEKTON_FS_GROUP" ]]; then
+  # Pass through to envs[<idx>].tektonFsGroup; ApplicationSet will map this to umbrella ciPipelines.fsGroup
+  helm_args+=(--set-string "envs[${env_index}].tektonFsGroup=${TEKTON_FS_GROUP}")
 fi
 helm_args+=(--wait --timeout 5m)
 
