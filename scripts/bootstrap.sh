@@ -255,5 +255,33 @@ else
   fi
 fi
 
+# 5) Wait for child Applications to reconcile (best-effort)
+wait_app() {
+  local name=$1; local ns=openshift-gitops; local timeout=${2:-600}; local interval=10; local elapsed=0
+  log "Waiting for Application ${name} to reach Synced/Healthy…"
+  for i in {1..60}; do
+    if oc -n "$ns" get application "$name" >/dev/null 2>&1; then break; fi
+    sleep 5
+  done
+  if ! oc -n "$ns" get application "$name" >/dev/null 2>&1; then
+    log "WARNING: ${name} not found; skipping wait."
+    return 0
+  fi
+  while (( elapsed < timeout )); do
+    local health=$(oc -n "$ns" get application "$name" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+    local sync=$(oc -n "$ns" get application "$name" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+    if [[ "$health" == "Healthy" && "$sync" == "Synced" ]]; then
+      log "${name}: health=${health} sync=${sync}"
+      return 0
+    fi
+    sleep ${interval}; elapsed=$((elapsed+interval))
+  done
+  log "WARNING: ${name} did not become Healthy/Synced within ${timeout}s."
+}
+
+wait_app "image-updater-${ENV}" 300 || true
+wait_app "ci-pipelines-${ENV}" 300 || true
+wait_app "bitiq-sample-app-${ENV}" 600 || true
+
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
