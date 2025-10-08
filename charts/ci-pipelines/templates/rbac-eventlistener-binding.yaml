@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pipeline-triggers-eventlistener
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.triggers.serviceAccountName | default .Values.serviceAccountName | default "pipeline" }}
+    namespace: openshift-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-clusterrole
