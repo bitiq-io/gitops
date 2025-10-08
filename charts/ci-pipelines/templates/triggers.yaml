@@ -1,7 +1,7 @@
 {{- if .Values.triggers.create }}
 {{- $root := . -}}
 {{- $defaultSA := .Values.serviceAccountName | default "pipeline" -}}
-{{- $listenerSA := .Values.triggers.serviceAccountName | default $defaultSA -}}
+{{- $listenerSA := .Values.triggers.serviceAccountName -}}
 {{ if .Values.triggers.createSecret }}
 ---
 apiVersion: v1
@@ -99,16 +99,20 @@ spec:
 {{- $_ := set $triggerAccumulator "items" (append (index $triggerAccumulator "items") $trigger) }}
 {{- end }}
 
-{{- $eventListener := dict
-  "apiVersion" "triggers.tekton.dev/v1beta1"
-  "kind" "EventListener"
-  "metadata" (dict "name" .Values.triggers.eventListenerName "namespace" "openshift-pipelines")
-  "spec" (dict
-    "serviceAccountName" $listenerSA
-    "triggers" (index $triggerAccumulator "items"))
-}}
 ---
-{{ toYaml $eventListener }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ .Values.triggers.eventListenerName }}
+  namespace: openshift-pipelines
+spec:
+{{- if $listenerSA }}
+  # If a serviceAccountName is explicitly provided, use it; otherwise allow
+  # Tekton Triggers to create and bind an EventListener-specific SA with the
+  # required RBAC.
+  serviceAccountName: {{ $listenerSA }}
+{{- end }}
+  triggers: {{ toYaml (index $triggerAccumulator "items") | nindent 4 }}
 
 {{ if .Values.triggers.route }}
 ---
