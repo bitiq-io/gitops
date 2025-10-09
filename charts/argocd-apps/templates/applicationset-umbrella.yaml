@@ -50,6 +50,10 @@ spec:
               value: '{{ "{{ .platforms }}" }}'
             - name: imageUpdater.enableFrontend
               value: '{{ "{{ .enableFrontendImageUpdate | default true }}" }}'
+            - name: imageUpdater.pause.backend
+              value: '{{ "{{ .imageUpdaterPause.backend | default false }}" }}'
+            - name: imageUpdater.pause.frontend
+              value: '{{ "{{ .imageUpdaterPause.frontend | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
       destination:

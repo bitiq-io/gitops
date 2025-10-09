@@ -27,6 +27,7 @@
    description: Extend ROLLBACK.md with multi-service rollback steps and an updater freeze/unfreeze procedure to avoid immediate re-bumps during rollback windows.
    why: Multi-service changes are common; freezing avoids races; ensures composite versions reflect the intended state.
    dependencies: [T1]
+   status: complete (docs updated)
    acceptance_criteria:
      - Docs include rolling back backend + frontend together with one commit and verifying composite appVersion.
      - Defines a reversible freeze (dry-run true or omit image-list) and re-enable steps with commands.
@@ -38,6 +39,7 @@
    description: Add values (imageUpdater.pause.backend/frontend) to conditionally render updater annotations per Application/environment, enabling safe freeze/unfreeze without ad-hoc edits.
    why: Improves operability for rollbacks/hotfixes; safer than manual annotation edits and preserves Git intent.
    dependencies: [T0, T2]
+   status: complete (pause flags implemented; docs updated)
    acceptance_criteria:
      - Umbrella Application templates conditionally render image-list, update-strategy, platforms, and write-back annotations based on pause flags.
      - Defaults false; toggling true prevents write-back changes (verified via Argo UI and Git history).
