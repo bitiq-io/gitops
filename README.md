@@ -116,9 +116,10 @@ Production (ENV=prod) quick path
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
 4. The umbrella app deploys:
 
+<<<<<<< HEAD
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
- * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
- * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
+  * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
+  * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
 
 ### Sample app ownership & placement
 
