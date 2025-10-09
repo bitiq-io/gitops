@@ -117,8 +117,23 @@ Production (ENV=prod) quick path
 4. The umbrella app deploys:
 
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-  * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
-  * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
+ * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
+ * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
+
+### Sample app ownership & placement
+
+Application code for the demo services lives in their own repositories:
+
+- [`PaulCapestany/toy-service`](https://github.com/PaulCapestany/toy-service)
+- [`PaulCapestany/toy-web`](https://github.com/PaulCapestany/toy-web)
+
+Those repos stay free of Kubernetes manifests on purpose. All runtime configuration is rendered from this GitOps repo:
+
+- Helm charts and env overlays: `charts/toy-service/` and `charts/toy-web/`
+- Tekton pipelines and triggers: `charts/ci-pipelines/values*.yaml` (watches the service repos via webhook + CEL repo filters)
+- Argo CD Image Updater write-back: automatically commits image tag bumps to `charts/toy-service/values-<env>.yaml` and `charts/toy-web/values-<env>.yaml`
+
+When a service change requires an updated deployment (e.g., new env var, different resource limits), open a pull request here alongside the code change so reviewers can keep the GitOps manifests in sync. Issues and PRs in the service repos should link back to the relevant chart or values file in this repository to document how the change rolls out.
 
 ### Image updates & Git write-back
 
