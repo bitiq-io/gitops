@@ -29,6 +29,7 @@ It uses:
 
 - OpenShift 4.x cluster (OpenShift Local, SNO, or full) and `oc`, `helm` in PATH
 - Cluster-admin for bootstrap (OLM subscriptions, operators)
+- Operator catalog access to install **OpenShift GitOps 1.18** (`channel: gitops-1.18`) and **OpenShift Pipelines 1.20** (`channel: pipelines-1.20`). Review the compatibility matrices: [GitOps 1.18][gitops-1-18-compat], [Pipelines 1.20][pipelines-1-20-compat].
 - Git repo hosting (HTTPS or SSH) with ArgoCD repo credentials configured
 - For OpenShift Local: the app base domain is `apps-crc.testing`. :contentReference[oaicite:7]{index=7}
 
@@ -60,6 +61,8 @@ export BASE_DOMAIN=apps.sno.example    # e.g., apps.<yourcluster-domain>
 # 4) Bootstrap operators and GitOps apps
 ./scripts/bootstrap.sh
 ```
+
+After bootstrap finishes, run `./scripts/preflight.sh` to confirm the cluster meets the pinned GitOps 1.18 / Pipelines 1.20 baseline before syncing applications.
 
 Local notes (OpenShift Local / CRC)
 
@@ -108,8 +111,7 @@ Production (ENV=prod) quick path
 
 **What happens:**
 
-1. Installs/ensures **OpenShift GitOps** and **OpenShift Pipelines** via OLM Subscriptions.
-   Use channels `latest` or versioned `gitops-<ver>` / `pipelines-<ver>` as needed. ([Red Hat Docs][2])
+1. Installs/ensures **OpenShift GitOps** (channel `gitops-1.18`) and **OpenShift Pipelines** (channel `pipelines-1.20`) via OLM Subscriptions aligned with the official compatibility matrices. ([GitOps 1.18 release notes][gitops-1-18-compat], [Pipelines 1.20 release notes][pipelines-1-20-compat])
 2. Waits for the default **Argo CD** instance in `openshift-gitops` (unless disabled). ([Red Hat Docs][3])
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
 4. The umbrella app deploys:
@@ -305,7 +307,7 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 
 ## Why these choices (evidence-backed)
 
-* **Operator channels**: use `latest` or versioned `gitops-<ver>` / `pipelines-<ver>`. These are the supported patterns in official docs. ([Red Hat Docs][2])
+* **Operator channels**: pin to GitOps `gitops-1.18` and Pipelines `pipelines-1.20` to stay inside supported compatibility ranges. ([GitOps 1.18 release notes][gitops-1-18-compat], [Pipelines 1.20 release notes][pipelines-1-20-compat])
 * **Image Updater** as a workload in Argo’s namespace and configured via an **API token** secret is the recommended “method 1” install. ([Argo CD Image Updater][7])
 * **Helm `ignoreMissingValueFiles`** is supported declaratively by Argo and is ideal for env overlay selection with a single template. ([Argo CD][1])
 * **Buildah task + `pipeline` SA** are installed by OpenShift Pipelines; this Pipeline expects those defaults. ([Red Hat Docs][4])
@@ -325,9 +327,9 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
 TODO: add a second example microservice and wire **App-of-Apps dependencies** (e.g., DB first, then API) using Argo CD sync phases — or convert the image bump from Image Updater to a **Tekton PR** flow that edits the env Helm values directly (both patterns are compatible with this layout)
 
 [1]: https://argo-cd.readthedocs.io/en/latest/user-guide/helm/?utm_source=chatgpt.com "Helm - Argo CD - Declarative GitOps CD for Kubernetes"
-[2]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.13/html/installing_gitops/installing-openshift-gitops?utm_source=chatgpt.com "Chapter 2. Installing Red Hat OpenShift GitOps"
-[3]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.13/html/argo_cd_instance/setting-up-argocd-instance?utm_source=chatgpt.com "Chapter 1. Setting up an Argo CD instance"
-[4]: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.14/html/about_openshift_pipelines/understanding-openshift-pipelines?utm_source=chatgpt.com "Chapter 3. Understanding OpenShift Pipelines"
+[2]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/installing_openshift_gitops/index?utm_source=chatgpt.com "Installing Red Hat OpenShift GitOps 1.18"
+[3]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/argo_cd_instance/setting-up-argocd-instance?utm_source=chatgpt.com "Chapter 1. Setting up an Argo CD instance"
+[4]: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/installing_red_hat_openshift_pipelines/index?utm_source=chatgpt.com "Installing Red Hat OpenShift Pipelines 1.20"
 [5]: https://crc.dev/docs/networking/?utm_source=chatgpt.com "Networking :: CRC Documentation"
 [6]: https://argo-cd.readthedocs.io/en/latest/user-guide/sync-options/?utm_source=chatgpt.com "Sync Options - Argo CD - Declarative GitOps CD for Kubernetes"
 [7]: https://argocd-image-updater.readthedocs.io/en/stable/install/installation/?utm_source=chatgpt.com "Installation - Argo CD Image Updater"
@@ -348,3 +350,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 ## Security
 
 For vulnerability reporting, please see [SECURITY.md](SECURITY.md).
+
+[gitops-1-18-compat]: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/release_notes/gitops-release-notes#GitOps-compatibility-support-matrix_gitops-release-notes "Red Hat OpenShift GitOps 1.18 compatibility matrix"
+[pipelines-1-20-compat]: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/release_notes/op-release-notes-1-20#compatibility-support-matrix_op-release-notes "Red Hat OpenShift Pipelines 1.20 compatibility matrix"
