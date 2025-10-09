@@ -65,7 +65,7 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
    argocd app sync bitiq-umbrella-<env> --retry-limit 2
    ```
 
-5. Confirm the Application now reports the dry-run flag:
+5. Confirm the Application annotations reflect the freeze:
 
    ```bash
    argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
@@ -136,7 +136,7 @@ Document any on-cluster patch in the incident log and plan to revert it in [Sect
 5. Commit and push the rollback with context in the message (single commit includes the revert and appVersion recompute):
 
    ```bash
-   git commit -am "revert: restore backend+frontend to toy-service-v0.2.9/toy-web-v0.1.8"
+   git commit -am "revert: restore <service> to vX.Y.Z-commit.<sha>"
    git push origin <branch>
    ```
 
@@ -285,3 +285,4 @@ Only use these steps when Argo CD access is unavailable and production impact re
 - Deterministic tag and composite versioning conventions: [`docs/CONVENTIONS.md`](./CONVENTIONS.md)
 - Image Updater automation and write-back behavior: [`charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml`](../charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml)
 - Tekton pipeline tag computation: [`charts/ci-pipelines/templates/pipeline.yaml`](../charts/ci-pipelines/templates/pipeline.yaml)
+
