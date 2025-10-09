@@ -4,23 +4,21 @@ templates:
 values:
   - ../values-common.yaml
 release:
-  name: sample
+  name: toy-service
   namespace: bitiq-local
 tests:
   - it: uses repository + tag from values
     set:
-      backend:
-        image:
-          repository: quay.io/example/sample
-          tag: v1.2.3-commit.abc1234
+      image:
+        repository: quay.io/example/sample
+        tag: v1.2.3-commit.abc1234
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
           value: quay.io/example/sample:v1.2.3-commit.abc1234
   - it: propagates health path into readiness probe
     set:
-      backend:
-        healthPath: /ping
+      healthPath: /ping
     asserts:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path

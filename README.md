@@ -116,23 +116,24 @@ Production (ENV=prod) quick path
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
 4. The umbrella app deploys:
 
-   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-   * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
-   * **bitiq-sample-app** (toy-service backend + toy-web frontend) in a `bitiq-${ENV}` namespace with two Routes on your base domain.
+  * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
+  * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
+  * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
 
 ### Image updates & Git write-back
 
-The `bitiq-sample-app` Argo Application is annotated for **Argo CD Image Updater** to track multiple images (backend + frontend) and write back **Helm values** in Git:
+The `toy-service-${ENV}` and `toy-web-${ENV}` Argo Applications are annotated for **Argo CD Image Updater** so each service tracks its image and writes updates to Git:
 
-* We use `argocd-image-updater.argoproj.io/write-back-method: git` and
-  `argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-${ENV}.yaml` (absolute) or `helmvalues:values-${ENV}.yaml` (relative to the app path). ([Argo CD Image Updater][8])
-* We map Helm parameters via `backend.helm.image-name/tag` and `frontend.helm.image-name/tag` so each alias writes to the correct section of `values-${ENV}.yaml`. ([Argo CD Image Updater][9])
+* `toy-service-${ENV}` renders alias `toy-service` and commits back to `/charts/toy-service/values-${ENV}.yaml` (`image.repository` and `image.tag`).
+* `toy-web-${ENV}` renders alias `toy-web` and commits back to `/charts/toy-web/values-${ENV}.yaml`.
 
-Local env note (frontend disabled by default)
+Both Applications set `write-back-method: git` with the tracked branch, interval, platform filter, and optional pull secret configured via the umbrella chart’s `imageUpdater.*` values. ([Argo CD Image Updater][8])
 
-* The local environment disables frontend image updates to avoid failures when the toy-web Quay repo is private or throttled. This is controlled by `imageUpdater.enableFrontend` in the umbrella chart, which the ApplicationSet sets via `enableFrontendImageUpdate` and defaults to `false` for `local`.
-* Re-enable by setting `enableFrontendImageUpdate: true` for the env in `charts/argocd-apps/values.yaml`, or by overriding the param on the ApplicationSet. If the repo is private, also set `imageUpdater.pullSecret` so Image Updater can list tags.
-* Pause a specific service’s write-back by flipping `imageUpdaterPause.backend` or `imageUpdaterPause.frontend` to `true` for the target environment in `charts/argocd-apps/values.yaml`. The ApplicationSet forwards those to the umbrella chart’s `imageUpdater.pause.*` values, which drops the matching Image Updater annotations until you set the flag back to `false`.
+Local env note (toy-web updates disabled by default)
+
+* The local environment defaults `toyWebImageUpdater.enabled: false` in `charts/argocd-apps/values.yaml` to avoid failures when the toy-web Quay repo is private or throttled. This maps to the umbrella value `imageUpdater.toyWeb.enabled`.
+* Re-enable by setting `toyWebImageUpdater.enabled: true` for the env (or overriding the Application parameter). If the repo is private, also set `imageUpdater.pullSecret` so Image Updater can list tags.
+* Pause either service’s write-back by flipping `toyServiceImageUpdater.pause` / `toyWebImageUpdater.pause` (forwarded to `imageUpdater.toyService.pause` and `.toyWeb.pause`). The corresponding Application drops Image Updater annotations until you resume it.
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
@@ -258,7 +259,7 @@ CI uses the same entrypoint: the workflow runs `make validate` for parity with l
 ## Operations
 
 - Rollbacks: follow [`docs/ROLLBACK.md`](docs/ROLLBACK.md) for Git revert + Argo sync recovery. The playbook assumes the deterministic tag and `appVersion` conventions in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
-- App naming: Argo Applications carry the env suffix (`bitiq-umbrella-${ENV}`, `ci-pipelines-${ENV}`, `image-updater-${ENV}`, `bitiq-sample-app-${ENV}`) and are labeled `bitiq.io/env=${ENV}`. Namespaces inherit the same label for fleet queries.
+- App naming: Argo Applications carry the env suffix (`bitiq-umbrella-${ENV}`, `ci-pipelines-${ENV}`, `image-updater-${ENV}`, `toy-service-${ENV}`, `toy-web-${ENV}`) and are labeled `bitiq.io/env=${ENV}`. Namespaces inherit the same label for fleet queries.
 - CI: GitHub Actions (`.github/workflows/validate.yaml`) runs `make hu`, `make template`, `make validate`, and `make verify-release` on every PR/push to catch Helm/template regressions before they reach the cluster.
 
 ## How to use it

@@ -290,7 +290,8 @@ wait_app() {
 
 wait_app "image-updater-${ENV}" 300 || true
 wait_app "ci-pipelines-${ENV}" 300 || true
-wait_app "bitiq-sample-app-${ENV}" 600 || true
+wait_app "toy-service-${ENV}" 600 || true
+wait_app "toy-web-${ENV}" 600 || true
 
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"

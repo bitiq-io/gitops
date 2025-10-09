@@ -21,7 +21,8 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
 - `charts/eso-vault-examples/` — Optional ESO + Vault ExternalSecret examples (disabled by default)
-- `charts/bitiq-sample-app/` — Example app used for end-to-end flow
+- `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
+- `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
 - `scripts/validate.sh` — Local validation (render + schema + policy)
 - `Makefile` — Lint, template sanity, and full validate
@@ -53,7 +54,8 @@ If adding/altering Helm values:
 ```bash
 export ENV=local  # or sno|prod
 helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml \
-  -f charts/bitiq-sample-app/values-${ENV}.yaml >/dev/null
+  -f charts/toy-service/values-${ENV}.yaml \
+  -f charts/toy-web/values-${ENV}.yaml >/dev/null
 ```
 
 ## Commit & PR Conventions

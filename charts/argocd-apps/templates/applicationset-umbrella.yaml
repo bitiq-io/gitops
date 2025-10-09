@@ -18,9 +18,10 @@ spec:
             baseDomain: {{ default $e.baseDomain $.Values.baseDomainOverride | quote }}
             appNamespace: {{ $e.appNamespace | quote }}
             platforms: {{ $e.platforms | quote }}
-            imageUpdaterPause:
-              backend: {{ default false $e.imageUpdaterPause.backend }}
-              frontend: {{ default false $e.imageUpdaterPause.frontend }}
+            toyServiceUpdaterEnabled: {{ default true $e.toyServiceImageUpdater.enabled }}
+            toyServiceUpdaterPause: {{ default false $e.toyServiceImageUpdater.pause }}
+            toyWebUpdaterEnabled: {{ default true $e.toyWebImageUpdater.enabled }}
+            toyWebUpdaterPause: {{ default false $e.toyWebImageUpdater.pause }}
             tektonFsGroup: {{ $e.tektonFsGroup | quote }}
 {{- end }}
 {{- end }}
@@ -51,12 +52,14 @@ spec:
               value: {{ .Values.targetRevision | quote }}
             - name: imageUpdater.platforms
               value: '{{ "{{ .platforms }}" }}'
-            - name: imageUpdater.enableFrontend
-              value: '{{ "{{ .enableFrontendImageUpdate | default true }}" }}'
-            - name: imageUpdater.pause.backend
-              value: '{{ "{{ .imageUpdaterPause.backend | default false }}" }}'
-            - name: imageUpdater.pause.frontend
-              value: '{{ "{{ .imageUpdaterPause.frontend | default false }}" }}'
+            - name: imageUpdater.toyService.enabled
+              value: '{{ "{{ .toyServiceUpdaterEnabled | default true }}" }}'
+            - name: imageUpdater.toyService.pause
+              value: '{{ "{{ .toyServiceUpdaterPause | default false }}" }}'
+            - name: imageUpdater.toyWeb.enabled
+              value: '{{ "{{ .toyWebUpdaterEnabled | default true }}" }}'
+            - name: imageUpdater.toyWeb.pause
+              value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
       destination:

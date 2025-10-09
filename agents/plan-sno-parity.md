@@ -68,7 +68,7 @@ Conclusion: Most chart plumbing for ENV=sno is done. Remaining gap is a reproduc
   - ArgoCD Application bitiq-umbrella-sno is Healthy/Synced.
   - Sample app Routes resolve on BASE_DOMAIN and serve traffic.
   - Tekton PipelineRun builds/pushes images successfully.
-  - Argo CD Image Updater detects new tags and writes back to charts/bitiq-sample-app/values-sno.yaml.
+  - Argo CD Image Updater detects new tags and writes back to charts/toy-service/values-sno.yaml and charts/toy-web/values-sno.yaml.
 - No unintended Namespaces created by ci-pipelines chart; templates render cleanly for sno.
 
 ## Non‑Goals / Out of Scope

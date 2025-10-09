@@ -42,15 +42,17 @@ check_tags() {
 }
 
 for ENV in $ENVIRONMENTS; do
-  VALUES_FILE="$ROOT/charts/bitiq-sample-app/values-${ENV}.yaml"
-  if [[ ! -f "$VALUES_FILE" ]]; then
-    echo "[WARN] values file not found for ENV=$ENV ($VALUES_FILE); skipping" >&2
-    continue
-  fi
+  for CHART in charts/toy-service charts/toy-web; do
+    VALUES_FILE="$ROOT/${CHART}/values-${ENV}.yaml"
+    if [[ ! -f "$VALUES_FILE" ]]; then
+      echo "[WARN] values file not found for ENV=$ENV ($VALUES_FILE); skipping" >&2
+      continue
+    fi
 
-  if ! check_tags "$VALUES_FILE" "$ENV"; then
-    EXIT_CODE=1
-  fi
+    if ! check_tags "$VALUES_FILE" "$ENV"; then
+      EXIT_CODE=1
+    fi
+  done
 
   EXPECTED=$(MODE=print ENV=$ENV bash "$ROOT/scripts/compute-appversion.sh" "$ENV")
   if [[ "$EXPECTED" != "$ACTUAL_APP_VERSION" ]]; then

@@ -1,31 +1,23 @@
-suite: Frontend deployment image
+suite: Deployment container image
 templates:
-  - templates/frontend-deployment.yaml
+  - templates/deployment.yaml
 values:
   - ../values-common.yaml
 release:
-  name: sample
+  name: toy-web
   namespace: bitiq-local
 tests:
-  - it: renders frontend deployment when enabled
+  - it: renders deployment with default image
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
           value: quay.io/paulcapestany/toy-web:v0.0.0-commit.0000000
   - it: allows overriding image tag
     set:
-      frontend:
-        image:
-          repository: quay.io/example/frontend
-          tag: v1.2.3-commit.abc1234
+      image:
+        repository: quay.io/example/frontend
+        tag: v1.2.3-commit.abc1234
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
           value: quay.io/example/frontend:v1.2.3-commit.abc1234
-  - it: can be disabled
-    set:
-      frontend:
-        enabled: false
-    asserts:
-      - isNull:
-          path: apiVersion

@@ -20,11 +20,11 @@ Authoritative conventions for repository naming, versioning, and environment ove
   make compute-appversion ENV=local        # or sno|prod
   ```
 
-- Behind the scenes `scripts/compute-appversion.sh` inspects `values-<env>.yaml` for each chart in `CHARTS` (default `charts/bitiq-sample-app`).
+- Behind the scenes `scripts/compute-appversion.sh` inspects `values-<env>.yaml` for each chart in `CHARTS` (default `charts/toy-service charts/toy-web`).
 - To include additional services, extend `CHARTS` when running the script:
 
   ```bash
-  CHARTS="charts/bitiq-sample-app charts/another-svc" make compute-appversion ENV=sno
+  CHARTS="charts/toy-service charts/toy-web charts/another-svc" make compute-appversion ENV=sno
   ```
 
 - Keep the umbrella chart’s `appVersion` in sync with the image tags committed in the same change.
@@ -43,14 +43,15 @@ Authoritative conventions for repository naming, versioning, and environment ove
   export ENV=local
   helm template charts/bitiq-umbrella \
     -f charts/bitiq-umbrella/values-common.yaml \
-    -f charts/bitiq-sample-app/values-${ENV}.yaml >/dev/null
+    -f charts/toy-service/values-${ENV}.yaml \
+    -f charts/toy-web/values-${ENV}.yaml >/dev/null
   ```
 
 ## Namespace and app naming
 
 - Namespace convention: `bitiq-<env>`.
 - Umbrella Argo CD Application: `bitiq-umbrella-<env>`.
-- Child Argo CD Applications include the env suffix (e.g., `ci-pipelines-<env>`, `image-updater-<env>`, `bitiq-sample-app-<env>`).
+- Child Argo CD Applications include the env suffix (e.g., `ci-pipelines-<env>`, `image-updater-<env>`, `toy-service-<env>`, `toy-web-<env>`).
 - Add the label `bitiq.io/env=<env>` to namespaces and top-level workloads for fleet queries.
 
 ## Rollback recipe

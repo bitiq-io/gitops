@@ -21,7 +21,7 @@ CRC domains & TLS
 - Application wildcard: `*.apps-crc.testing` resolves inside the CRC VM. The sample stack uses:
   - Backend Route host prefix `svc-api` → `https://svc-api.apps-crc.testing`
   - Frontend Route host prefix `svc-web` → `https://svc-web.apps-crc.testing`
-- Changing `BASE_DOMAIN`? Update `charts/bitiq-sample-app/values-local.yaml` (and other env files) and rerun `make compute-appversion ENV=local` so Routes and appVersion remain consistent.
+- Changing `BASE_DOMAIN`? Update `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` (and other env files) and rerun `make compute-appversion ENV=local` so Routes and appVersion remain consistent.
 - Browsers may warn about TLS; accept the cert for local testing or import the CRC CA if desired.
 
 Bootstrap this repo
@@ -85,8 +85,8 @@ Configure Argo CD repo write access
 Sample app images
 - Backend (`toy-service`) defaults to `quay.io/paulcapestany/toy-service` with `/healthz` probe and host prefix `svc-api`.
 - Frontend (`toy-web`) defaults to `quay.io/paulcapestany/toy-web` with `/` probe and host prefix `svc-web`.
-- Override tags in `charts/bitiq-sample-app/values-local.yaml`; rerun `make compute-appversion ENV=local` (or let Image Updater write back) and `make verify-release` before merging.
-- If you change ports or health paths, adjust the chart templates (`backend.service.port`, `frontend.service.port`, `backend.healthPath`, `frontend.healthPath`).
+- Override tags in `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml`; rerun `make compute-appversion ENV=local` (or let Image Updater write back) and `make verify-release` before merging.
+- If you change ports or health paths, adjust the chart templates (`service.port`, `healthPath`) in the respective chart.
 
 Tekton pipeline (optional)
 - Default pushes to the in-cluster registry namespace `bitiq-ci`.
@@ -102,12 +102,12 @@ Validate and inspect
 - Watch applications:
   - `oc -n openshift-gitops get applications,applicationsets`
 - Get sample app routes and test:
-  - `oc -n bitiq-local get route bitiq-sample-app -o jsonpath='{.spec.host}{"\n"}'`
-  - `oc -n bitiq-local get route bitiq-sample-app-web -o jsonpath='{.spec.host}{"\n"}'`
+  - `oc -n bitiq-local get route toy-service -o jsonpath='{.spec.host}{"\n"}'`
+  - `oc -n bitiq-local get route toy-web -o jsonpath='{.spec.host}{"\n"}'`
   - `curl -k https://svc-api.apps-crc.testing/healthz`
   - `curl -k https://svc-web.apps-crc.testing/`
 
 Troubleshooting
-- Lint issues: run `helm lint charts/bitiq-sample-app -f charts/bitiq-sample-app/values-common.yaml -f charts/bitiq-sample-app/values-local.yaml`.
+- Lint issues: run `helm lint charts/toy-service -f charts/toy-service/values-common.yaml -f charts/toy-service/values-local.yaml` and the same for `charts/toy-web`.
 - RBAC errors generating token: ensure `argocd-rbac-cm` has `g, kubeadmin, role:admin` and server is restarted.
 - Image pull errors: confirm image exists and is pullable from the cluster, and ports/probes match.

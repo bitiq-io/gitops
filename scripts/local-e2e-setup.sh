@@ -287,7 +287,8 @@ refresh_app() {
 
 refresh_app "ci-pipelines-$ENVIRONMENT"
 refresh_app "image-updater-$ENVIRONMENT"
-refresh_app "bitiq-sample-app-$ENVIRONMENT"
+refresh_app "toy-service-$ENVIRONMENT"
+refresh_app "toy-web-$ENVIRONMENT"
 
 cat <<'EONOTES'
 ---

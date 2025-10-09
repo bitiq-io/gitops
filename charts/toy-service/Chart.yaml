@@ -1,0 +1,6 @@
+apiVersion: v2
+name: toy-service
+description: Backend toy service sample deployment (Deployment + Service + Route)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

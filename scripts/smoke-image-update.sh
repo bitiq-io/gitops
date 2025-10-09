@@ -13,7 +13,7 @@ set -euo pipefail
 
 ENV="${ENV:-local}"
 NS="${NS:-openshift-gitops}"
-APP="bitiq-sample-app-${ENV}"
+APP="${APP:-toy-service-${ENV}}"
 
 require() { command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }; }
 

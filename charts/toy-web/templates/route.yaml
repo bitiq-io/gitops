@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: toy-web
+  labels:
+    app.kubernetes.io/name: toy-web
+spec:
+  host: {{ .Values.hostPrefix }}.{{ required "baseDomain must be set (values-<env>.yaml)" .Values.baseDomain }}
+  to:
+    kind: Service
+    name: toy-web
+  port:
+    targetPort: http
+  tls:
+    termination: edge

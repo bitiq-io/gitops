@@ -11,7 +11,7 @@ set -euo pipefail
 #   scripts/compute-appversion.sh <env>
 #
 # Optional:
-#   CHARTS="charts/bitiq-sample-app charts/another" scripts/compute-appversion.sh <env>
+#   CHARTS="charts/toy-service charts/toy-web charts/another" scripts/compute-appversion.sh <env>
 
 here() { cd "$(dirname "$0")" && pwd -P; }
 repo_root() { cd "$(here)/.." && pwd -P; }
@@ -29,7 +29,7 @@ ROOT=$(repo_root)
 UMBRELLA_CHART="$ROOT/charts/bitiq-umbrella/Chart.yaml"
 
 # Default charts to scan for image repo/tag
-CHART_LIST=${CHARTS:-"charts/bitiq-sample-app"}
+CHART_LIST=${CHARTS:-"charts/toy-service charts/toy-web"}
 
 declare -a ENTRIES=()
 

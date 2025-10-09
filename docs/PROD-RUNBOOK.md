@@ -304,7 +304,7 @@ YAML
    ```bash
    oc -n openshift-gitops logs deploy/argocd-image-updater --since=10m | grep -E 'Committing|Pushed change'
    ```
-   - Ensure commits land in `charts/bitiq-sample-app/values-prod.yaml` on the tracked branch.
+  - Ensure commits land in `charts/toy-service/values-prod.yaml` and `charts/toy-web/values-prod.yaml` on the tracked branch.
 
 ## 11. Advanced: Central Argo CD (documentation only)
 

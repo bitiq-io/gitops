@@ -69,7 +69,7 @@ Conclusion: The stack largely works, but running ENV=local on a remote Ubuntu se
   - Install CRC + CLIs per docs/LOCAL-RUNBOOK-UBUNTU.md.
   - Run `ENV=local ./scripts/bootstrap.sh` and see `bitiq-umbrella-local` Healthy/Synced in Argo CD.
   - Configure repo creds and Image Updater token; push a commit and trigger a Tekton PipelineRun via dynamic DNS + port‑forward (or ngrok).
-  - Image Updater detects new tags and writes back to `charts/bitiq-sample-app/values-local.yaml`.
+  - Image Updater detects new tags and writes back to `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml`.
   - Routes function from the server (curl to `svc-api.apps-crc.testing/healthz`).
 
 ## Guardrails & Notes
