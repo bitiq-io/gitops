@@ -51,6 +51,7 @@
    description: Split current combined sample chart into `charts/toy-service` and `charts/toy-web`, with independent Argo Applications and write-back targets.
    why: Mirrors real microservice topology for scaling, health, and rollbacks; simplifies troubleshooting and aligns with best practices.
    dependencies: [T0, T3]
+   status: complete (implemented in PR #39)
    acceptance_criteria:
      - New charts for each service with values-common and env overlays (local/sno/prod) exist; umbrella renders `toy-service-<env>` and `toy-web-<env>` Applications.
      - Image Updater annotations use distinct aliases and helmvalues write-back to each chart’s env values file.
@@ -62,6 +63,7 @@
    description: Confirm that sample deployment config is only in this repo; add cross-links in microservice READMEs and this repo’s README.
    why: Keeps repositories focused (app code vs. deployment); reduces duplication and drift.
    dependencies: [T4]
+   status: complete (docs updated; READMEs linked)
    acceptance_criteria:
      - toy-service and toy-web repos contain no k8s manifests; issues/PRs add “Deployment via GitOps” links pointing here.
      - This repo’s README clearly states where runtime manifests live and how CI/Image Updater connects to microservice repos.
