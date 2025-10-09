@@ -15,6 +15,7 @@ log() { echo "[INFO]  $*"; }
 
 NS=""
 ENV_ARG="${ENV:-local}"
+SOURCE="values"  # values|deployment
 APPS=()
 
 while [[ $# -gt 0 ]]; do
@@ -23,6 +24,8 @@ while [[ $# -gt 0 ]]; do
       NS="$2"; shift 2 ;;
     -e|--env)
       ENV_ARG="$2"; shift 2 ;;
+    -s|--source)
+      SOURCE="$2"; shift 2 ;;
     -h|--help)
       sed -n '1,40p' "$0"; exit 0 ;;
     --)
@@ -53,11 +56,34 @@ fi
 
 log "Namespace: ${NS}"
 log "Apps: ${APPS[*]}"
+log "Desired source: ${SOURCE} (values|deployment)"
 
 # Ensure namespace exists
 if ! oc get ns "${NS}" >/dev/null 2>&1; then
   err "Namespace ${NS} not found"; exit 1
 fi
+
+get_desired_image_from_values() {
+  local app="$1" env_name="$2"
+  local base_dir script_dir file repo tag
+  script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+  base_dir="$(cd "${script_dir}/.." && pwd -P)"
+  case "$app" in
+    toy-service) file="$base_dir/charts/toy-service/values-${env_name}.yaml" ;;
+    toy-web)     file="$base_dir/charts/toy-web/values-${env_name}.yaml" ;;
+    *) echo ""; return 0 ;;
+  esac
+  if [[ ! -f "$file" ]]; then
+    echo ""; return 0
+  fi
+  repo="$(awk -F': *' '/^[[:space:]]*repository:/ {print $2; exit}' "$file" | tr -d '"')"
+  tag="$(awk -F': *' '/^[[:space:]]*tag:/ {print $2; exit}' "$file" | tr -d '"')"
+  if [[ -n "$repo" && -n "$tag" ]]; then
+    echo "${repo}:${tag}"
+  else
+    echo ""
+  fi
+}
 
 prune_app() {
   local ns="$1" app="$2"
@@ -69,7 +95,12 @@ prune_app() {
 
   # Determine desired image from the Deployment template
   local desired_img desired_replicas
-  desired_img="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.spec.template.spec.containers[0].image}')"
+  if [[ "$SOURCE" == "values" ]]; then
+    desired_img="$(get_desired_image_from_values "$app" "$ENV_ARG" || true)"
+  fi
+  if [[ -z "$desired_img" ]]; then
+    desired_img="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.spec.template.spec.containers[0].image}')"
+  fi
   desired_replicas="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.spec.replicas}')"
   [[ -z "$desired_replicas" ]] && desired_replicas=1
   log "Desired image: ${desired_img} (replicas=${desired_replicas})"
