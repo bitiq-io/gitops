@@ -18,6 +18,9 @@ spec:
             baseDomain: {{ default $e.baseDomain $.Values.baseDomainOverride | quote }}
             appNamespace: {{ $e.appNamespace | quote }}
             platforms: {{ $e.platforms | quote }}
+            imageUpdaterPause:
+              backend: {{ default false $e.imageUpdaterPause.backend }}
+              frontend: {{ default false $e.imageUpdaterPause.frontend }}
             tektonFsGroup: {{ $e.tektonFsGroup | quote }}
 {{- end }}
 {{- end }}
