@@ -26,13 +26,13 @@ Operational recipe for reverting deployments managed by this GitOps repo. Applie
 
 ## 2. Revert the offending change
 
-1. Use Git to revert the commit that introduced the bad tag (preferred):
+1. Use Git to revert the commit that introduced the bad tag (preferred). Use `--no-commit` so you can include the composite appVersion recompute in the same commit for a deterministic rollback record:
 
    ```bash
-   git revert --no-edit <commit-sha>
+   git revert --no-commit <commit-sha>
    ```
 
-   If you already have a clean revert commit available (for example, you cherry-picked the rollback), ensure that it covers both the service values and `Chart.yaml`.
+   If you already created a revert commit (e.g., with `--no-edit`), skip committing here and proceed to recompute `appVersion`; then commit only the `Chart.yaml` change separately with a clear message (e.g., `chore(umbrella): recompute appVersion`).
 
 2. When the revert changes image tags, recompute the umbrella composite `appVersion` so it aligns with the restored image tags:
 
@@ -55,7 +55,7 @@ Operational recipe for reverting deployments managed by this GitOps repo. Applie
    +appVersion: sample-api-v1.2.3-commit.9f8e7d6
    ```
 
-4. Commit and push the rollback with context in the message:
+4. Commit and push the rollback with context in the message (single commit includes the revert and appVersion recompute):
 
    ```bash
    git commit -am "revert: restore <service> to vX.Y.Z-commit.<sha>"

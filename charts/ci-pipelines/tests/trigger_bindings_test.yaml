@@ -27,4 +27,3 @@ tests:
       - equal:
           path: metadata.name
           value: bitiq-web-build-and-push-binding
-
