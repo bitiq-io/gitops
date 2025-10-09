@@ -67,27 +67,40 @@ prune_app() {
     return 0
   fi
 
-  # Determine active ReplicaSet by Deployment revision; fallback to newest RS
-  local rev active_rs active_hash
-  rev="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}' 2>/dev/null || true)"
-  if [[ -n "${rev}" ]]; then
-    active_rs="$(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.metadata.annotations.deployment\.kubernetes\.io/revision}{"\n"}{end}' \
-      | awk -F '|' -v r="${rev}" '$2==r {print $1}' | tail -n1)"
+  # Determine desired image from the Deployment template
+  local desired_img desired_replicas
+  desired_img="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.spec.template.spec.containers[0].image}')"
+  desired_replicas="$(oc -n "$ns" get deploy "$app" -o jsonpath='{.spec.replicas}')"
+  [[ -z "$desired_replicas" ]] && desired_replicas=1
+  log "Desired image: ${desired_img} (replicas=${desired_replicas})"
+
+  # Find the RS whose pod template image matches the Deployment image; choose newest
+  local rs_line active_rs active_hash
+  rs_line="$(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.template.spec.containers[0].image}{"|"}{.metadata.creationTimestamp}{"|"}{.metadata.labels.pod-template-hash}{"\n"}{end}' \
+    | awk -F '|' -v img="$desired_img" '$2==img {line=$0} END{print line}')"
+  if [[ -z "$rs_line" ]]; then
+    # Fallback to RS with a Ready pod, otherwise newest
+    rs_line="$(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.template.spec.containers[0].image}{"|"}{.metadata.creationTimestamp}{"|"}{.metadata.labels.pod-template-hash}{"|"}{.status.readyReplicas}{"\n"}{end}' \
+      | awk -F '|' '$5+0>0 {line=$0} END{print line}')"
   fi
-  if [[ -z "${active_rs:-}" ]]; then
-    # Fallback to newest by creationTimestamp
-    active_rs="$(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" --sort-by=.metadata.creationTimestamp -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | tail -n1)"
+  if [[ -z "$rs_line" ]]; then
+    rs_line="$(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" --sort-by=.metadata.creationTimestamp \
+      -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.template.spec.containers[0].image}{"|"}{.metadata.creationTimestamp}{"|"}{.metadata.labels.pod-template-hash}{"\n"}{end}' | tail -n1)"
   fi
-  if [[ -z "${active_rs}" ]]; then
+  if [[ -z "$rs_line" ]]; then
     log "No ReplicaSets found for ${app}; skipping"
     return 0
   fi
 
-  active_hash="$(oc -n "$ns" get rs "$active_rs" -o jsonpath='{.metadata.labels.pod-template-hash}')"
-  log "Active RS: ${active_rs} (hash=${active_hash})"
+  active_rs="$(awk -F '|' '{print $1}' <<< "$rs_line")"
+  active_hash="$(awk -F '|' '{print $4}' <<< "$rs_line")"
+  log "Active RS (by image): ${active_rs} (hash=${active_hash})"
 
-  # Scale older ReplicaSets to 0 via patch (works even if already 0)
-  log "Scaling older ReplicaSets to 0..."
+  # Ensure desired RS is scaled to desired replicas
+  oc -n "$ns" patch rs "$active_rs" --type=merge -p '{"spec":{"replicas":'"${desired_replicas}"'}}' >/dev/null || true
+
+  # Scale all other RS to 0
+  log "Scaling older/non-desired ReplicaSets to 0..."
   while IFS= read -r rs; do
     [[ -z "$rs" ]] && continue
     if [[ "$rs" != "$active_rs" ]]; then
@@ -96,8 +109,8 @@ prune_app() {
     fi
   done < <(oc -n "$ns" get rs -l app.kubernetes.io/name="${app}" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
 
-  # Delete pods not matching the active hash
-  log "Deleting stray pods not on active hash..."
+  # Delete pods not matching the active hash (non-desired RS)
+  log "Deleting stray pods not on desired image/hash..."
   while read -r name hash; do
     [[ -z "$name" ]] && continue
     if [[ "$hash" != "$active_hash" ]]; then
@@ -108,7 +121,7 @@ prune_app() {
 
   # Wait for rollout to stabilize
   log "Waiting for ${app} rollout..."
-  oc -n "$ns" rollout status deploy/"$app" --timeout=180s || {
+  oc -n "$ns" rollout status deploy/"$app" --timeout=240s || {
     err "Rollout did not complete for ${app}"; return 1; }
 }
 
@@ -124,4 +137,3 @@ else
 fi
 
 exit "$rc"
-
