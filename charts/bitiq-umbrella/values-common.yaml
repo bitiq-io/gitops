@@ -18,6 +18,10 @@ imageUpdater:
   # Control whether Image Updater manages frontend image (toy-web) annotations
   # Defaults to true; can be disabled per-env via ApplicationSet params
   enableFrontend: true
+  # Pause flags disable Image Updater write-back for a given service while still allowing manual tag edits
+  pause:
+    backend: false
+    frontend: false
 
 # Sample app images (Image Updater watches these)
 # Use Quay for easier public tag discovery in local e2e

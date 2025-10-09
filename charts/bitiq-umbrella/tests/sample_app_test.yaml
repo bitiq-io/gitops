@@ -43,3 +43,50 @@ tests:
       - equal:
           path: spec.source.helm.ignoreMissingValueFiles
           value: true
+  - it: omits backend annotations when backend pause is true
+    set:
+      env: local
+      imageUpdater:
+        pause:
+          backend: true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "frontend=quay.io/paulcapestany/toy-web"
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/backend.helm.image-name"]
+      - exists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/frontend.helm.image-name"]
+  - it: omits frontend annotations when frontend pause is true
+    set:
+      env: local
+      imageUpdater:
+        enableFrontend: true
+        pause:
+          frontend: true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "backend=quay.io/paulcapestany/toy-service"
+      - exists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/backend.helm.image-name"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/frontend.helm.image-name"]
+  - it: omits write-back annotations when both services are paused
+    set:
+      env: local
+      imageUpdater:
+        pause:
+          backend: true
+          frontend: true
+    asserts:
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-method"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/git-branch"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/dry-run"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/interval"]

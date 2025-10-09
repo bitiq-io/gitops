@@ -32,7 +32,19 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
 
 ### 2.1 Git-first freeze (preferred)
 
-1. On your rollback branch, edit `charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml:41` to set `argocd-image-updater.argoproj.io/dry-run: "true"`. To freeze **only** one service, adjust the `argocd-image-updater.argoproj.io/image-list` annotation at `charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml:13` and remove the entry for the service you want to hold.
+1. On your rollback branch, edit `charts/argocd-apps/values.yaml` for the affected environment and flip the relevant pause flag(s) under `imageUpdaterPause` to `true`. Example — pausing the backend while keeping the frontend active:
+
+   ```diff
+       - name: <env>
+         ...
+         imageUpdaterPause:
+-          backend: false
+-          frontend: false
++          backend: true    # freeze backend while rolling back
++          frontend: false
+   ```
+
+   Set both flags to `true` if you need a full freeze.
 2. Run the usual template sanity check so you catch typos early:
 
    ```bash
@@ -42,7 +54,7 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
 3. Commit the freeze so Argo can reconcile it:
 
    ```bash
-   git commit -am "chore(image-updater): freeze sample app for rollback"
+   git commit -am "chore(image-updater): pause backend updates for <env>"
    ```
 
    Keep this commit separate from the rollback itself so you can revert it cleanly after validation.
@@ -56,10 +68,16 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
 5. Confirm the Application now reports the dry-run flag:
 
    ```bash
-   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io/dry-run'
+   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
    ```
 
-   Expected output: `argocd-image-updater.argoproj.io/dry-run: true`.
+   Expected snippet when only the backend is paused:
+
+   ```
+   argocd-image-updater.argoproj.io/image-list: frontend=quay.io/paulcapestany/toy-web
+   ```
+
+   (Backend-specific annotations will be absent until you unpause it.)
 
 ### 2.2 Fallback: temporary annotation patch
 
@@ -200,7 +218,7 @@ Restore the Image Updater configuration once the rollback is stable so future ta
 
 ### 6.1 Git-first unfreeze (preferred)
 
-1. Revert the freeze commit or edit `charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml:41` back to `argocd-image-updater.argoproj.io/dry-run: "false"` and reintroduce any image entries you removed from the `image-list`.
+1. Revert the freeze commit or edit `charts/argocd-apps/values.yaml` to set `imageUpdaterPause.backend` / `imageUpdaterPause.frontend` back to `false` for the affected environment.
 2. Run `make template` to confirm the manifest matches expectations.
 3. Commit and push the change:
 
@@ -213,10 +231,10 @@ Restore the Image Updater configuration once the rollback is stable so future ta
 
    ```bash
    argocd app sync bitiq-umbrella-<env>
-   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io/dry-run'
+   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
    ```
 
-   Expected output: `argocd-image-updater.argoproj.io/dry-run: false`.
+   Expected output: the `image-list` (and associated annotations) show entries for every service you unpaused, for example `backend=quay.io/paulcapestany/toy-service,frontend=quay.io/paulcapestany/toy-web`.
 
 ### 6.2 Remove a temporary patch
 

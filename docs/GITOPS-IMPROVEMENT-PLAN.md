@@ -39,6 +39,7 @@
    description: Add values (imageUpdater.pause.backend/frontend) to conditionally render updater annotations per Application/environment, enabling safe freeze/unfreeze without ad-hoc edits.
    why: Improves operability for rollbacks/hotfixes; safer than manual annotation edits and preserves Git intent.
    dependencies: [T0, T2]
+   status: complete (pause flags implemented; docs updated)
    acceptance_criteria:
      - Umbrella Application templates conditionally render image-list, update-strategy, platforms, and write-back annotations based on pause flags.
      - Defaults false; toggling true prevents write-back changes (verified via Argo UI and Git history).

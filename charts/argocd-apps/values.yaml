@@ -18,6 +18,9 @@ envs:
     baseDomain: apps-crc.testing                    # OpenShift Local default
     platforms: linux/amd64
     enableFrontendImageUpdate: true
+    imageUpdaterPause:
+      backend: false
+      frontend: false
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
     # Leave empty to use cluster defaults/SCC.
@@ -27,10 +30,16 @@ envs:
     appNamespace: bitiq-sno
     baseDomain: apps.sno.example
     platforms: linux/amd64
+    imageUpdaterPause:
+      backend: false
+      frontend: false
     tektonFsGroup: ""
   - name: prod
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
     baseDomain: apps.prod.example
     platforms: linux/amd64
+    imageUpdaterPause:
+      backend: false
+      frontend: false
     tektonFsGroup: ""

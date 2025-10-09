@@ -2,6 +2,12 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 {{- $enableFrontendVal := default false .Values.imageUpdater.enableFrontend }}
 {{- $enableFrontend := eq (lower (printf "%v" $enableFrontendVal)) "true" }}
+{{- $pauseBackendVal := dig "pause" "backend" false .Values.imageUpdater }}
+{{- $pauseBackend := eq (lower (printf "%v" $pauseBackendVal)) "true" }}
+{{- $pauseFrontendVal := dig "pause" "frontend" false .Values.imageUpdater }}
+{{- $pauseFrontend := eq (lower (printf "%v" $pauseFrontendVal)) "true" }}
+{{- $manageBackend := not $pauseBackend }}
+{{- $manageFrontend := and $enableFrontend (not $pauseFrontend) }}
 metadata:
   name: bitiq-sample-app-{{ .Values.env }}
   namespace: {{ .Values.gitopsNamespace }}
@@ -9,37 +15,56 @@ metadata:
     bitiq.io/env: {{ .Values.env }}
     app.kubernetes.io/part-of: bitiq-umbrella
   annotations:
-    # Tell Image Updater what image to track and how to write back to Helm values
-    argocd-image-updater.argoproj.io/image-list: backend={{ .Values.sampleAppImages.backend }}{{- if $enableFrontend }},frontend={{ .Values.sampleAppImages.frontend }}{{- end }}
+    # Image Updater annotations are rendered per service; pause flags remove entries for safe rollbacks
+    {{ if or $manageBackend $manageFrontend }}
+    {{- $imgList := list -}}
+    {{- if $manageBackend -}}
+    {{- $imgList = append $imgList (printf "backend=%s" .Values.sampleAppImages.backend) -}}
+    {{- end -}}
+    {{- if $manageFrontend -}}
+    {{- $imgList = append $imgList (printf "frontend=%s" .Values.sampleAppImages.frontend) -}}
+    {{- end -}}
+    argocd-image-updater.argoproj.io/image-list: {{ join "," $imgList }}
+    {{- end }}
+    {{- if $manageBackend }}
     argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
-    {{- if $enableFrontend }}
+    {{- end }}
+    {{- if $manageFrontend }}
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
     {{- end }}
+    {{- if $manageBackend }}
     argocd-image-updater.argoproj.io/backend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
-    {{- if $enableFrontend }}
+    {{- end }}
+    {{- if $manageFrontend }}
     argocd-image-updater.argoproj.io/frontend.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
     {{- end }}
-    {{- if .Values.imageUpdater.pullSecret }}
+    {{- if and $manageBackend .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/backend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
-    {{- if $enableFrontend }}
+    {{- end }}
+    {{- if and $manageFrontend .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/frontend.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
     {{- end }}
-    {{- end }}
+    {{- if $manageBackend }}
     argocd-image-updater.argoproj.io/backend.helm.image-name: backend.image.repository
     argocd-image-updater.argoproj.io/backend.helm.image-tag: backend.image.tag
-    {{- if $enableFrontend }}
+    {{- end }}
+    {{- if $manageFrontend }}
     argocd-image-updater.argoproj.io/frontend.helm.image-name: frontend.image.repository
     argocd-image-updater.argoproj.io/frontend.helm.image-tag: frontend.image.tag
     {{- end }}
+    {{- if $manageBackend }}
     argocd-image-updater.argoproj.io/backend.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
-    {{- if $enableFrontend }}
+    {{- end }}
+    {{- if $manageFrontend }}
     argocd-image-updater.argoproj.io/frontend.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
     {{- end }}
+    {{- if or $manageBackend $manageFrontend }}
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/bitiq-sample-app/values-{{ .Values.env }}.yaml
     argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}
     argocd-image-updater.argoproj.io/dry-run: "false"
     argocd-image-updater.argoproj.io/interval: 1m
+    {{- end }}
 spec:
   project: default
   source:

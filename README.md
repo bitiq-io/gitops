@@ -132,6 +132,7 @@ Local env note (frontend disabled by default)
 
 * The local environment disables frontend image updates to avoid failures when the toy-web Quay repo is private or throttled. This is controlled by `imageUpdater.enableFrontend` in the umbrella chart, which the ApplicationSet sets via `enableFrontendImageUpdate` and defaults to `false` for `local`.
 * Re-enable by setting `enableFrontendImageUpdate: true` for the env in `charts/argocd-apps/values.yaml`, or by overriding the param on the ApplicationSet. If the repo is private, also set `imageUpdater.pullSecret` so Image Updater can list tags.
+* Pause a specific service’s write-back by flipping `imageUpdaterPause.backend` or `imageUpdaterPause.frontend` to `true` for the target environment in `charts/argocd-apps/values.yaml`. The ApplicationSet forwards those to the umbrella chart’s `imageUpdater.pause.*` values, which drops the matching Image Updater annotations until you set the flag back to `false`.
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
 
