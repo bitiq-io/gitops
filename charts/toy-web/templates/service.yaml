@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: toy-web
+  labels:
+    app.kubernetes.io/name: toy-web
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/name: toy-web
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http

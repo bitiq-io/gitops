@@ -1,0 +1,15 @@
+suite: Route host formatting
+templates:
+  - templates/route.yaml
+release:
+  name: toy-service
+  namespace: bitiq-local
+tests:
+  - it: builds host from hostPrefix and baseDomain
+    set:
+      baseDomain: apps.example.test
+      hostPrefix: svc
+    asserts:
+      - equal:
+          path: spec.host
+          value: svc.apps.example.test

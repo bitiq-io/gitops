@@ -54,14 +54,16 @@ policy_test() {
   fi
 }
 
-log "Render + validate: bitiq-sample-app (local, sno, prod)"
-for env in local sno prod; do
-  out="$OUT_DIR/bitiq-sample-app-$env.yaml"
-  render_chart "$ROOT_DIR/charts/bitiq-sample-app" "$out" \
-    -f "$ROOT_DIR/charts/bitiq-sample-app/values-common.yaml" \
-    -f "$ROOT_DIR/charts/bitiq-sample-app/values-$env.yaml"
-  validate_file "$out"
-  policy_test "$out"
+log "Render + validate: toy-service and toy-web (local, sno, prod)"
+for chart in toy-service toy-web; do
+  for env in local sno prod; do
+    out="$OUT_DIR/${chart}-$env.yaml"
+    render_chart "$ROOT_DIR/charts/${chart}" "$out" \
+      -f "$ROOT_DIR/charts/${chart}/values-common.yaml" \
+      -f "$ROOT_DIR/charts/${chart}/values-$env.yaml"
+    validate_file "$out"
+    policy_test "$out"
+  done
 done
 
 log "Render + validate: image-updater"

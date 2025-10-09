@@ -185,7 +185,7 @@ Run these steps after the cluster is reachable.
      ```bash
      oc -n openshift-gitops logs deploy/argocd-image-updater -f --since=10m
      ```
-   - Verify updated image tags in `charts/bitiq-sample-app/values-sno.yaml` via Argo CD commit history.
+  - Verify updated image tags in `charts/toy-service/values-sno.yaml` and `charts/toy-web/values-sno.yaml` via Argo CD commit history.
 
 ## 8. Troubleshooting
 

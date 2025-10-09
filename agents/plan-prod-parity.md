@@ -6,7 +6,7 @@ Purpose: Achieve end‑to‑end parity for ENV=prod with ENV=local across Argo C
 - ApplicationSet defines `envs[]` for `prod` with `clusterServer=https://kubernetes.default.svc`, `appNamespace=bitiq-prod`, `baseDomain=apps.prod.example` (charts/argocd-apps/values.yaml).
 - Umbrella chart generates nested Argo Applications whose destinations are hardcoded to in‑cluster (`https://kubernetes.default.svc`).
 - Bootstrap script sets `envFilter` and `baseDomainOverride`, but does not override `clusterServer` (scripts/bootstrap.sh).
-- Sample app has `values-prod.yaml` including baseDomain and deterministic image tags (charts/bitiq-sample-app/values-prod.yaml).
+- Sample app charts have `values-prod.yaml` including baseDomain and deterministic image tags (charts/toy-service/values-prod.yaml, charts/toy-web/values-prod.yaml).
 - CI templates/lint/validate include `prod` in loops (Makefile, .github/workflows/validate.yaml).
 
 Conclusion: Plumbing exists to render a `bitiq-umbrella-prod` app, and the sample app has a prod overlay. Remaining production gaps include:
@@ -111,7 +111,7 @@ We will implement the in‑cluster model by default and document the central mod
   - Argo Application `bitiq-umbrella-prod` Healthy/Synced in `openshift-gitops`.
   - Namespace `bitiq-prod` exists; toy backend/frontend Routes resolve on `${BASE_DOMAIN}` and serve 200s.
   - Tekton PipelineRuns build and push images to the configured registry using the `pipeline` SA.
-  - Argo CD Image Updater detects new tags and writes back to `charts/bitiq-sample-app/values-prod.yaml` on the tracked branch.
+  - Argo CD Image Updater detects new tags and writes back to `charts/toy-service/values-prod.yaml` and `charts/toy-web/values-prod.yaml` on the tracked branch.
 - Operator channels pinned and documented; preflight passes on a fresh 4.19 cluster.
 - Alternative central‑Argo path documented (and optionally implemented behind a flag).
 

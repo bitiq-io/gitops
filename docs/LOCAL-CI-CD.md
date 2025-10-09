@@ -148,7 +148,7 @@ GitHub repo → Settings → Webhooks → Add webhook
 - The Pipeline tags the image with the commit SHA and pushes to Quay (`quay.io/paulcapestany/toy-service:<sha>`).
 - Observe runs and logs:
 
-The sample app Helm values (`charts/bitiq-sample-app/values-local.yaml`) default the image to `quay.io/paulcapestany/toy-service:latest`; Argo CD Image Updater rewrites the tag to each commit SHA once the pipeline publishes it.
+The sample app Helm values (`charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml`) default the images to public Quay repos; Argo CD Image Updater rewrites the tags to each commit SHA once the pipelines publish them.
 
 ```bash
 oc -n openshift-pipelines get pipelineruns
@@ -163,7 +163,7 @@ tkn pr logs -L -f -n openshift-pipelines
 oc -n openshift-gitops logs deploy/argocd-image-updater -f
 ```
 
-- It updates `charts/bitiq-sample-app/values-local.yaml` with the backend/frontend tags → Argo syncs the app → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
+- It updates `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` with the new tags → Argo syncs the apps → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
 
 Troubleshooting
 
@@ -254,7 +254,7 @@ FsGroup verification for git-clone
     - Override the platform for your env by setting `imageUpdater.platforms: linux/arm64` in the umbrella chart values for that environment.
   - Keeping the filter aligned with your cluster node arch avoids pods failing with `no matching manifest for linux/amd64`.
 - Image Updater write-back path resolves incorrectly:
-  - `write-back-target` is relative to the Application's source path unless you prefix it with `/`. The chart now uses `/charts/bitiq-sample-app/values-<env>.yaml`; resync the umbrella app if you previously rendered a double `charts/` path.
+  - `write-back-target` is relative to the Application's source path unless you prefix it with `/`. The toy-service app writes to `/charts/toy-service/values-<env>.yaml`; the toy-web app writes to `/charts/toy-web/values-<env>.yaml`. Resync the umbrella app if you previously rendered a double `charts/` path.
 
 Optional: set Quay credentials for the pipeline SA
 

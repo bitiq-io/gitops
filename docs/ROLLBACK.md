@@ -13,7 +13,7 @@ Operational recipe for reverting deployments managed by this GitOps repo. Applie
 1. Inspect recent Git history for the service values and composite fingerprint. Replace `<env>` with `local|sno|prod` and `<service>` with the service you need to roll back:
 
    ```bash
-   git log -p -- charts/bitiq-sample-app/values-<env>.yaml charts/bitiq-umbrella/Chart.yaml
+   git log -p -- charts/toy-service/values-<env>.yaml charts/toy-web/values-<env>.yaml charts/bitiq-umbrella/Chart.yaml
    ```
 
 2. Verify the currently deployed fingerprint in Argo (CLI or UI):
@@ -32,16 +32,16 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
 
 ### 2.1 Git-first freeze (preferred)
 
-1. On your rollback branch, edit `charts/argocd-apps/values.yaml` for the affected environment and flip the relevant pause flag(s) under `imageUpdaterPause` to `true`. Example — pausing the backend while keeping the frontend active:
+1. On your rollback branch, edit `charts/argocd-apps/values.yaml` for the affected environment and flip the relevant `toyServiceImageUpdater.pause` / `toyWebImageUpdater.pause` flag(s) to `true`. Example — pausing the toy-service while keeping toy-web active:
 
    ```diff
        - name: <env>
          ...
-         imageUpdaterPause:
--          backend: false
--          frontend: false
-+          backend: true    # freeze backend while rolling back
-+          frontend: false
+         toyServiceImageUpdater:
+-          pause: false
++          pause: true    # freeze toy-service while rolling back
+         toyWebImageUpdater:
+           pause: false
    ```
 
    Set both flags to `true` if you need a full freeze.
@@ -68,31 +68,26 @@ Pause Argo CD Image Updater before touching image tags so it does not immediatel
 5. Confirm the Application annotations reflect the freeze:
 
    ```bash
-   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
+   argocd app get toy-service-<env> | rg 'argocd-image-updater.argoproj.io'
+   argocd app get toy-web-<env> | rg 'argocd-image-updater.argoproj.io'
    ```
 
-   Expected snippet when only the backend is paused:
-
-   ```
-   argocd-image-updater.argoproj.io/image-list: frontend=quay.io/paulcapestany/toy-web
-   ```
-
-   (Backend-specific annotations will be absent until you unpause it.)
+   When only `toy-service` is paused, the first command should return no matches (all updater annotations are suppressed). The second command should still list the `toy-web` annotations.
 
 ### 2.2 Fallback: temporary annotation patch
 
 If you cannot push a Git change quickly, apply a temporary annotation patch and record it so you can undo it after the rollback.
 
 ```bash
-oc -n openshift-gitops patch application/bitiq-sample-app-<env> \
+oc -n openshift-gitops patch application/toy-service-<env> \
   --type merge \
   -p '{"metadata":{"annotations":{"argocd-image-updater.argoproj.io/dry-run":"true"}}}'
 ```
 
-For a per-service pause, patch the `image-list` instead (e.g., leave only `backend=<image>` to freeze the frontend). Always confirm the state:
+For `toy-web`, patch `application/toy-web-<env>` instead. Always confirm the state:
 
 ```bash
-argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
+argocd app get toy-service-<env> | rg 'argocd-image-updater.argoproj.io'
 ```
 
 Document any on-cluster patch in the incident log and plan to revert it in [Section 6](#6-unfreeze-the-image-updater).
@@ -107,7 +102,7 @@ Document any on-cluster patch in the incident log and plan to revert it in [Sect
 
    If you already created a revert commit (e.g., with `--no-edit`), skip committing here and proceed to recompute `appVersion`; then commit only the `Chart.yaml` change separately with a clear message (e.g., `chore(umbrella): recompute appVersion`).
 
-2. When multiple services moved together (backend + frontend), make sure both image tags are restored in `charts/bitiq-sample-app/values-<env>.yaml` before you continue.
+2. When both services moved together, make sure the image tags are restored in `charts/toy-service/values-<env>.yaml` and `charts/toy-web/values-<env>.yaml` before you continue.
 
 3. Recompute the umbrella composite `appVersion` so it aligns with the restored image tags:
 
@@ -115,7 +110,7 @@ Document any on-cluster patch in the incident log and plan to revert it in [Sect
    make compute-appversion ENV=<env>
    ```
 
-4. Confirm both `charts/bitiq-sample-app/values-<env>.yaml` and `charts/bitiq-umbrella/Chart.yaml` match the desired tags and fingerprint before committing:
+4. Confirm both `charts/toy-service/values-<env>.yaml`, `charts/toy-web/values-<env>.yaml`, and `charts/bitiq-umbrella/Chart.yaml` match the desired tags and fingerprint before committing:
 
    ```bash
    git diff
@@ -231,27 +226,25 @@ Restore the Image Updater configuration once the rollback is stable so future ta
 
    ```bash
    argocd app sync bitiq-umbrella-<env>
-   argocd app get bitiq-sample-app-<env> | rg 'argocd-image-updater.argoproj.io'
+   argocd app get toy-service-<env> | rg 'argocd-image-updater.argoproj.io'
+   argocd app get toy-web-<env> | rg 'argocd-image-updater.argoproj.io'
    ```
 
-   Expected output: the `image-list` (and associated annotations) show entries for every service you unpaused, for example `backend=quay.io/paulcapestany/toy-service,frontend=quay.io/paulcapestany/toy-web`.
+   Expected output: each Application shows its respective alias (e.g., `toy-service=quay.io/paulcapestany/toy-service` and `toy-web=quay.io/paulcapestany/toy-web`).
 
 ### 6.2 Remove a temporary patch
 
 If you used `oc patch` earlier, undo it now:
 
 ```bash
-oc -n openshift-gitops patch application/bitiq-sample-app-<env> \
+oc -n openshift-gitops patch application/toy-service-<env> \
   --type merge \
   -p '{"metadata":{"annotations":{"argocd-image-updater.argoproj.io/dry-run":"false"}}}'
-```
 
-Re-add any removed services in the `image-list` (replace the repositories if you customized them):
+oc -n openshift-gitops annotate application/toy-service-<env> \
+  argocd-image-updater.argoproj.io/dry-run- --overwrite
 
-```bash
-oc -n openshift-gitops patch application/bitiq-sample-app-<env> \
-  --type merge \
-  -p '{"metadata":{"annotations":{"argocd-image-updater.argoproj.io/image-list":"backend=quay.io/paulcapestany/toy-service,frontend=quay.io/paulcapestany/toy-web"}}}'
+# Repeat the same two commands for toy-web-<env> if you patched that Application.
 ```
 
 Run `argocd app sync bitiq-umbrella-<env>` so Git reconverges with the desired state.
@@ -283,6 +276,5 @@ Only use these steps when Argo CD access is unavailable and production impact re
 ## Reference
 
 - Deterministic tag and composite versioning conventions: [`docs/CONVENTIONS.md`](./CONVENTIONS.md)
-- Image Updater automation and write-back behavior: [`charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml`](../charts/bitiq-umbrella/templates/app-bitiq-sample-app.yaml)
+- Image Updater automation and write-back behavior: [`charts/bitiq-umbrella/templates/app-toy-service.yaml`](../charts/bitiq-umbrella/templates/app-toy-service.yaml) and [`charts/bitiq-umbrella/templates/app-toy-web.yaml`](../charts/bitiq-umbrella/templates/app-toy-web.yaml)
 - Tekton pipeline tag computation: [`charts/ci-pipelines/templates/pipeline.yaml`](../charts/ci-pipelines/templates/pipeline.yaml)
-

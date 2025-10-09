@@ -51,7 +51,6 @@ fi
 log "Running generic smoke checks (Application health, Routes)"
 ENV=prod BASE_DOMAIN="$BASE_DOMAIN" bash "$ROOT_DIR/scripts/smoke.sh" || true
 
-app="bitiq-sample-app-prod"
 ns_gitops="openshift-gitops"
 
 log "Image Updater recent events (last 5m)"
@@ -59,12 +58,13 @@ oc -n "$ns_gitops" logs deploy/argocd-image-updater --since=5m 2>/dev/null \
   | grep -E "(Committing|Pushed change|Dry run|eligible for consideration|Setting new image)" || true
 
 ns_app="bitiq-prod"
-host=$(oc -n "$ns_app" get route bitiq-sample-app -o jsonpath='{.spec.host}' 2>/dev/null || true)
-if [[ -n "$host" ]] && command -v curl >/dev/null 2>&1; then
-  log "Probing sample app route: https://$host"
-  code=$(curl -ks -o /dev/null -w '%{http_code}' "https://$host" || true)
-  log "HTTP status: $code"
-fi
+for route in toy-service toy-web; do
+  host=$(oc -n "$ns_app" get route "$route" -o jsonpath='{.spec.host}' 2>/dev/null || true)
+  if [[ -n "$host" ]] && command -v curl >/dev/null 2>&1; then
+    log "Probing $route route: https://$host"
+    code=$(curl -ks -o /dev/null -w '%{http_code}' "https://$host" || true)
+    log "HTTP status ($route): $code"
+  fi
+done
 
 log "prod-smoke completed"
-

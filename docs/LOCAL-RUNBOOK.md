@@ -191,7 +191,10 @@ oc -n openshift-gitops rollout restart deploy/argocd-image-updater
 ## 5) Auto‑sync child apps
 
 ```bash
-oc -n openshift-gitops patch application bitiq-sample-app-local \
+oc -n openshift-gitops patch application toy-service-${ENV} \
+  --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}'
+
+oc -n openshift-gitops patch application toy-web-${ENV} \
   --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}'
 
 oc -n openshift-gitops patch application ci-pipelines-${ENV} \
@@ -205,7 +208,7 @@ make smoke ENV=local
 
 # Or directly:
 oc -n openshift-gitops get applications
-APP_HOST=$(oc -n bitiq-local get route bitiq-sample-app -o jsonpath='{.spec.host}')
+APP_HOST=$(oc -n bitiq-local get route toy-service -o jsonpath='{.spec.host}')
 echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
 ```
 
@@ -214,10 +217,11 @@ echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
 - The sample stack ships with two images:
   - Backend (`toy-service`) — defaults to `quay.io/paulcapestany/toy-service` with probes on `/healthz`.
   - Frontend (`toy-web`) — defaults to `quay.io/paulcapestany/toy-web` with probes on `/`.
-- These live in `charts/bitiq-sample-app/values-*.yaml` under `backend.image` and `frontend.image` (plus `healthPath`, `hostPrefix`, and `service.port`).
+- These live in `charts/toy-service/values-*.yaml` and `charts/toy-web/values-*.yaml` (`image.repository`, `image.tag`, `healthPath`, `hostPrefix`, and `service.port`).
 - If you swap to your own images, ensure ports/probes line up; then hard refresh:
   ```bash
-  oc -n openshift-gitops annotate application bitiq-sample-app-local argocd.argoproj.io/refresh=hard --overwrite
+  oc -n openshift-gitops annotate application toy-service-local argocd.argoproj.io/refresh=hard --overwrite
+  oc -n openshift-gitops annotate application toy-web-local argocd.argoproj.io/refresh=hard --overwrite
   ```
 
 ## Quick Troubleshooting
@@ -230,5 +234,6 @@ echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
   ```
 - If the umbrella app is Healthy but children are Missing, ensure the rolebinding in `bitiq-local` exists (step 3), then hard refresh:
   ```bash
-  oc -n openshift-gitops annotate application bitiq-sample-app-local argocd.argoproj.io/refresh=hard --overwrite
+  oc -n openshift-gitops annotate application toy-service-local argocd.argoproj.io/refresh=hard --overwrite
+  oc -n openshift-gitops annotate application toy-web-local argocd.argoproj.io/refresh=hard --overwrite
   ```

@@ -73,13 +73,26 @@ else
   log "Application ${app_name} not found (yet)."
 fi
 
+for child in toy-service toy-web; do
+  child_app="${child}-${ENVIRONMENT}"
+  if oc -n openshift-gitops get application "${child_app}" >/dev/null 2>&1; then
+    health=$(oc -n openshift-gitops get application "${child_app}" -o jsonpath='{.status.health.status}' || echo "Unknown")
+    sync=$(oc -n openshift-gitops get application "${child_app}" -o jsonpath='{.status.sync.status}' || echo "Unknown")
+    log "Application ${child_app}: health=${health} sync=${sync}"
+  else
+    log "Application ${child_app} not found (yet)."
+  fi
+done
+
 ns="bitiq-${ENVIRONMENT}"
-log "Checking sample app Route in namespace ${ns}"
-host=$(oc -n "${ns}" get route bitiq-sample-app -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
-if [[ -n "${host}" ]]; then
-  log "Sample app route: https://${host}"
-else
-  log "Sample app route not found (yet)."
-fi
+log "Checking sample app Routes in namespace ${ns}"
+for route in toy-service toy-web; do
+  host=$(oc -n "${ns}" get route "${route}" -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+  if [[ -n "${host}" ]]; then
+    log "Route ${route}: https://${host}"
+  else
+    log "Route ${route} not found (yet)."
+  fi
+done
 
 log "Smoke test completed."
