@@ -88,7 +88,7 @@ if [[ -z "$nodes_json" ]]; then
   status FAIL "Unable to list cluster nodes"
   ((failures++))
 else
-  node_report="$(MIN_NODE_CPU_CORES="$MIN_NODE_CPU_CORES" MIN_NODE_MEMORY_GIB="$MIN_NODE_MEMORY_GIB" python3 - <<'PY'
+  node_report="$(echo "$nodes_json" | MIN_NODE_CPU_CORES="$MIN_NODE_CPU_CORES" MIN_NODE_MEMORY_GIB="$MIN_NODE_MEMORY_GIB" python3 - <<'PY'
 import json
 import math
 import os
