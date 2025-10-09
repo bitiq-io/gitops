@@ -15,6 +15,7 @@
    description: Harden docs/ROLLBACK.md with a deterministic, copy/pasteable, Git-first rollback flow for a single microservice plus verification and failure fallbacks.
    why: Reduces operator error under pressure while keeping Git as source of truth; aligns with GitOps model.
    dependencies: [T0]
+   status: complete (docs updated)
    acceptance_criteria:
      - ROLLBACK.md includes: git revert example, recompute umbrella/appVersion, argocd app sync/wait commands, and expected outputs.
      - Explicitly advises against cluster-side edits; documents CLI fallback only as emergency.
