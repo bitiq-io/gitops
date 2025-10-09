@@ -27,6 +27,7 @@
    description: Extend ROLLBACK.md with multi-service rollback steps and an updater freeze/unfreeze procedure to avoid immediate re-bumps during rollback windows.
    why: Multi-service changes are common; freezing avoids races; ensures composite versions reflect the intended state.
    dependencies: [T1]
+   status: complete (docs updated)
    acceptance_criteria:
      - Docs include rolling back backend + frontend together with one commit and verifying composite appVersion.
      - Defines a reversible freeze (dry-run true or omit image-list) and re-enable steps with commands.
