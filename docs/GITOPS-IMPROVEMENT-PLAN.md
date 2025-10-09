@@ -51,6 +51,7 @@
    description: Split current combined sample chart into `charts/toy-service` and `charts/toy-web`, with independent Argo Applications and write-back targets.
    why: Mirrors real microservice topology for scaling, health, and rollbacks; simplifies troubleshooting and aligns with best practices.
    dependencies: [T0, T3]
+   status: complete (implemented in PR #39)
    acceptance_criteria:
      - New charts for each service with values-common and env overlays (local/sno/prod) exist; umbrella renders `toy-service-<env>` and `toy-web-<env>` Applications.
      - Image Updater annotations use distinct aliases and helmvalues write-back to each chart’s env values file.
