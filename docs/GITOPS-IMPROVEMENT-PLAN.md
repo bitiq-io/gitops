@@ -63,6 +63,7 @@
    description: Confirm that sample deployment config is only in this repo; add cross-links in microservice READMEs and this repo’s README.
    why: Keeps repositories focused (app code vs. deployment); reduces duplication and drift.
    dependencies: [T4]
+   status: complete (docs updated; READMEs linked)
    acceptance_criteria:
      - toy-service and toy-web repos contain no k8s manifests; issues/PRs add “Deployment via GitOps” links pointing here.
      - This repo’s README clearly states where runtime manifests live and how CI/Image Updater connects to microservice repos.
