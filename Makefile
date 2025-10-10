@@ -92,3 +92,18 @@ image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_T
 	@oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
+
+pin-images: ## pin toy-service/toy-web tags (ENVS=local,sno,prod SVC_TAG=... WEB_TAG=... [FREEZE=true] [UNFREEZE=true] [NO_VERIFY=true])
+	@ENVS="$${ENVS:-local,sno,prod}" \
+	 SVC_TAG="$${SVC_TAG:-}" WEB_TAG="$${WEB_TAG:-}" \
+	 SVC_REPO="$${SVC_REPO:-}" WEB_REPO="$${WEB_REPO:-}" \
+	 FREEZE="$${FREEZE:-false}" UNFREEZE="$${UNFREEZE:-false}" \
+	 DRY_RUN="$${DRY_RUN:-false}" ; \
+	 NV=""; if [ -n "$$NO_VERIFY" ]; then NV=--no-verify; fi; \
+	 bash scripts/pin-images.sh $${ENVS:+--envs $$ENVS} $${SVC_TAG:+--svc-tag $$SVC_TAG} $${WEB_TAG:+--web-tag $$WEB_TAG} $${SVC_REPO:+--svc-repo $$SVC_REPO} $${WEB_REPO:+--web-repo $$WEB_REPO} $${FREEZE:+--freeze} $${UNFREEZE:+--unfreeze} $$NV $${DRY_RUN:+--dry-run}
+
+freeze-updater: ## set pause:true for Image Updater (ENVS=local,sno,prod) [SERVICES=backend|frontend|backend,frontend]
+	@ENVS="$${ENVS:-local,sno,prod}" SERVICES="$${SERVICES:-}" bash scripts/pin-images.sh --envs "$$ENVS" $${SERVICES:+--services $$SERVICES} --freeze --no-verify
+
+unfreeze-updater: ## set pause:false for Image Updater (ENVS=local,sno,prod) [SERVICES=backend|frontend|backend,frontend]
+	@ENVS="$${ENVS:-local,sno,prod}" SERVICES="$${SERVICES:-}" bash scripts/pin-images.sh --envs "$$ENVS" $${SERVICES:+--services $$SERVICES} --unfreeze --no-verify

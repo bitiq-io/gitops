@@ -145,10 +145,9 @@ The `toy-service-${ENV}` and `toy-web-${ENV}` Argo Applications are annotated fo
 
 Both Applications set `write-back-method: git` with the tracked branch, interval, platform filter, and optional pull secret configured via the umbrella chart’s `imageUpdater.*` values. ([Argo CD Image Updater][8])
 
-Local env note (toy-web updates disabled by default)
+Local env note
 
-* The local environment defaults `toyWebImageUpdater.enabled: false` in `charts/argocd-apps/values.yaml` to avoid failures when the toy-web Quay repo is private or throttled. This maps to the umbrella value `imageUpdater.toyWeb.enabled`.
-* Re-enable by setting `toyWebImageUpdater.enabled: true` for the env (or overriding the Application parameter). If the repo is private, also set `imageUpdater.pullSecret` so Image Updater can list tags.
+* Both sample apps (backend and frontend) have Image Updater enabled by default. If your registry is private, set `imageUpdater.pullSecret` so the updater can list tags.
 * Pause either service’s write-back by flipping `toyServiceImageUpdater.pause` / `toyWebImageUpdater.pause` (forwarded to `imageUpdater.toyService.pause` and `.toyWeb.pause`). The corresponding Application drops Image Updater annotations until you resume it.
 
 Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Updater will commit to the repo branch Argo tracks. ([Argo CD Image Updater][10])
@@ -242,6 +241,7 @@ make hu         # run helm-unittest suites (helm plugin required)
 make template   # helm template sanity for each env
 make validate   # full validation: helm render, kubeconform, conftest, yamllint
 make verify-release  # assert appVersion matches env image tags (multi-image safe)
+make pin-images           # pin sample-app tags per service across envs
 make dev-setup  # install local commit-msg hook for commitlint
 make smoke-image-update  # show app annotations and tail image-updater logs (ENV=<env>)
 make bump-image           # create a new tag in Quay (SOURCE_TAG->NEW_TAG)
@@ -250,6 +250,47 @@ make smoke ENV=local [BOOTSTRAP=true]  # cluster smoke checks (optional bootstra
 ```
 
 CI uses the same entrypoint: the workflow runs `make validate` for parity with local checks.
+
+### Pinning image tags (automation)
+
+Use the helper to pin tags in values-<env>.yaml, recompute the umbrella composite, optionally freeze/unfreeze Image Updater (per service), and optionally commit/push + Argo sync:
+
+```bash
+# Pin both services across all envs and freeze updater
+SVC_TAG=v0.3.20-commit.abc1234 \
+WEB_TAG=v0.1.20-commit.def5678 \
+FREEZE=true make pin-images
+
+# Pin only prod backend (skip verify across all envs)
+ENVS=prod SVC_TAG=v0.3.21-commit.9999999 NO_VERIFY=1 make pin-images
+
+# Per-service selection
+# Pin only backend (infer service from SVC_TAG)
+ENVS=local SVC_TAG=v0.3.22-commit.abcdef0 make pin-images
+# Freeze only backend
+ENVS=local SERVICES=backend make freeze-updater
+# Unfreeze only frontend
+ENVS=local SERVICES=frontend make unfreeze-updater
+
+# Fully non-interactive end-to-end (commit, push, sync)
+ENVS=local \\
+SVC_TAG=v0.3.22-commit.abcdef0 \\
+WEB_TAG=v0.1.21-commit.1234567 \\
+YES=1 AUTO_COMMIT=1 AUTO_PUSH=1 SYNC=1 make pin-images
+
+# Freeze/unfreeze only
+ENVS=local make freeze-updater
+ENVS=local make unfreeze-updater
+```
+
+Notes:
+- Tag grammar is enforced: `vX.Y.Z-commit.<sha>`.
+- By default all envs are updated; when envs differ, the helper skips `verify-release` and computes `appVersion` from the first selected env.
+- Edits `charts/toy-service/values-<env>.yaml` and/or `charts/toy-web/values-<env>.yaml` based on chosen services, then runs `scripts/compute-appversion.sh`.
+- Limit scope with `SERVICES=backend|frontend` (or `--services`); unfreezing resumes Image Updater so it writes the newest allowed tags back to Git automatically for the selected services.
+- With `AUTO_COMMIT=1`, commits are created (freeze commit is separate by default). Use `SPLIT_COMMITS=false` to squash into one.
+- With `AUTO_PUSH=1`, pushes to the current branch’s remote (default `origin`). Override with `REMOTE`/`BRANCH`.
+- With `SYNC=1`, runs `argocd app sync bitiq-umbrella-<env>` and waits for health.
 
 ## Project docs
 
