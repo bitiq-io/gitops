@@ -21,7 +21,6 @@ envs:
       enabled: true
       pause: false
     toyWebImageUpdater:
-      enabled: false
       pause: false
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
@@ -36,7 +35,6 @@ envs:
       enabled: true
       pause: false
     toyWebImageUpdater:
-      enabled: true
       pause: false
     tektonFsGroup: ""
   - name: prod
@@ -48,6 +46,5 @@ envs:
       enabled: true
       pause: false
     toyWebImageUpdater:
-      enabled: true
       pause: false
     tektonFsGroup: ""

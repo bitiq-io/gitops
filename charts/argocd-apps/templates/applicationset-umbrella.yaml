@@ -20,7 +20,6 @@ spec:
             platforms: {{ $e.platforms | quote }}
             toyServiceUpdaterEnabled: {{ default true $e.toyServiceImageUpdater.enabled }}
             toyServiceUpdaterPause: {{ default false $e.toyServiceImageUpdater.pause }}
-            toyWebUpdaterEnabled: {{ default true $e.toyWebImageUpdater.enabled }}
             toyWebUpdaterPause: {{ default false $e.toyWebImageUpdater.pause }}
             tektonFsGroup: {{ $e.tektonFsGroup | quote }}
 {{- end }}
@@ -56,8 +55,6 @@ spec:
               value: '{{ "{{ .toyServiceUpdaterEnabled | default true }}" }}'
             - name: imageUpdater.toyService.pause
               value: '{{ "{{ .toyServiceUpdaterPause | default false }}" }}'
-            - name: imageUpdater.toyWeb.enabled
-              value: '{{ "{{ .toyWebUpdaterEnabled | default true }}" }}'
             - name: imageUpdater.toyWeb.pause
               value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
             - name: ciPipelines.fsGroup

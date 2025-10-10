@@ -19,7 +19,6 @@ imageUpdater:
     enabled: true
     pause: false
   toyWeb:
-    enabled: true
     pause: false
 
 # Sample app images (Image Updater watches these)
