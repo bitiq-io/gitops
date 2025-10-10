@@ -18,11 +18,11 @@ tests:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
           value: helmvalues:/charts/toy-web/values-local.yaml
-  - it: omits annotations when disabled
+  - it: omits annotations when paused
     set:
       imageUpdater:
         toyWeb:
-          enabled: false
+          pause: true
     asserts:
       - notExists:
           path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]

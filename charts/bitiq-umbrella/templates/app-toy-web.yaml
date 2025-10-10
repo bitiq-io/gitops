@@ -1,15 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 {{- $toyWebCfg := default (dict) .Values.imageUpdater.toyWeb }}
-{{- $toyWebEnabled := true }}
-{{- if hasKey $toyWebCfg "enabled" }}
-  {{- $toyWebEnabled = eq (lower (printf "%v" (get $toyWebCfg "enabled"))) "true" }}
-{{- end }}
 {{- $toyWebPaused := false }}
 {{- if hasKey $toyWebCfg "pause" }}
   {{- $toyWebPaused = eq (lower (printf "%v" (get $toyWebCfg "pause"))) "true" }}
 {{- end }}
-{{- $manageToyWeb := and $toyWebEnabled (not $toyWebPaused) }}
+{{- $manageToyWeb := not $toyWebPaused }}
 {{- $toyWebRepo := default "" (get .Values.sampleAppImages "toyWeb") }}
 metadata:
   name: toy-web-{{ .Values.env }}
