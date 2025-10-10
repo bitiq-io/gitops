@@ -93,14 +93,23 @@ image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_T
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
 
-pin-images: ## pin toy-service/toy-web tags (ENVS=local,sno,prod SVC_TAG=... WEB_TAG=... [FREEZE=true] [UNFREEZE=true] [NO_VERIFY=true])
+pin-images: ## pin toy-service/toy-web tags (ENVS=local,sno,prod SVC_TAG=... WEB_TAG=... [FREEZE=true] [UNFREEZE=true] [NO_VERIFY=1] [DRY_RUN=true])
 	@ENVS="$${ENVS:-local,sno,prod}" \
 	 SVC_TAG="$${SVC_TAG:-}" WEB_TAG="$${WEB_TAG:-}" \
 	 SVC_REPO="$${SVC_REPO:-}" WEB_REPO="$${WEB_REPO:-}" \
 	 FREEZE="$${FREEZE:-false}" UNFREEZE="$${UNFREEZE:-false}" \
 	 DRY_RUN="$${DRY_RUN:-false}" ; \
-	 NV=""; if [ -n "$$NO_VERIFY" ]; then NV=--no-verify; fi; \
-	 bash scripts/pin-images.sh $${ENVS:+--envs $$ENVS} $${SVC_TAG:+--svc-tag $$SVC_TAG} $${WEB_TAG:+--web-tag $$WEB_TAG} $${SVC_REPO:+--svc-repo $$SVC_REPO} $${WEB_REPO:+--web-repo $$WEB_REPO} $${FREEZE:+--freeze} $${UNFREEZE:+--unfreeze} $$NV $${DRY_RUN:+--dry-run}
+	 ARGS=""; \
+	 if [ -n "$$ENVS" ]; then ARGS="$$ARGS --envs $$ENVS"; fi; \
+	 if [ -n "$$SVC_TAG" ]; then ARGS="$$ARGS --svc-tag $$SVC_TAG"; fi; \
+	 if [ -n "$$WEB_TAG" ]; then ARGS="$$ARGS --web-tag $$WEB_TAG"; fi; \
+	 if [ -n "$$SVC_REPO" ]; then ARGS="$$ARGS --svc-repo $$SVC_REPO"; fi; \
+	 if [ -n "$$WEB_REPO" ]; then ARGS="$$ARGS --web-repo $$WEB_REPO"; fi; \
+	 if [ "$$FREEZE" = "true" ]; then ARGS="$$ARGS --freeze"; fi; \
+	 if [ "$$UNFREEZE" = "true" ]; then ARGS="$$ARGS --unfreeze"; fi; \
+	 if [ -n "$$NO_VERIFY" ]; then ARGS="$$ARGS --no-verify"; fi; \
+	 if [ "$$DRY_RUN" = "true" ]; then ARGS="$$ARGS --dry-run"; fi; \
+	 bash scripts/pin-images.sh $$ARGS
 
 freeze-updater: ## set pause:true for Image Updater (ENVS=local,sno,prod) [SERVICES=backend|frontend|backend,frontend]
 	@ENVS="$${ENVS:-local,sno,prod}" SERVICES="$${SERVICES:-}" bash scripts/pin-images.sh --envs "$$ENVS" $${SERVICES:+--services $$SERVICES} --freeze --no-verify
