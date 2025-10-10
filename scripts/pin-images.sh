@@ -73,6 +73,7 @@ YES=${YES:-false}
 BRANCH=${BRANCH:-}
 REMOTE=${REMOTE:-origin}
 SPLIT_COMMITS=${SPLIT_COMMITS:-true}
+ARGOCD_FLAGS=${ARGOCD_FLAGS:---grpc-web}
 
 TAG_REGEX='^v[0-9]+\.[0-9]+\.[0-9]+-commit\.[0-9a-f]{7,}$'
 
@@ -184,9 +185,97 @@ if ! truthy "$TARGET_BACKEND" && ! truthy "$TARGET_FRONTEND"; then
   TARGET_FRONTEND=true
 fi
 
+preflight_sync_prereqs
+
 
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing required tool: $1" >&2; return 1; }; }
+
+# --- Argo CD helpers -------------------------------------------------------
+argocd_logged_in() {
+  # Returns 0 if we can talk to the Argo CD API with current context
+  # Use account get-user-info because it requires valid auth
+  command -v argocd >/dev/null 2>&1 || return 1
+  argocd $ARGOCD_FLAGS account get-user-info >/dev/null 2>&1
+}
+
+discover_argocd_host() {
+  # Prefer explicit ARGOCD_HOST, else try to discover via oc route
+  if [[ -n "${ARGOCD_HOST:-}" ]]; then
+    echo "$ARGOCD_HOST"
+    return 0
+  fi
+  if command -v oc >/dev/null 2>&1; then
+    if oc whoami >/dev/null 2>&1; then
+      oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}' 2>/dev/null || true
+    else
+      # Not logged in; cannot auto-discover
+      echo ""
+    fi
+  fi
+}
+
+ensure_argocd_login() {
+  # Ensure argocd CLI exists and has a valid session. Interactively offer login.
+  if ! command -v argocd >/dev/null 2>&1; then
+    log "argocd CLI not found; skipping sync/login preflight"
+    return 1
+  fi
+  if argocd_logged_in; then
+    return 0
+  fi
+  log "Argo CD: not logged in or session expired."
+  # If host is not provided and oc is available but not logged in, offer oc login for discovery
+  if [[ -z "${ARGOCD_HOST:-}" ]] && command -v oc >/dev/null 2>&1 && ! oc whoami >/dev/null 2>&1; then
+    log "OpenShift: not logged in (oc whoami failed). This is only needed to auto-discover the Argo CD host."
+    if confirm "Login to OpenShift now to enable host discovery?" y; then
+      oc login || log "oc login failed or was canceled; you can still provide ARGOCD_HOST manually."
+    else
+      log "Skipping oc login; you can set ARGOCD_HOST to skip discovery."
+    fi
+  fi
+  if ! confirm "Login to Argo CD now?" y; then
+    return 1
+  fi
+  local host
+  host=$(discover_argocd_host)
+  if [[ -z "$host" ]]; then
+    host=$(prompt "Enter Argo CD host (e.g., argocd.example.com)" "")
+  else
+    log "Discovered Argo CD host: $host"
+  fi
+  if [[ -z "$host" ]]; then
+    log "No Argo CD host provided; cannot perform login."
+    return 1
+  fi
+  log "Running: argocd $ARGOCD_FLAGS login $host --sso"
+  # Best-effort SSO login; fall back message if it fails
+  if ! argocd $ARGOCD_FLAGS login "$host" --sso; then
+    log "Argo CD login failed. You may need to run: argocd login $host --sso --grpc-web"
+    return 1
+  fi
+  if argocd_logged_in; then
+    log "Argo CD login successful."
+    return 0
+  fi
+  log "Argo CD login did not establish a session; continuing without sync."
+  return 1
+}
+
+# Proactive hinting when sync is requested
+preflight_sync_prereqs() {
+  if ! truthy "$SYNC"; then return 0; fi
+  if ! command -v argocd >/dev/null 2>&1; then
+    log "SYNC requested but 'argocd' CLI not found; will skip manual sync and rely on Argo auto-sync."
+  fi
+  if ! command -v oc >/dev/null 2>&1; then
+    log "SYNC requested but 'oc' not found; cannot auto-discover Argo CD host. Set ARGOCD_HOST or install oc."
+  else
+    if ! oc whoami >/dev/null 2>&1; then
+      log "SYNC requested but 'oc whoami' failed; run 'oc login' to enable host discovery or set ARGOCD_HOST."
+    fi
+  fi
+}
 
 validate_tag() {
   local tag=$1
@@ -507,16 +596,28 @@ maybe_sync_argo() {
     log "argocd CLI not found; skipping sync"
     return 0
   fi
+  # Ensure we have an authenticated session before attempting syncs
+  if ! ensure_argocd_login; then
+    log "Skipping sync: not logged in to Argo CD. Changes have been pushed and will reconcile via auto-sync."
+    return 0
+  fi
   for env in "${ENV_ARR[@]}"; do
     local app="bitiq-umbrella-$env"
     log "Syncing $app"
-    if ! argocd app sync "$app" --retry-limit 2; then
+    local out
+    if ! out=$(argocd $ARGOCD_FLAGS app sync "$app" --retry-limit 2 2>&1); then
+      printf '%s\n' "$out" >&2
+      if echo "$out" | rg -qi 'permissiondenied|permission denied'; then
+        log "Sync failed with PermissionDenied. Likely not logged in or lacking Argo CD RBAC."
+        log "Try: argocd $ARGOCD_FLAGS login \
+  $(discover_argocd_host || echo '<argocd-host>') --sso"
+      fi
       if ! confirm "Sync failed for $app. Continue?" n; then
         return 1
       fi
     fi
-    argocd app wait "$app" --health --sync --timeout 300 || true
-    argocd app get "$app" | (rg '^App Version:' || grep -E '^App Version:') || true
+    argocd $ARGOCD_FLAGS app wait "$app" --health --sync --timeout 300 || true
+    argocd $ARGOCD_FLAGS app get "$app" | (rg '^App Version:' || grep -E '^App Version:') || true
   done
 }
 
