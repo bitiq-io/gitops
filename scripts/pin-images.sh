@@ -185,9 +185,6 @@ if ! truthy "$TARGET_BACKEND" && ! truthy "$TARGET_FRONTEND"; then
   TARGET_FRONTEND=true
 fi
 
-preflight_sync_prereqs
-
-
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing required tool: $1" >&2; return 1; }; }
 
@@ -276,6 +273,9 @@ preflight_sync_prereqs() {
     fi
   fi
 }
+
+# Run sync preflight after helpers are defined (ensures function exists)
+preflight_sync_prereqs
 
 validate_tag() {
   local tag=$1
