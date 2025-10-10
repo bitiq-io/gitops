@@ -406,7 +406,7 @@ if $VERIFY && ! $DRY_RUN && $RECALC; then
   else
     # allow subset verification
     log "Running verify-release for envs: ${ENV_ARR[*]}"
-    ENVIRONMENTS="${ENV_ARR[*]}" bash "$ROOT/scripts/verify-release.sh" || true
+    ENVIRONMENTS="${ENV_ARR[*]}" bash "$ROOT/scripts/verify-release.sh"
   fi
 fi
 
