@@ -41,6 +41,18 @@ set -euo pipefail
 here() { cd "$(dirname "$0")" && pwd -P; }
 ROOT=$(cd "$(here)/.." && pwd -P)
 
+# Logging + truthiness helpers (must be defined before use)
+log() { printf '[%s] %s\n' "$(date -Ins)" "$*"; }
+
+# Return success (0) if argument looks truthy: 1|true|yes|y (case-insensitive)
+# Otherwise return non-zero.
+truthy() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|y) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 ENVS=${ENVS:-}
 # Service selection: backend (toy-service) and/or frontend (toy-web)
 SERVICES=${SERVICES:-}
@@ -128,18 +140,18 @@ fi
 if [[ -n "$SVC_TAG" ]]; then TARGET_BACKEND=true; PIN_BACKEND=true; fi
 if [[ -n "$WEB_TAG" ]]; then TARGET_FRONTEND=true; PIN_FRONTEND=true; fi
 
-if ! $TARGET_BACKEND && ! $TARGET_FRONTEND; then
+if ! truthy "$TARGET_BACKEND" && ! truthy "$TARGET_FRONTEND"; then
   TARGET_BACKEND=true
   TARGET_FRONTEND=true
 fi
 
-log() { printf '[%s] %s\n' "$(date -Ins)" "$*"; }
+ 
 
 confirm() {
   local prompt=${1:-Continue?}
   local default=${2:-y}
   local ans
-  if $YES; then return 0; fi
+  if truthy "$YES"; then return 0; fi
   if [[ ! -t 0 ]]; then
     ans=$default
   else
@@ -152,7 +164,7 @@ confirm() {
 prompt() {
   local prompt=$1 def=${2:-}
   local ans
-  if $YES && [[ -n "$def" ]]; then
+  if truthy "$YES" && [[ -n "$def" ]]; then
     echo "$def"
     return 0
   fi
@@ -193,7 +205,7 @@ current_tag() {
 
 replace_line() {
   local file=$1 pattern=$2 new=$3
-  if $DRY_RUN; then
+  if truthy "$DRY_RUN"; then
     log "DRY-RUN would update: $file :: s|$pattern|$new|"
     return 0
   fi
@@ -231,7 +243,7 @@ toggle_pause_for_env() {
   local env=$1 val=$2 target=$3
   local file="$ROOT/charts/argocd-apps/values.yaml"
   [[ -f "$file" ]] || { log "[WARN] $file not found; cannot toggle pause"; return 0; }
-  if $DRY_RUN; then
+  if truthy "$DRY_RUN"; then
     local which="both"
     if [[ "$target" == "backend" ]]; then which="backend"; fi
     if [[ "$target" == "frontend" ]]; then which="frontend"; fi
@@ -280,7 +292,7 @@ $TARGET_FRONTEND && targets+=(frontend)
 log "Targets: ${targets[*]}"
 log "Planned changes: toy-service tag='${SVC_TAG:-<no change>}' repo='${SVC_REPO:-<no change>}'; toy-web tag='${WEB_TAG:-<no change>}' repo='${WEB_REPO:-<no change>}'; freeze=$FREEZE unfreeze=$UNFREEZE verify=$VERIFY dry-run=$DRY_RUN"
 
-if $FREEZE && $UNFREEZE; then
+if truthy "$FREEZE" && truthy "$UNFREEZE"; then
   echo "Cannot set both --freeze and --unfreeze" >&2
   exit 1
 fi
@@ -298,7 +310,7 @@ fi
 
 PROMPT_TAGS=false
 if [[ -z "$SVC_TAG" && -z "$WEB_TAG" ]]; then
-  if ! $FREEZE && ! $UNFREEZE; then
+  if ! truthy "$FREEZE" && ! truthy "$UNFREEZE"; then
     PROMPT_TAGS=true
   else
     if confirm "Also pin new tags during this freeze/unfreeze run?" n; then
@@ -370,14 +382,14 @@ for env in "${ENV_ARR[@]}"; do
     env_changed=true
   fi
 
-  if $FREEZE; then
+  if truthy "$FREEZE"; then
     log "Freezing Image Updater in env=$env"
     if $TARGET_BACKEND && $TARGET_FRONTEND; then toggle_pause_for_env "$env" true both; 
     elif $TARGET_BACKEND; then toggle_pause_for_env "$env" true backend; 
     elif $TARGET_FRONTEND; then toggle_pause_for_env "$env" true frontend; 
     else toggle_pause_for_env "$env" true both; fi
   fi
-  if $UNFREEZE; then
+  if truthy "$UNFREEZE"; then
     log "Unfreezing Image Updater in env=$env"
     if $TARGET_BACKEND && $TARGET_FRONTEND; then toggle_pause_for_env "$env" false both; 
     elif $TARGET_BACKEND; then toggle_pause_for_env "$env" false backend; 
@@ -391,15 +403,15 @@ done
 
 # Compute composite only if values changed. If tags are aligned
 # across envs, verify-release will pass for all.
-if ! $DRY_RUN && $RECALC; then
+if ! truthy "$DRY_RUN" && truthy "$RECALC"; then
   first_env=${ENV_ARR[0]}
   log "Recomputing umbrella appVersion from ENV=$first_env"
   ENV=$first_env bash "$ROOT/scripts/compute-appversion.sh" "$first_env"
-elif ! $DRY_RUN; then
+elif ! truthy "$DRY_RUN"; then
   log "No tag/repo updates detected; skipping appVersion recompute"
 fi
 
-if $VERIFY && ! $DRY_RUN && $RECALC; then
+if truthy "$VERIFY" && ! truthy "$DRY_RUN" && truthy "$RECALC"; then
   if [[ "${#ENV_ARR[@]}" -eq 3 ]]; then
     log "Running verify-release across all envs"
     bash "$ROOT/scripts/verify-release.sh"
@@ -439,7 +451,7 @@ git_commit_if_any() {
 
 maybe_auto_commit_push() {
   cd "$ROOT"
-  if $DRY_RUN; then
+  if truthy "$DRY_RUN"; then
     log "DRY-RUN: skipping git commit/push"
     return 0
   fi
@@ -449,7 +461,7 @@ maybe_auto_commit_push() {
   # Show a concise diff summary
   log "Changed files:"; git --no-pager diff --name-only | sed 's/^/  - /'
 
-  if ! $AUTO_COMMIT; then
+  if ! truthy "$AUTO_COMMIT"; then
     if ! confirm "Create git commits for these changes?" y; then
       log "Skipping commit/push"
       return 0
@@ -457,7 +469,7 @@ maybe_auto_commit_push() {
   fi
 
   # Separate freeze commit if requested and present
-  if $SPLIT_COMMITS && $FREEZE; then
+  if truthy "$SPLIT_COMMITS" && truthy "$FREEZE"; then
     git_commit_if_any "chore(image-updater): freeze sample app updates for ${ENVS}" charts/argocd-apps/values.yaml || true
   fi
 
@@ -470,7 +482,7 @@ maybe_auto_commit_push() {
   fi
 
   # Push if selected
-  if $AUTO_PUSH || confirm "Push to remote?" y; then
+  if truthy "$AUTO_PUSH" || confirm "Push to remote?" y; then
     local branch=${BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}
     local remote=${REMOTE}
     if [[ "$branch" == "HEAD" ]]; then
@@ -483,11 +495,11 @@ maybe_auto_commit_push() {
 }
 
 maybe_sync_argo() {
-  if $DRY_RUN; then
+  if truthy "$DRY_RUN"; then
     log "DRY-RUN: skipping Argo CD sync"
     return 0
   fi
-  if ! $SYNC && ! confirm "Sync Argo CD umbrella apps now?" n; then
+  if ! truthy "$SYNC" && ! confirm "Sync Argo CD umbrella apps now?" n; then
     return 0
   fi
   if ! need argocd; then
@@ -509,8 +521,8 @@ maybe_sync_argo() {
 
 maybe_unfreeze_post_sync() {
   cd "$ROOT"
-  if $DRY_RUN; then return 0; fi
-  if $UNFREEZE || ($FREEZE && confirm "Unfreeze Image Updater now?" n); then
+  if truthy "$DRY_RUN"; then return 0; fi
+  if truthy "$UNFREEZE" || (truthy "$FREEZE" && confirm "Unfreeze Image Updater now?" n); then
     for env in "${ENV_ARR[@]}"; do
       log "Unfreezing env=$env"
       if $TARGET_BACKEND && $TARGET_FRONTEND; then toggle_pause_for_env "$env" false both; 
@@ -520,7 +532,7 @@ maybe_unfreeze_post_sync() {
     done
     # Commit unfreeze if any changes
     need git && git_commit_if_any "chore(image-updater): unfreeze sample app updates for ${ENVS}" charts/argocd-apps/values.yaml || true
-    if $AUTO_PUSH || confirm "Push unfreeze commit?" y; then
+    if truthy "$AUTO_PUSH" || confirm "Push unfreeze commit?" y; then
       local branch=${BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}
       git push -u "$REMOTE" "$branch"
     fi
