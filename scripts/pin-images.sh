@@ -80,6 +80,45 @@ usage() {
   sed -n '1,100p' "$0" | sed -n '1,40p' | sed 's/^# //;t;d'
 }
 
+# Define interactive helpers before any use
+confirm() {
+  local prompt=${1:-Continue?}
+  local default=${2:-y}
+  local ans
+  if truthy "$YES"; then return 0; fi
+  if [[ ! -t 0 ]]; then
+    ans=$default
+  else
+    read -r -p "$prompt [$default] " ans || true
+    ans=${ans:-$default}
+  fi
+  [[ "$ans" =~ ^[Yy]$ ]]
+}
+
+prompt() {
+  local prompt=$1 def=${2:-}
+  local ans
+  if truthy "$YES" && [[ -n "$def" ]]; then
+    echo "$def"
+    return 0
+  fi
+  if [[ ! -t 0 ]]; then
+    if [[ -n "$def" ]]; then
+      echo "$def"
+    else
+      echo ""
+    fi
+  else
+    if [[ -n "$def" ]]; then
+      read -r -p "$prompt [$def]: " ans || true
+      echo "${ans:-$def}"
+    else
+      read -r -p "$prompt: " ans || true
+      echo "$ans"
+    fi
+  fi
+}
+
 TARGET_BACKEND=false
 TARGET_FRONTEND=false
 PIN_BACKEND=false
@@ -145,45 +184,7 @@ if ! truthy "$TARGET_BACKEND" && ! truthy "$TARGET_FRONTEND"; then
   TARGET_FRONTEND=true
 fi
 
- 
 
-confirm() {
-  local prompt=${1:-Continue?}
-  local default=${2:-y}
-  local ans
-  if truthy "$YES"; then return 0; fi
-  if [[ ! -t 0 ]]; then
-    ans=$default
-  else
-    read -r -p "$prompt [$default] " ans || true
-    ans=${ans:-$default}
-  fi
-  [[ "$ans" =~ ^[Yy]$ ]]
-}
-
-prompt() {
-  local prompt=$1 def=${2:-}
-  local ans
-  if truthy "$YES" && [[ -n "$def" ]]; then
-    echo "$def"
-    return 0
-  fi
-  if [[ ! -t 0 ]]; then
-    if [[ -n "$def" ]]; then
-      echo "$def"
-    else
-      echo ""
-    fi
-  else
-    if [[ -n "$def" ]]; then
-      read -r -p "$prompt [$def]: " ans || true
-      echo "${ans:-$def}"
-    else
-      read -r -p "$prompt: " ans || true
-      echo "$ans"
-    fi
-  fi
-}
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing required tool: $1" >&2; return 1; }; }
 

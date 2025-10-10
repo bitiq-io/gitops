@@ -112,7 +112,17 @@ pin-images: ## pin toy-service/toy-web tags (ENVS=local,sno,prod SVC_TAG=... WEB
 	 bash scripts/pin-images.sh $$ARGS
 
 freeze-updater: ## set pause:true for Image Updater (ENVS=local,sno,prod) [SERVICES=backend|frontend|backend,frontend]
-	@ENVS="$${ENVS:-local,sno,prod}" SERVICES="$${SERVICES:-}" bash scripts/pin-images.sh --envs "$$ENVS" $${SERVICES:+--services $$SERVICES} --freeze --no-verify
+	@ENVS="$${ENVS:-local,sno,prod}" \
+	 SERVICES="$${SERVICES:-}" ; \
+	 ARGS=""; \
+	 if [ -n "$$ENVS" ]; then ARGS="$$ARGS --envs $$ENVS"; fi; \
+	 if [ -n "$$SERVICES" ]; then ARGS="$$ARGS --services $$SERVICES"; fi; \
+	 bash scripts/pin-images.sh $$ARGS --freeze --no-verify
 
 unfreeze-updater: ## set pause:false for Image Updater (ENVS=local,sno,prod) [SERVICES=backend|frontend|backend,frontend]
-	@ENVS="$${ENVS:-local,sno,prod}" SERVICES="$${SERVICES:-}" bash scripts/pin-images.sh --envs "$$ENVS" $${SERVICES:+--services $$SERVICES} --unfreeze --no-verify
+	@ENVS="$${ENVS:-local,sno,prod}" \
+	 SERVICES="$${SERVICES:-}" ; \
+	 ARGS=""; \
+	 if [ -n "$$ENVS" ]; then ARGS="$$ARGS --envs $$ENVS"; fi; \
+	 if [ -n "$$SERVICES" ]; then ARGS="$$ARGS --services $$SERVICES"; fi; \
+	 bash scripts/pin-images.sh $$ARGS --unfreeze --no-verify
