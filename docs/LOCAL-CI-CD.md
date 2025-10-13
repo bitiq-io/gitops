@@ -52,35 +52,25 @@ oc -n openshift-pipelines create rolebinding argocd-app-admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
 ```
 
-3) Image Updater token (recommended local account)
+3) Image Updater token (ESO)
 
-Using SSO users for API tokens often returns “account '<user>' does not exist”. Create a local Argo CD account for the updater and generate a token for it.
+Generate a token (via SSO or a local account) and write it to Vault so ESO reconciles the Kubernetes Secret:
 
 ```bash
-# Define local account + RBAC, then restart
-oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{
-  "spec":{
-    "extraConfig":{"accounts.argocd-image-updater":"apiKey"},
-    "rbac":{"policy":"g, kubeadmin, role:admin\n\ng, argocd-image-updater, role:admin\n\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}
-  }
-}'
-oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
-
-# Login and generate token for the local account
 ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
 argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web --account argocd-image-updater)
-
-# Create/update the Secret and restart the updater
-make image-updater-secret
+export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
+vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
 ```
 
-4) Tekton prerequisites (namespace + webhook secret)
+4) Tekton prerequisites (namespace + webhook secret via ESO)
 
 ```bash
-# Creates ns bitiq-ci, grants image pusher to pipeline SA, and creates the webhook secret
-export GITHUB_WEBHOOK_SECRET=$(openssl rand -base64 32)
-make tekton-setup GITHUB_WEBHOOK_SECRET="$GITHUB_WEBHOOK_SECRET"
+# Creates ns bitiq-ci and grants image pusher to pipeline SA
+make tekton-setup
+
+# Seed webhook secret in Vault (ESO will reconcile)
+vault kv put gitops/data/github/webhook token="$(openssl rand -base64 32)"
 ```
 
 5) Ensure ci-pipelines-${ENV} is synced
@@ -256,13 +246,11 @@ FsGroup verification for git-clone
 - Image Updater write-back path resolves incorrectly:
   - `write-back-target` is relative to the Application's source path unless you prefix it with `/`. The toy-service app writes to `/charts/toy-service/values-<env>.yaml`; the toy-web app writes to `/charts/toy-web/values-<env>.yaml`. Resync the umbrella app if you previously rendered a double `charts/` path.
 
-Optional: set Quay credentials for the pipeline SA
+Optional: set Quay credentials for the pipeline SA (ESO)
 
 ```bash
-export QUAY_USERNAME=<your-username>
-export QUAY_PASSWORD=<your-token-or-password>
-export QUAY_EMAIL=<your-email>
-make quay-secret
+# Provide a dockerconfigjson; ESO will reconcile the Secret and link to SA 'pipeline'
+vault kv put gitops/data/registry/quay dockerconfigjson='{"auths":{"quay.io":{"auth":"<base64 user:token>"}}}'
 ```
 
 Optional: point the pipelines Application at a feature branch for testing

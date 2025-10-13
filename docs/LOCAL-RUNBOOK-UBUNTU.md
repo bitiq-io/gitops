@@ -22,7 +22,7 @@ What it covers:
 - Runs `scripts/bootstrap.sh` (operators + ApplicationSet + umbrella app)
 - Ensures ESO is installed (via bootstrap) and prompts you to seed Vault via `make dev-vault`
 - Grants Argo CD controller admin in `bitiq-local` and `openshift-pipelines`
-- Prompts to add Argo CD repo credentials and `argocd-image-updater-secret`
+- Prompts to add Argo CD repo credentials
 
 For full context and follow-ups (webhook exposure, build triggers, logs), see `docs/LOCAL-CI-CD.md`.
 

@@ -133,7 +133,7 @@ Run these steps after the cluster is reachable.
    oc -n bitiq-sno get routes
    ```
 
-## 6. Configure secrets & credentials
+## 6. Configure secrets & credentials (ESO + Vault)
 
 1. **Argo CD repository access (write-enabled)**
    - Ensure the Argo CD instance can push to your Git repository (SSH key or HTTPS PAT with repo scope).
@@ -142,22 +142,18 @@ Run these steps after the cluster is reachable.
 2. **Argo CD Image Updater token**
    ```bash
    export ARGOCD_TOKEN=<argocd-api-token>
-   make image-updater-secret
+   vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
    ```
-   The make target creates `argocd-image-updater-secret` in `openshift-gitops` and restarts the deployment.
 
 3. **Quay (or other registry) push secret**
    ```bash
-   export QUAY_USERNAME=<user or robot>
-   export QUAY_PASSWORD=<token>
-   export QUAY_EMAIL=<email>
-   make quay-secret
+   # dockerconfigjson with auth for quay.io
+   vault kv put gitops/data/registry/quay dockerconfigjson='{"auths":{"quay.io":{"auth":"<base64 user:token>"}}}'
    ```
 
 4. **GitHub webhook secret (Tekton triggers)**
    ```bash
-   oc -n openshift-pipelines create secret generic github-webhook-secret \
-     --from-literal=secretToken='<random-string>'
+   vault kv put gitops/data/github/webhook token='<random-string>'
    ```
    - Point your repository webhook at the EventListener Route: `https://el-bitiq-listener-openshift-pipelines.apps.<cluster-domain>/`
 
@@ -191,7 +187,7 @@ Run these steps after the cluster is reachable.
 
 - **No default storage class**: install OpenShift Data Foundation or LVM Storage; set the class default before running Tekton pipelines.
 - **Routes fail to resolve**: double-check wildcard DNS and that `BASE_DOMAIN` matches your ingress domain.
-- **Pipeline fails to push image**: ensure Quay credentials are linked to `openshift-pipelines/pipeline` service account (`make quay-secret`).
+- **Pipeline fails to push image**: ensure Quay credentials are linked to `openshift-pipelines/pipeline` service account (ESO will reconcile `quay-auth`).
 - **Image Updater authentication errors**: verify the Argo CD token permissions and that Argo CD has write access to the Git repo.
 - **Cluster managed by central Argo CD**: set `clusterServer` in `charts/argocd-apps/values.yaml` to the external API URL and register the cluster via `argocd cluster add` before syncing.
 

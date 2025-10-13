@@ -76,26 +76,21 @@ make local-e2e
 Headless fast path (non-interactive, remote server):
 
 ```bash
-# Create required secrets and repo creds without prompts, then refresh and wait
+# Bootstrap + RBAC (secrets via ESO; no 'oc create secret')
 FAST_PATH=true \
 ENV=local BASE_DOMAIN=apps-crc.testing \
-GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
-QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
-ARGOCD_TOKEN='<argocd-api-token>' \
 # Per-repo credentials (write access for this repo)
 ARGOCD_REPO_URL='https://github.com/bitiq-io/gitops.git' \
 ARGOCD_REPO_USERNAME='git' \
 ARGOCD_REPO_PASSWORD='<github-pat>' \
-# Optional: host-wide repo-creds for all repos under a prefix (e.g., GitHub)
-ARGOCD_REPOCREDS_URL='https://github.com' \
-ARGOCD_REPOCREDS_USERNAME='git' \
-ARGOCD_REPOCREDS_PASSWORD='<github-pat>' \
 ./scripts/local-e2e-setup.sh
+
+# Seed dev Vault with demo secrets (ESO will reconcile)
+make dev-vault
 ```
 
 Notes:
-- The helper runs `bootstrap.sh` with `SKIP_APP_WAIT=true`, configures RBAC and secrets, and then forces an Argo CD refresh and waits for apps to become Healthy/Synced.
-- argocd CLI login is not required when repo creds are supplied via Secret.
+- Secrets are ESO/Vault‑managed. Rotate by writing to Vault (paths under `gitops/data/...`) and rerun `make dev-vault`.
 
 After bootstrap finishes, run `./scripts/preflight.sh` to confirm the cluster meets the pinned GitOps 1.18 / Pipelines 1.20 baseline before syncing applications.
 
@@ -151,8 +146,8 @@ Production (ENV=prod) quick path
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
 4. The umbrella app deploys:
 
-<<<<<<< HEAD
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
+  * **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds).
   * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
   * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
 
@@ -223,44 +218,16 @@ Defaults used by the helper:
 - `SOURCE_TAG=latest`
 - `NEW_TAG=dev-<timestamp>`
 
-Token secret configuration for Image Updater
+Token secret configuration for Image Updater (ESO)
 
-- The chart supports providing the Argo CD API token via an existing Secret (recommended) or creating one from values.
-- Values (charts/image-updater/values.yaml):
-  - `secret.create`: set to `true` to create the Secret from `.argocd.token`; default `false`.
-  - `secret.name`: Secret name to reference (default `argocd-image-updater-secret`).
-  - `secret.key`: Secret key containing the token (default `argocd.token`).
-  - If `secret.create=true`, set `argocd.token` to the token value (or pass via `--set`).
-  - For production, prefer ESO + Vault as documented in [PROD-SECRETS](docs/PROD-SECRETS.md); set `secret.create=false` with `secret.name` pointing to the managed Secret.
-
-CLI helper for local e2e:
-
-```bash
-# After "argocd login ... --sso --grpc-web --insecure"
-export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
-make image-updater-secret   # applies/updates secret and restarts updater
-```
-
-If your SSO user cannot generate a token (error: `account '<user>' does not exist`), define a dedicated local Argo CD account and generate a token for it:
-
-```bash
-oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{
-  "spec":{
-    "extraConfig":{"accounts.argocd-image-updater":"apiKey"},
-    "rbac":{"policy":"g, kubeadmin, role:admin\n\ng, argocd-image-updater, role:admin\n\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}
-  }
-}'
-oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
-argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web --account argocd-image-updater)
-make image-updater-secret
-```
+- Image Updater reads its API token from an ESO‑managed Secret (`openshift-gitops/argocd-image-updater-secret`).
+- Write the token to Vault at `gitops/data/argocd/image-updater` (key: `token`) and run `make dev-vault` (local) or follow [PROD-SECRETS](docs/PROD-SECRETS.md) for sno/prod.
 
 ### Tekton triggers
 
 The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, TriggerBinding, TriggerTemplate). Point your GitHub webhook to the exposed Route of the EventListener to kick off builds on push/PR. ([Red Hat][11], [Tekton][12])
 
-Secret management note: the chart does not create the webhook Secret by default to avoid overwriting manual/managed secrets. Manually create it or set `triggers.createSecret=true` and provide `triggers.secretToken`.
+Secret management note: the webhook Secret is ESO‑managed. Seed Vault (path `gitops/data/github/webhook`, key `token`) and let ESO reconcile the Kubernetes Secret. Avoid `triggers.createSecret=true` under this policy.
 
 ### Notes
 

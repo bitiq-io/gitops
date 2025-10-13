@@ -31,7 +31,7 @@ Bootstrap this repo
   - `./scripts/bootstrap.sh`
 - This installs the GitOps and Pipelines operators and creates an ApplicationSet that renders one umbrella app for `local`.
 
-Argo CD access and token for Image Updater
+Argo CD access and token for Image Updater (ESO)
 - Get the Argo CD host:
   - `ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')`
 - Open the UI and log in via OAuth:
@@ -43,17 +43,15 @@ Grant RBAC so kubeadmin can create tokens (once per cluster)
 - Restart Argo CD server:
   - `oc -n openshift-gitops rollout restart deploy/openshift-gitops-server`
 
-Generate an Argo CD API token
+Generate an Argo CD API token and write it to Vault
 - CLI (SSO):
   - `argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure`
   - `TOKEN=$(argocd account generate-token --grpc-web)`
 - Or UI: user menu → Generate token → copy value.
 
-Provide the token to Image Updater (kept out of Git)
-- Patch the Application to pass the Helm parameter:
-  - `oc -n openshift-gitops patch application image-updater-${ENV} --type merge -p '{"spec":{"source":{"helm":{"parameters":[{"name":"argocd.token","value":"'"$TOKEN"'"}]}}}}'`
-- Verify Secret created:
-  - `oc -n openshift-gitops get secret argocd-image-updater-secret -o jsonpath='{.data.argocd\.token}' | base64 -d; echo`
+Seed Vault (ESO will reconcile the Kubernetes Secret):
+- `vault kv put gitops/data/argocd/image-updater token="$TOKEN"`
+- For local CRC, you can run `make dev-vault` to seed demo values; then replace the token using the same path.
 
 Configure Argo CD repo write access
 - CLI (recommended for OpenShift GitOps):
@@ -93,7 +91,7 @@ Tekton pipeline (optional)
 - Create namespace and allow pipeline SA to push:
   - `oc new-project bitiq-ci || true`
   - `oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci`
-- Webhook: the `EventListener` has a Route. Set the secret in `charts/ci-pipelines/values.yaml` and point a GitHub webhook to it.
+- Webhook: ESO manages the webhook Secret. Seed Vault at `gitops/data/github/webhook` (key `token`) and point a GitHub webhook to the EventListener Route.
 
 Validate and inspect
 - Lint and template:

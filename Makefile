@@ -58,44 +58,19 @@ bump-image: ## create a new tag in Quay from SOURCE_TAG to NEW_TAG (uses skopeo|
 bump-and-tail: ## bump image in Quay then tail updater logs (ENV=<env> NS=openshift-gitops)
 	@bash scripts/quay-bump-tag.sh && bash scripts/smoke-image-update.sh
 
-tekton-setup: ## create image ns + grant pusher; create webhook secret if GITHUB_WEBHOOK_SECRET is set
+tekton-setup: ## create image ns + grant pusher (webhook secret is ESO-managed; seed Vault instead)
 	@oc new-project bitiq-ci >/dev/null 2>&1 || true
 	@oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci >/dev/null 2>&1 || true
-	@if [ -n "$$GITHUB_WEBHOOK_SECRET" ]; then \
-	  echo "Creating GitHub webhook secret in openshift-pipelines"; \
-	  oc -n openshift-pipelines create secret generic github-webhook-secret \
-	    --from-literal=secretToken="$$GITHUB_WEBHOOK_SECRET" >/dev/null 2>&1 || \
-	    oc -n openshift-pipelines set data secret/github-webhook-secret secretToken="$$GITHUB_WEBHOOK_SECRET" >/dev/null 2>&1 || true; \
-	else \
-	  echo "Set GITHUB_WEBHOOK_SECRET to create webhook secret"; \
-	fi
+	@echo "[INFO] Webhook secret is ESO-managed. Seed Vault at gitops/data/github/webhook (key: token) and run 'make dev-vault'."
 
 local-e2e: ## interactive helper to prep ENV=local CI/CD flow
 	@bash scripts/local-e2e-setup.sh
 
-quay-secret: ## create/link Quay push secret for pipeline SA (QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL required)
-	@if [ -z "$$QUAY_USERNAME" ] || [ -z "$$QUAY_PASSWORD" ] || [ -z "$$QUAY_EMAIL" ]; then \
-	  echo "Set QUAY_USERNAME, QUAY_PASSWORD, QUAY_EMAIL"; exit 1; \
-	fi
-	@oc -n openshift-pipelines create secret docker-registry quay-auth \
-	  --docker-server=quay.io \
-	  --docker-username="$$QUAY_USERNAME" \
-	  --docker-password="$$QUAY_PASSWORD" \
-	  --docker-email="$$QUAY_EMAIL" \
-	  --dry-run=client -o yaml | oc apply -f -
-	@oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-	@oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
-	@echo "Quay secret configured and linked to SA 'pipeline'"
+quay-secret: ## DEPRECATED: use ESO/Vault (seed gitops/data/registry/quay) then make dev-vault
+	@echo "[DEPRECATED] Quay credentials are ESO-managed. Seed Vault at gitops/data/registry/quay (key: dockerconfigjson) and run 'make dev-vault'." && exit 1
 
-image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_TOKEN (and restart deployment)
-	@if [ -z "$$ARGOCD_TOKEN" ]; then \
-	  echo "Set ARGOCD_TOKEN environment variable"; exit 1; \
-	fi
-	@oc -n openshift-gitops get ns >/dev/null 2>&1 || { echo "Namespace openshift-gitops not found"; exit 1; }
-	@echo "Applying argocd-image-updater-secret in openshift-gitops"
-	@oc -n openshift-gitops create secret generic argocd-image-updater-secret \
-	  --from-literal=argocd.token="$$ARGOCD_TOKEN" --dry-run=client -o yaml | oc apply -f -
-	@oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
+image-updater-secret: ## DEPRECATED: use ESO/Vault (seed gitops/data/argocd/image-updater) then make dev-vault
+	@echo "[DEPRECATED] Argo CD Image Updater token is ESO-managed. Seed Vault at gitops/data/argocd/image-updater (key: token) and run 'make dev-vault'." && exit 1
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
 
