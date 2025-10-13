@@ -45,6 +45,10 @@ OpenShift Local (CRC) resources
 
 For detailed macOS/OpenShift Local setup, see `docs/LOCAL-SETUP.md`.
 
+First-time local (CRC)? Use the interactive helper to bootstrap and seed credentials:
+
+`make local-e2e`
+
 ```bash
 # 1) Log in as cluster-admin
 oc login https://api.<cluster-domain>:6443 -u <admin>
@@ -61,6 +65,37 @@ export BASE_DOMAIN=apps.sno.example    # e.g., apps.<yourcluster-domain>
 # 4) Bootstrap operators and GitOps apps
 ./scripts/bootstrap.sh
 ```
+
+Quick interactive setup (local):
+
+```bash
+# Guided helper that bootstraps, configures RBAC, and prompts for creds
+make local-e2e
+```
+
+Headless fast path (non-interactive, remote server):
+
+```bash
+# Create required secrets and repo creds without prompts, then refresh and wait
+FAST_PATH=true \
+ENV=local BASE_DOMAIN=apps-crc.testing \
+GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
+QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
+ARGOCD_TOKEN='<argocd-api-token>' \
+# Per-repo credentials (write access for this repo)
+ARGOCD_REPO_URL='https://github.com/bitiq-io/gitops.git' \
+ARGOCD_REPO_USERNAME='git' \
+ARGOCD_REPO_PASSWORD='<github-pat>' \
+# Optional: host-wide repo-creds for all repos under a prefix (e.g., GitHub)
+ARGOCD_REPOCREDS_URL='https://github.com' \
+ARGOCD_REPOCREDS_USERNAME='git' \
+ARGOCD_REPOCREDS_PASSWORD='<github-pat>' \
+./scripts/local-e2e-setup.sh
+```
+
+Notes:
+- The helper runs `bootstrap.sh` with `SKIP_APP_WAIT=true`, configures RBAC and secrets, and then forces an Argo CD refresh and waits for apps to become Healthy/Synced.
+- argocd CLI login is not required when repo creds are supplied via Secret.
 
 After bootstrap finishes, run `./scripts/preflight.sh` to confirm the cluster meets the pinned GitOps 1.18 / Pipelines 1.20 baseline before syncing applications.
 

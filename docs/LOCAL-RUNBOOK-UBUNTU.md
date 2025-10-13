@@ -4,6 +4,54 @@ This guide walks through running the full ENV=local GitOps workflow on a remote 
 
 > This mirrors the macOS guide (`docs/LOCAL-RUNBOOK.md`) and is tuned for Ubuntu Server. CRC must still meet Red Hat’s hardware requirements: 4+ vCPUs, 12–16 GiB RAM, and ~50 GiB free disk.
 
+## Quick Interactive Setup
+
+Short on time? Use the interactive helper to bootstrap, grant RBAC, and create the common secrets/credentials in one guided flow.
+
+```bash
+make local-e2e
+# or
+ENV=local BASE_DOMAIN=apps-crc.testing ./scripts/local-e2e-setup.sh
+```
+
+Prerequisites:
+- You are logged in as cluster-admin: `oc login -u kubeadmin -p <pass> https://api.crc.testing:6443`
+- `argocd` CLI is installed and you can log in to the OpenShift GitOps route (`--sso --grpc-web --insecure`).
+
+What it covers:
+- Runs `scripts/bootstrap.sh` (operators + ApplicationSet + umbrella app)
+- Grants Argo CD controller admin in `bitiq-local` and `openshift-pipelines`
+- Creates/updates: `openshift-pipelines/github-webhook-secret`, `openshift-pipelines/quay-auth`
+- Prompts to add Argo CD repo credentials and `argocd-image-updater-secret`
+
+For full context and follow-ups (webhook exposure, build triggers, logs), see `docs/LOCAL-CI-CD.md`.
+
+### Headless Fast Path (non-interactive)
+
+When running on a headless server, you can avoid prompts and `argocd` CLI login by providing credentials via env vars. The helper will seed all required secrets and repo credentials for you and then refresh/wait for apps to sync.
+
+```bash
+FAST_PATH=true \
+ENV=local BASE_DOMAIN=apps-crc.testing \
+GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
+QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
+ARGOCD_TOKEN='<argocd-api-token>' \
+# Per-repo credentials (write access for this repo)
+ARGOCD_REPO_URL='https://github.com/bitiq-io/gitops.git' \
+ARGOCD_REPO_USERNAME='git' \
+ARGOCD_REPO_PASSWORD='<github-pat>' \
+# Optional host-wide credentials for all repos under a prefix (e.g., GitHub)
+ARGOCD_REPOCREDS_URL='https://github.com' \
+ARGOCD_REPOCREDS_USERNAME='git' \
+ARGOCD_REPOCREDS_PASSWORD='<github-pat>' \
+./scripts/local-e2e-setup.sh
+```
+
+Notes:
+- The script runs `bootstrap.sh` with `SKIP_APP_WAIT=true`, then configures RBAC/secrets and forces an Argo CD refresh before waiting for Healthy/Synced.
+- If you provide `GH_PAT`, it is accepted as an alias for `ARGOCD_REPO_PASSWORD`/`ARGOCD_REPOCREDS_PASSWORD`.
+- If a secret already exists, the helper leaves it as-is unless updated interactively (when `FAST_PATH` is not set).
+
 ## 0) Host prerequisites
 
 1. Confirm virtualization support (KVM):

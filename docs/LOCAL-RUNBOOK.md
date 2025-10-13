@@ -2,6 +2,43 @@
 
 This is a concise, copy/pasteable sequence to get ENV=local running end‑to‑end on OpenShift Local (CRC) for smoke testing.
 
+## Quick Interactive Setup
+
+Prefer a guided flow that bootstraps, configures RBAC, and prompts for required credentials/secrets:
+
+```bash
+make local-e2e
+# or
+ENV=local BASE_DOMAIN=apps-crc.testing ./scripts/local-e2e-setup.sh
+```
+
+Prereqs: you’re logged in as cluster‑admin (`oc login -u kubeadmin ...`) and have the `argocd` CLI installed and logged in to the OpenShift GitOps route (`--sso --grpc-web --insecure`). For details and follow‑ups (webhook exposure, CI trigger), see `docs/LOCAL-CI-CD.md`.
+
+### Headless Fast Path (non-interactive)
+
+On headless/remote environments you can skip prompts and `argocd` CLI login by providing credentials via env vars. The helper seeds secrets and repo credentials, refreshes Argo, and waits for apps to sync.
+
+```bash
+FAST_PATH=true \
+ENV=local BASE_DOMAIN=apps-crc.testing \
+GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
+QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
+ARGOCD_TOKEN='<argocd-api-token>' \
+# Per-repo credentials (write access for this repo)
+ARGOCD_REPO_URL='https://github.com/bitiq-io/gitops.git' \
+ARGOCD_REPO_USERNAME='git' \
+ARGOCD_REPO_PASSWORD='<github-pat>' \
+# Optional host-wide credentials for all repos under a prefix (e.g., GitHub)
+ARGOCD_REPOCREDS_URL='https://github.com' \
+ARGOCD_REPOCREDS_USERNAME='git' \
+ARGOCD_REPOCREDS_PASSWORD='<github-pat>' \
+./scripts/local-e2e-setup.sh
+```
+
+Notes:
+- Uses `SKIP_APP_WAIT=true` for bootstrap, then applies RBAC/secrets and triggers a hard refresh before waiting for Healthy/Synced.
+- Accepts `GH_PAT` as an alias for `ARGOCD_REPO_PASSWORD`/`ARGOCD_REPOCREDS_PASSWORD`.
+
 ## 0) Size CRC and start
 
 ```bash
