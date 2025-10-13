@@ -158,6 +158,30 @@ if [[ "$(oc auth can-i get pipelines.tekton.dev -n openshift-pipelines)" != "yes
   err "Grant: oc adm policy add-role-to-user admin $CURRENT_USER -n openshift-pipelines"
 fi
 
+# Ensure Argo CD UI RBAC for kubeadmin on ENV=local (idempotent)
+ensure_argocd_ui_rbac() {
+  if [[ "$ENVIRONMENT" != "local" ]]; then
+    return 0
+  fi
+  log "Ensuring Argo CD UI RBAC for kubeadmin (ENV=local)"
+  # Wait briefly for ArgoCD CR to exist
+  for i in {1..60}; do
+    if oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+  done
+  if oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; then
+    oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{"spec":{"rbac":{ "policy":"g, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}' >/dev/null 2>&1 || true
+    # Restart server to pick up RBAC changes managed by operator
+    oc -n openshift-gitops rollout restart deploy/openshift-gitops-server >/dev/null 2>&1 || true
+  else
+    err "Argo CD CR not found; skipping RBAC patch"
+  fi
+}
+
+ensure_argocd_ui_rbac
+
 log "Ensuring application namespace access"
 oc new-project bitiq-local >/dev/null 2>&1 || true
 oc -n bitiq-local create rolebinding argocd-app-admin \
