@@ -18,6 +18,7 @@ Environment variables:
   TARGET_REV         : Git revision Argo should track (default: main)
   PLATFORMS_OVERRIDE : optional imageUpdater platform override for the selected ENV (e.g., linux/arm64)
   TEKTON_FSGROUP     : optional override for Tekton TaskRun fsGroup (auto-detected on OpenShift if unset)
+  SKIP_APP_WAIT      : if true, do not wait for Applications to become Healthy/Synced (default: false)
 
 Examples:
   ENV=local ./scripts/bootstrap.sh
@@ -145,6 +146,27 @@ configure_tekton_results() {
     return 0
   fi
 
+  # Wait for TektonConfig named 'config' to appear (cluster-scoped or namespaced)
+  local found_cfg=""
+  for i in {1..60}; do
+    if oc get tektonconfig config >/dev/null 2>&1; then
+      found_cfg="cluster"
+      break
+    fi
+    # If namespaced, detect the namespace that owns 'config'
+    local cfg_ns
+    cfg_ns=$(oc get tektonconfigs.operator.tekton.dev -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' 2>/dev/null | awk '$2=="config" {print $1; exit}')
+    if [[ -n "$cfg_ns" ]]; then
+      found_cfg="$cfg_ns"
+      break
+    fi
+    sleep 5
+  done
+  if [[ -z "$found_cfg" ]]; then
+    log "TektonConfig 'config' not found within timeout; skipping Tekton Results configuration"
+    return 0
+  fi
+
   # Detect scope and location of the TektonConfig named 'config'
   local name="config"
   local ns=""
@@ -176,6 +198,9 @@ configure_tekton_results() {
     # Best-effort cleanup to reclaim space on CRC
     oc -n openshift-pipelines delete statefulset -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
     oc -n openshift-pipelines delete pvc -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
+    # Fallback: explicit resource names commonly used by Tekton Results on OCP
+    oc -n openshift-pipelines delete statefulset tekton-results-postgres >/dev/null 2>&1 || true
+    oc -n openshift-pipelines delete pvc postgredb-tekton-results-postgres-0 >/dev/null 2>&1 || true
     # Also stop API/watch deployments if present
     oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-api --replicas=0 >/dev/null 2>&1 || true
     oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-watcher --replicas=0 >/dev/null 2>&1 || true
@@ -246,21 +271,25 @@ done
 if ! oc -n openshift-gitops get application "${umbrella_app}" >/dev/null 2>&1; then
   log "WARNING: ${umbrella_app} not found yet; controller may still be reconciling."
 else
-  log "Waiting for ${umbrella_app} to reach Synced/Healthy…"
-  timeout=600
-  interval=10
-  elapsed=0
-  while (( elapsed < timeout )); do
-    health=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
-    sync=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
-    if [[ "$health" == "Healthy" && "$sync" == "Synced" ]]; then
-      log "${umbrella_app}: health=${health} sync=${sync}"
-      break
+  if [[ "${SKIP_APP_WAIT:-}" == "true" ]]; then
+    log "Skipping wait for ${umbrella_app} (SKIP_APP_WAIT=true)"
+  else
+    log "Waiting for ${umbrella_app} to reach Synced/Healthy…"
+    timeout=600
+    interval=10
+    elapsed=0
+    while (( elapsed < timeout )); do
+      health=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+      sync=$(oc -n openshift-gitops get application "${umbrella_app}" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+      if [[ "$health" == "Healthy" && "$sync" == "Synced" ]]; then
+        log "${umbrella_app}: health=${health} sync=${sync}"
+        break
+      fi
+      sleep ${interval}; elapsed=$((elapsed+interval))
+    done
+    if (( elapsed >= timeout )); then
+      log "WARNING: ${umbrella_app} did not become Healthy/Synced within $timeout seconds (health=${health} sync=${sync})."
     fi
-    sleep ${interval}; elapsed=$((elapsed+interval))
-  done
-  if (( elapsed >= timeout )); then
-    log "WARNING: ${umbrella_app} did not become Healthy/Synced within $timeout seconds (health=${health} sync=${sync})."
   fi
 fi
 
@@ -288,10 +317,14 @@ wait_app() {
   log "WARNING: ${name} did not become Healthy/Synced within ${timeout}s."
 }
 
-wait_app "image-updater-${ENV}" 300 || true
-wait_app "ci-pipelines-${ENV}" 300 || true
-wait_app "toy-service-${ENV}" 600 || true
-wait_app "toy-web-${ENV}" 600 || true
+if [[ "${SKIP_APP_WAIT:-}" == "true" ]]; then
+  log "Skipping waits for child Applications (SKIP_APP_WAIT=true)"
+else
+  wait_app "image-updater-${ENV}" 300 || true
+  wait_app "ci-pipelines-${ENV}" 300 || true
+  wait_app "toy-service-${ENV}" 600 || true
+  wait_app "toy-web-${ENV}" 600 || true
+fi
 
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
