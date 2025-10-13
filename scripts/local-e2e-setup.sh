@@ -110,6 +110,39 @@ log "Running bootstrap.sh (skip waits; will configure creds then refresh)"
 ENV="$ENVIRONMENT" BASE_DOMAIN="$BASE_DOMAIN" GIT_REPO_URL="$GIT_REPO_URL" TARGET_REV="$TARGET_REV" SKIP_APP_WAIT=true \
   "$REPO_ROOT/scripts/bootstrap.sh"
 
+# Utility: wait for a ServiceAccount to exist
+wait_for_sa() {
+  local ns=$1 sa=$2 timeout=${3:-120}
+  local elapsed=0 interval=3
+  while (( elapsed < timeout )); do
+    if oc -n "$ns" get sa "$sa" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "$interval"; elapsed=$((elapsed+interval))
+  done
+  return 1
+}
+
+# Ensure quay-auth is linked to the pipeline SA (idempotent)
+ensure_quay_link() {
+  local ns=openshift-pipelines sa=pipeline secret=quay-auth
+  # If secret doesn't exist, nothing to do
+  if ! oc -n "$ns" get secret "$secret" >/dev/null 2>&1; then
+    return 0
+  fi
+  # Wait for pipeline SA to be created by the ci-pipelines chart
+  if ! wait_for_sa "$ns" "$sa" 180; then
+    log "[warn] Timed out waiting for ServiceAccount '$sa' in namespace '$ns'"
+    return 0
+  fi
+  # Link the secret; tolerate if already linked
+  if oc -n "$ns" secrets link "$sa" "$secret" --for=pull,mount >/dev/null 2>&1; then
+    log "Linked secret '$secret' to SA '$sa' in '$ns'"
+  else
+    log "[warn] Failed linking secret '$secret' to SA '$sa' (may already be linked)"
+  fi
+}
+
 # Defensive: ensure Tekton Results is disabled and any leftover resources are cleaned up
 ensure_disable_tekton_results() {
   log "Ensuring Tekton Results is disabled and cleaned up (ENV=$ENVIRONMENT)"
@@ -231,7 +264,8 @@ if [[ "${FAST_PATH}" == "true" ]]; then
       --docker-email="${QUAY_EMAIL}" \
       --dry-run=client -o yaml | oc apply -f -
     oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-    oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+    # Wait for SA and (re)link after creation
+    ensure_quay_link
   else
     log "[fast] QUAY_USERNAME/QUAY_PASSWORD/QUAY_EMAIL not fully set; skipping Quay secret"
   fi
@@ -379,7 +413,7 @@ else
           --docker-email="$quay_email" \
           --dry-run=client -o yaml | oc apply -f -
         oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-        oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+        ensure_quay_link
       else
         log "Missing Quay fields; keeping existing secret"
       fi
@@ -400,7 +434,7 @@ else
           --docker-email="$quay_email" \
           --dry-run=client -o yaml | oc apply -f -
         oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-        oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+        ensure_quay_link
       else
         log "Missing Quay fields; skipping creation"
       fi
@@ -579,6 +613,8 @@ refresh_app "toy-web-$ENVIRONMENT"
 
 wait_app "image-updater-$ENVIRONMENT" 300 || true
 wait_app "ci-pipelines-$ENVIRONMENT" 300 || true
+# After ci-pipelines is Healthy/Synced, ensure quay-auth is linked to pipeline SA
+ensure_quay_link
 wait_app "toy-service-$ENVIRONMENT" 600 || true
 wait_app "toy-web-$ENVIRONMENT" 600 || true
 
