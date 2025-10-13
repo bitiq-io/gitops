@@ -56,15 +56,16 @@ fi
 QUAY_REPOSITORY=${QUAY_REPOSITORY:-$QUAY_REPOSITORY_DEFAULT}
 
 log "Bumping Quay tag: ${QUAY_NAMESPACE}/${QUAY_REPOSITORY}:${NEW_TAG} (from SOURCE_TAG=${SOURCE_TAG:-latest})"
-QUAY_NAMESPACE="$QUAY_NAMESPACE" QUAY_REPOSITORY="$QUAY_REPOSITORY" NEW_TAG="$NEW_TAG" \
+QUAY_NAMESPACE="$QUAY_NAMESPACE" QUAY_REPOSITORY="$QUAY_REPOSITORY" NEW_TAG="$NEW_TAG" SOURCE_TAG="${SOURCE_TAG:-latest}" \
   bash "$(cd "$(dirname "$0")" && pwd)/quay-bump-tag.sh"
 
-log "Tail updater logs for commit/push (2m)"
-deadline=$((SECONDS+120))
+TIMEOUT_SECS=${TIMEOUT_SECS:-180}
+log "Tail updater logs for commit/push (${TIMEOUT_SECS}s)"
+deadline=$((SECONDS+TIMEOUT_SECS))
 found=0
 while (( SECONDS < deadline )); do
-  if oc -n "$NS_GITOPS" logs deploy/argocd-image-updater --since=2m 2>/dev/null \
-      | grep -E "(Committing changes to application|Pushed change|Setting new image.*${SERVICE})" >/dev/null; then
+  if oc -n "$NS_GITOPS" logs deploy/argocd-image-updater --since=5m 2>/dev/null \
+      | grep -E "(eligible for consideration|Setting new image|Committing changes to application|Pushed change|skipping app|no matching tags|permission denied|denied|Failed to write)" >/dev/null; then
     found=1
     break
   fi
@@ -72,7 +73,14 @@ while (( SECONDS < deadline )); do
 done
 
 if [[ "$found" -ne 1 ]]; then
-  err "Updater did not log a commit/push for ${APP_NAME} within 2m"
+  err "Updater did not log activity for ${APP_NAME} within ${TIMEOUT_SECS}s"
+  echo "--- Recent updater logs (last 5m) ---"
+  oc -n "$NS_GITOPS" logs deploy/argocd-image-updater --since=5m 2>/dev/null | tail -n 300 || true
+  echo "--- Hints ---"
+  echo "• If the new tag references the same digest as the current tag, the updater may skip changes."
+  echo "  Set a different SOURCE_TAG (e.g., an older tag) to force a digest change, e.g.:"
+  echo "    SOURCE_TAG=v0.3.22-commit.XXXXXXX make e2e-updater-smoke"
+  echo "• Ensure Argo CD repo credentials allow push and updater token is valid."
   exit 1
 fi
 
