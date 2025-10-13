@@ -93,6 +93,9 @@ image-updater-secret: ## create/update argocd-image-updater-secret from ARGOCD_T
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
 
+e2e-updater-smoke: ## bump Quay tag and assert updater write-back (ENV=local [SERVICE=toy-service|toy-web])
+	@bash scripts/e2e-updater-smoke.sh
+
 pin-images: ## pin toy-service/toy-web tags (ENVS=local,sno,prod SVC_TAG=... WEB_TAG=... [FREEZE=true] [UNFREEZE=true] [NO_VERIFY=1] [DRY_RUN=true])
 	@ENVS="$${ENVS:-local,sno,prod}" \
 	 SVC_TAG="$${SVC_TAG:-}" WEB_TAG="$${WEB_TAG:-}" \
