@@ -222,6 +222,8 @@ Token secret configuration for Image Updater (ESO)
 
 - Image Updater reads its API token from an ESO‑managed Secret (`openshift-gitops/argocd-image-updater-secret`).
 - Write the token to Vault at `gitops/data/argocd/image-updater` (key: `token`) and run `make dev-vault` (local) or follow [PROD-SECRETS](docs/PROD-SECRETS.md) for sno/prod.
+ - Rotation: after Vault updates and ESO reconciles the Secret, restart the deployment to pick up the new env var:
+   `oc -n openshift-gitops rollout restart deploy/argocd-image-updater`.
 
 ### Tekton triggers
 

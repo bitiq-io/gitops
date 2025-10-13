@@ -181,6 +181,35 @@ ensure_disable_tekton_results() {
 
 ensure_disable_tekton_results
 
+# Offer to seed dev Vault if required ESO-managed Secrets are missing (ENV=local only)
+suggest_dev_vault_if_missing() {
+  if [[ "$ENVIRONMENT" != "local" ]]; then
+    return 0
+  fi
+  local missing=0
+  for pair in \
+    "openshift-gitops:argocd-image-updater-secret" \
+    "openshift-pipelines:quay-auth" \
+    "openshift-pipelines:github-webhook-secret"; do
+    ns=${pair%%:*}; name=${pair##*:}
+    if ! oc -n "$ns" get secret "$name" >/dev/null 2>&1; then
+      missing=$((missing+1))
+    fi
+  done
+  if (( missing > 0 )); then
+    log "Detected ${missing} missing ESO-managed Secret(s)."
+    if prompt_yes "Run 'make dev-vault' now to seed Vault and reconcile secrets?"; then
+      bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+    else
+      log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
+    fi
+  else
+    log "ESO-managed platform secrets present; skipping dev-vault prompt."
+  fi
+}
+
+suggest_dev_vault_if_missing
+
 # Post-bootstrap permission sanity-checks now that CRDs should exist
 if [[ "$(oc auth can-i get applications.argoproj.io -n openshift-gitops)" != "yes" ]]; then
   err "User $CURRENT_USER lacks access to Argo CD Applications in openshift-gitops"
