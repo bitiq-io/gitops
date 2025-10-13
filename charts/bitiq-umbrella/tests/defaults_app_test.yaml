@@ -36,4 +36,3 @@ tests:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
           value: helmvalues:/charts/toy-web/values-local.yaml
-
