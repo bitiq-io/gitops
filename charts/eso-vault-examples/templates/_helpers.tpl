@@ -10,9 +10,16 @@ metadata:
   namespace: {{ $cfg.targetNamespace | quote }}
 spec:
   refreshInterval: {{ $cfg.refreshInterval | default "1m" | quote }}
+  {{- $cfgSecretStoreRef := default (dict) $cfg.secretStoreRef }}
+  {{- $defaultSecretStoreRef := default (dict "kind" "ClusterSecretStore") $root.Values.externalSecretDefaults.secretStoreRef }}
+  {{- $resolvedKind := coalesce $cfgSecretStoreRef.kind $defaultSecretStoreRef.kind "ClusterSecretStore" }}
+  {{- $resolvedName := coalesce $cfgSecretStoreRef.name $defaultSecretStoreRef.name }}
   secretStoreRef:
-    kind: {{ $cfg.secretStoreRef.kind | default $root.Values.externalSecretDefaults.secretStoreRef.kind | default "ClusterSecretStore" | quote }}
-    name: {{ $cfg.secretStoreRef.name | default $root.Values.externalSecretDefaults.secretStoreRef.name | quote }}
+    kind: {{ $resolvedKind | quote }}
+    {{- if not $resolvedName }}
+    {{- fail "secretStoreRef.name must be provided via values or defaults" }}
+    {{- end }}
+    name: {{ $resolvedName | quote }}
   target:
     name: {{ $cfg.targetSecretName | quote }}
     creationPolicy: {{ $cfg.creationPolicy | default $root.Values.externalSecretDefaults.creationPolicy | default "Owner" | quote }}

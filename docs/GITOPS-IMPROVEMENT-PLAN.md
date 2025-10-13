@@ -74,6 +74,7 @@
    description: Finalize `charts/eso-vault-examples` as an explicit opt-in for Argo token, Quay creds, and GitHub webhook secrets with Vault-backed ExternalSecrets.
    why: Production-grade, auditable secrets management aligned to ESO/Vault patterns.
    dependencies: [T0]
+   status: complete (ESO chart opt-in defaults fixed; prod secrets guide updated)
    acceptance_criteria:
      - PROD-SECRETS.md documents enablement flags and Vault paths; values reference ClusterSecretStore and refresh intervals; kubeconform validation passes when enabled.
      - Optional Tekton annotation (`tekton.dev/docker-0`) is documented for registry auth.
