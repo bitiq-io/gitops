@@ -70,55 +70,62 @@
    notes: No relocation is needed given current repos; just document and link.
 
 7. id: T6
-   name: Secrets — ESO/Vault Enablement (Platform)
-   description: Finalize `charts/eso-vault-examples` as an explicit opt-in for Argo token, Quay creds, and GitHub webhook secrets with Vault-backed ExternalSecrets.
-   why: Production-grade, auditable secrets management aligned to ESO/Vault patterns.
+   name: Secrets — Enforce ESO/Vault (Platform)
+   description: Make ESO/Vault mandatory for all secrets (platform and app). Bootstrap installs ESO via OperatorHub; Git manages ClusterSecretStore and ExternalSecrets. No ad-hoc `oc create secret` flows remain.
+   why: Enforces GitOps for credentials, eliminates manual CLI drift, and centralizes audit (Vault) and reconciliation (ESO).
    dependencies: [T0]
-   status: complete (ESO chart opt-in defaults fixed; prod secrets guide updated)
+   status: planned (policy change + automation required)
    acceptance_criteria:
-     - PROD-SECRETS.md documents enablement flags and Vault paths; values reference ClusterSecretStore and refresh intervals; kubeconform validation passes when enabled.
-     - Optional Tekton annotation (`tekton.dev/docker-0`) is documented for registry auth.
+     - scripts/bootstrap.sh installs ESO Subscription (stable channel) automatically and waits for CRDs.
+     - charts/eso-vault-examples renders by default with `enabled=true` for all envs; ClusterSecretStore configured via values.
+     - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are sourced exclusively via ExternalSecrets.
+     - No Make targets or docs recommend creating Opaque secrets directly; CLI examples are removed or explicitly forbidden.
+     - kubeconform validation of ESO resources is part of `make validate` (CRDs ignored as needed) for all envs.
    notes: Pipelines 1.20 configuring: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/configuring_openshift_pipelines/
 
 8. id: T7
    name: Secrets — toy-service via ExternalSecret
-   description: Add optional secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) and a matching ExternalSecret example (`toy-service-config`).
-   why: Demonstrates end-to-end secrets propagation for backend runtime.
+   description: Secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) with a required ExternalSecret (`toy-service-config`) across all envs.
+   why: Demonstrates and enforces end-to-end secrets propagation for backend runtime.
    dependencies: [T6]
-   status: complete (toy-service secrets wired)
+   status: complete (toy-service secrets wired; ESO enforced by policy)
    acceptance_criteria:
-     - New values fields applied to Deployment env; ExternalSecret example produces `toy-service-config` with FAKE_SECRET (or similar) key.
-     - Local template shows env wiring; `make validate` passes.
-   notes: Keep disabled by default; document Vault KV path and keys.
+     - Deployment consumes env exclusively from ExternalSecret-backed Secret; no plain env defaults for sensitive data.
+     - ExternalSecret renders by default and reconciles `toy-service-config` with required keys.
+     - Local/CI template shows env wiring; `make validate` passes without opt-in flags.
+   notes: Document Vault KV path and keys; require Vault seeding via automated script for local.
 
 9. id: T8
    name: Secrets — toy-web via ExternalSecret
-   description: Mirror T7 for frontend (`frontend.secret.*`, `frontend.env`) with an example ExternalSecret (`toy-web-config`) for `API_BASE_URL`.
-   why: Completes secrets story for frontend runtime configuration.
+   description: Mirror T7 for frontend (`frontend.secret.*`, `frontend.env`) with a required ExternalSecret (`toy-web-config`) for sensitive runtime config.
+   why: Completes secrets story for frontend runtime configuration with enforced ESO usage.
    dependencies: [T7]
    acceptance_criteria:
-     - Values applied to Deployment env; ExternalSecret example renders and validates; `make validate` passes.
-   notes: Consider ConfigMap for non-sensitive params; keep secret path for tokens.
+     - Deployment consumes sensitive env solely via ExternalSecret-backed Secret; non-sensitive values may use ConfigMap.
+     - ExternalSecret renders by default and validates in `make validate` for all envs.
+   notes: Keep non-sensitive params in ConfigMap where appropriate; no direct env literals for secrets.
 
 10. id: T9
-    name: Local Secrets Fallback (ENV=local)
-    description: Add `make dev-secrets` to create local Opaque secrets for platform (updater token, webhook) and sample app (toy-service/web) without Vault.
-    why: Enables end-to-end local testing without provisioning Vault.
-    dependencies: [T7, T8]
+    name: Local Vault Automation (ENV=local)
+    description: Replace Opaque secret fallback with automated local Vault + ESO flow. Provide a `make dev-vault` (or similar) target that deploys a dev Vault, seeds required KV paths, ensures ESO is installed, and reconciles ExternalSecrets for local.
+    why: Preserves GitOps discipline locally; removes manual CLI secret creation and keeps parity with sno/prod.
+    dependencies: [T6, T7, T8]
     acceptance_criteria:
-      - `make dev-secrets` manages: `argocd-image-updater-secret`, `github-webhook-secret`, `toy-service-config`, `toy-web-config` in correct namespaces.
-      - LOCAL runbooks updated with usage and verification commands; pods show expected env vars.
-    notes: Scope is local only; do not auto-create in SNO/prod.
+      - `make dev-vault` deploys a dev Vault (ephemeral) or connects to a configured Vault, writes sample values to `gitops/data/...` paths.
+      - scripts/bootstrap.sh detects/installs ESO in local and ensures ClusterSecretStore references the correct SA/role.
+      - Pods in `bitiq-local` show env vars present via /internal/config; no Opaque secret creation path remains in docs.
+    notes: Dev Vault must be clearly marked non-production; provide cleanup command.
 
 11. id: T10
-    name: Triggers & Registry Auth Hardening
-    description: Ensure EventListener uses GitHub secret (ESO-managed when enabled) and Tekton SA links to Quay creds; document resolver versions.
-    why: Secures CI triggers and ensures reliable image push per Pipelines 1.20 guidance.
+    name: Triggers & Registry Auth Hardening (ESO-only)
+    description: EventListener and Tekton SA must consume secrets only via ESO-managed Secrets; replace `make quay-secret` with Vault seeding + ESO reconciliation. Document resolver versions.
+    why: Eliminates manual secret management in CI; aligns with enforced ESO policy.
     dependencies: [T6]
     acceptance_criteria:
-      - TriggerBindings/TriggerTemplates per pipeline; EventListener references secret; `make quay-secret` remains valid.
-      - Docs include Pipelines 1.20 links and verification steps.
-    notes: Keep `triggers.createSecret=false` by default for safety.
+      - EventListener references ESO-managed GitHub secret; pipeline SA mounts ESO-managed Quay dockerconfig.
+      - Provide `make dev-vault` seeding for required CI creds; remove direct `oc create secret` helper.
+      - Docs updated with Pipelines 1.20 links and verification steps.
+    notes: `triggers.createSecret` default remains false; all secrets sourced via Vault.
 
 12. id: T11
     name: ApplicationSet Guardrails & Lint
@@ -142,20 +149,30 @@
 
 14. id: T13
     name: Validation Pipeline — ESO & AppSet Coverage
-    description: Expand `make validate` to optionally render/validate ESO chart (flag-driven) and sanity-check ApplicationSet per env.
-    why: Catches misconfigurations early and keeps local/CI parity.
+    description: Expand `make validate` to always render/validate ESO resources (no flag) and sanity-check ApplicationSet per env.
+    why: Enforced ESO means validation must cover it by default.
     dependencies: [T6]
     acceptance_criteria:
-      - `VALIDATE_ESO=true make validate` renders ESO with sample values and passes kubeconform (ignoring CRDs as needed).
+      - `make validate` renders ESO with repo values and passes kubeconform (ignoring CRDs as needed).
       - Validation outputs show pass/fail clearly for each chart and env.
-    notes: Current script already handles CRDs; extend without slowing CI significantly.
+    notes: Keep runtime short; parallelize if needed.
 
 15. id: T14
     name: Documentation Cross-links & Examples
-    description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, including updater pause usage and split-app guidance.
-    why: Keeps docs version-correct and reduces onboarding friction.
+    description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, include enforced ESO/Vault usage, and local Vault automation.
+    why: Keeps docs version-correct and reduces onboarding friction under the new policy.
     dependencies: [T1, T2, T3, T10]
     acceptance_criteria:
       - README/runbooks reference correct doc versions; ROLLBACK includes multi-service + updater freeze guidance.
-      - LOCAL/PROD runbooks mention ESO enablement and local dev-secrets fallback.
+      - LOCAL/PROD runbooks document ESO as mandatory and describe `make dev-vault` flow; no fallback to Opaque secrets.
     notes: Avoid duplicating upstream docs; link and show minimal verified commands.
+
+16. id: T15
+    name: Bootstrap — ESO install and preflight
+    description: Extend bootstrap to install ESO via OLM Subscription and add preflight checks for ESO CRDs/CSV readiness before applying ExternalSecrets.
+    why: Ensures clusters are reconciliation-ready and avoids timing issues when applying ESO resources.
+    dependencies: [T6]
+    acceptance_criteria:
+      - scripts/bootstrap.sh: creates Subscription, waits for CSV InstallSucceeded, verifies CRDs present.
+      - Subsequent chart installs (eso-vault-examples) succeed repeatably on fresh clusters.
+    notes: Keep operator channels pinned in bootstrap-operators or in docs per T12.
