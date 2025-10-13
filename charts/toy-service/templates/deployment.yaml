@@ -1,3 +1,10 @@
+{{- $backend := default (dict) .Values.backend -}}
+{{- $backendEnv := default (list) $backend.env -}}
+{{- $backendSecret := default (dict) $backend.secret -}}
+{{- $backendSecretItems := default (list) $backendSecret.items -}}
+{{- $backendSecretEnabled := and $backendSecret.enabled (gt (len $backendSecretItems) 0) -}}
+{{- $renderBackendEnv := or (gt (len $backendEnv) 0) $backendSecretEnabled -}}
+{{- $backendSecretName := default "toy-service-config" $backendSecret.name -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,6 +50,31 @@ spec:
             initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if $renderBackendEnv }}
+          env:
+            {{- range $entry := $backendEnv }}
+            - name: {{ required "backend.env entries must define name" $entry.name }}
+              {{- if hasKey $entry "valueFrom" }}
+              valueFrom:
+{{ toYaml $entry.valueFrom | indent 16 }}
+              {{- else }}
+              value: {{ default "" $entry.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $backendSecretEnabled }}
+            {{- range $item := $backendSecretItems }}
+            - name: {{ required "backend.secret.items entries must define name" $item.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default $backendSecretName $item.secretName | quote }}
+                  key: {{ required (printf "backend.secret.items entry %s must define key" (default "<missing>" $item.name)) $item.key | quote }}
+                  {{- $itemOptional := default $backendSecret.optional $item.optional }}
+                  {{- if $itemOptional }}
+                  optional: {{ $itemOptional }}
+                  {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

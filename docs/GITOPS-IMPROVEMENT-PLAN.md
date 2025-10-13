@@ -85,6 +85,7 @@
    description: Add optional secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) and a matching ExternalSecret example (`toy-service-config`).
    why: Demonstrates end-to-end secrets propagation for backend runtime.
    dependencies: [T6]
+   status: complete (toy-service secrets wired)
    acceptance_criteria:
      - New values fields applied to Deployment env; ExternalSecret example produces `toy-service-config` with FAKE_SECRET (or similar) key.
      - Local template shows env wiring; `make validate` passes.

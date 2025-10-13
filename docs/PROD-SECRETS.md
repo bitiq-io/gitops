@@ -1,10 +1,11 @@
 # Production Secrets with External Secrets Operator (ESO) + Vault
 
-This guide describes how to manage production secrets for the `gitops` stack using [External Secrets Operator (ESO)](https://external-secrets.io/) with HashiCorp Vault as the backend. It focuses on the three credentials required by the repo:
+This guide describes how to manage production secrets for the `gitops` stack using [External Secrets Operator (ESO)](https://external-secrets.io/) with HashiCorp Vault as the backend. It focuses on the three credentials required by the repo and ships an optional runtime secret for the sample backend:
 
 1. **Argo CD Image Updater token** (`openshift-gitops/argocd-image-updater-secret`)
 2. **Container registry credentials** for the Tekton `pipeline` ServiceAccount (`openshift-pipelines/quay-auth`)
 3. **GitHub webhook secret** (`openshift-pipelines/github-webhook-secret`)
+4. **toy-service runtime config** (`bitiq-local/toy-service-config`, optional)
 
 The repository ships an optional Helm chart (`charts/eso-vault-examples`) that renders a Vault `ClusterSecretStore` and `ExternalSecret` resources for these credentials. By default, the chart is disabled so that production operators can enable and customize it deliberately.
 
@@ -104,6 +105,9 @@ vault kv put gitops/data/registry/quay dockerconfigjson="$(cat dockercfg.json | 
 
 # GitHub webhook secret
 vault kv put gitops/data/github/webhook token="<RANDOM_WEBHOOK_SECRET>"
+
+# toy-service runtime config (optional)
+vault kv put gitops/data/services/toy-service/config fake_secret="<DEMO_FAKE_SECRET>"
 ```
 
 Use the same keys (`token`, `dockerconfigjson`) that the Helm chart references.
@@ -113,7 +117,7 @@ Use the same keys (`token`, `dockerconfigjson`) that the Helm chart references.
 The `eso-vault-examples` chart is optional and disabled by default. It renders:
 
 - `ClusterSecretStore` (`vault-global`) configured for Vault + Kubernetes auth.
-- `ExternalSecret` resources for the Argo CD token, Quay credentials, and GitHub webhook secret.
+- `ExternalSecret` resources for the Argo CD token, Quay credentials, GitHub webhook secret, and (optionally) the toy-service runtime config.
 
 ### 2.1 Review and customize values
 
@@ -130,19 +134,21 @@ Key fields to review:
 - `secretStore.provider.vault.auth.role`: Vault role created in section 1.2.
 - `secretStore.provider.vault.auth.serviceAccountRef`: ServiceAccount that ESO will impersonate.
 - `argocdToken/quayCredentials/webhookSecret.data[].remoteRef.key`: Vault KV paths.
+- `toyServiceConfig.data[].remoteRef.key`: Vault KV path for backend runtime secrets (`fake_secret` by default).
 - `quayCredentials.secretType`: defaults to `kubernetes.io/dockerconfigjson` to ensure Tekton interprets the secret correctly.
 
 Enablement flags (set these to `true` when you are ready to reconcile the resources):
 
 - `enabled`: global switch for the chart.
 - `secretStore.enabled`: renders the `ClusterSecretStore` example (`vault-global`).
-- `argocdToken.enabled`, `quayCredentials.enabled`, `webhookSecret.enabled`: render each `ExternalSecret`.
+- `argocdToken.enabled`, `quayCredentials.enabled`, `webhookSecret.enabled`, `toyServiceConfig.enabled`: render each `ExternalSecret`.
 
 Vault KV paths expected by the defaults:
 
 - `gitops/data/argocd/image-updater` → `token`
 - `gitops/data/registry/quay` → `dockerconfigjson`
 - `gitops/data/github/webhook` → `token`
+- `gitops/data/services/toy-service/config` → `fake_secret`
 
 Optional (Tekton credential helper): annotate the generated Quay secret so Tekton auto-detects it for `https://quay.io`.
 
@@ -171,12 +177,16 @@ helm upgrade --install eso-vault-examples charts/eso-vault-examples \
 
 This deploys the `ClusterSecretStore` and ExternalSecrets. ESO will reconcile the target secrets in their respective namespaces.
 
+Include `--set toyServiceConfig.enabled=true` when you want ESO to manage the toy-service runtime secret.
+
 Verify that the secrets materialize:
 
 ```bash
 oc -n openshift-gitops get secret argocd-image-updater-secret
 oc -n openshift-pipelines get secret quay-auth
 oc -n openshift-pipelines get secret github-webhook-secret
+# Optional when toyServiceConfig.enabled=true
+oc -n bitiq-local get secret toy-service-config
 ```
 
 ### 2.3 Validate manifests locally
