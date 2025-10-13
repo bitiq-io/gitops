@@ -110,6 +110,44 @@ log "Running bootstrap.sh (skip waits; will configure creds then refresh)"
 ENV="$ENVIRONMENT" BASE_DOMAIN="$BASE_DOMAIN" GIT_REPO_URL="$GIT_REPO_URL" TARGET_REV="$TARGET_REV" SKIP_APP_WAIT=true \
   "$REPO_ROOT/scripts/bootstrap.sh"
 
+# Defensive: ensure Tekton Results is disabled and any leftover resources are cleaned up
+ensure_disable_tekton_results() {
+  log "Ensuring Tekton Results is disabled and cleaned up (ENV=$ENVIRONMENT)"
+  # Only relevant for local by default, but safe to run idempotently
+  # 1) Wait for TektonConfig CRD; patch disable flags (covering multiple operator versions)
+  for i in {1..60}; do
+    if oc get crd tektonconfigs.operator.tekton.dev >/dev/null 2>&1; then break; fi
+    sleep 2
+  done
+  if oc get crd tektonconfigs.operator.tekton.dev >/dev/null 2>&1; then
+    if oc get tektonconfig config >/dev/null 2>&1; then
+      oc patch tektonconfig config --type merge -p '{"spec":{"result":{"disabled":true}}}' >/dev/null 2>&1 || true
+      oc patch tektonconfig config --type merge -p '{"spec":{"addon":{"params":[{"name":"enable-tekton-results","value":"false"}]}}}' >/dev/null 2>&1 || true
+      oc patch tektonconfig config --type merge -p '{"spec":{"addon":{"enableResults":false}}}' >/dev/null 2>&1 || true
+    else
+      # Namespaced TektonConfig fallback
+      cfg_ns=$(oc get tektonconfigs.operator.tekton.dev -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' 2>/dev/null | awk '$2=="config" {print $1; exit}')
+      if [[ -n "$cfg_ns" ]]; then
+        oc -n "$cfg_ns" patch tektonconfig config --type merge -p '{"spec":{"result":{"disabled":true}}}' >/dev/null 2>&1 || true
+        oc -n "$cfg_ns" patch tektonconfig config --type merge -p '{"spec":{"addon":{"params":[{"name":"enable-tekton-results","value":"false"}]}}}' >/dev/null 2>&1 || true
+        oc -n "$cfg_ns" patch tektonconfig config --type merge -p '{"spec":{"addon":{"enableResults":false}}}' >/dev/null 2>&1 || true
+      fi
+    fi
+  fi
+  # 2) Delete TektonResults CRs if present (cluster-scoped and legacy)
+  oc delete tektonresults.operator.tekton.dev result >/dev/null 2>&1 || true
+  oc delete tektonresults result >/dev/null 2>&1 || true
+  # 3) Best-effort scale down any API/watch components and drop Postgres resources
+  oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-api --replicas=0 >/dev/null 2>&1 || true
+  oc -n openshift-pipelines scale deploy -l app.kubernetes.io/name=tekton-results-watcher --replicas=0 >/dev/null 2>&1 || true
+  oc -n openshift-pipelines delete statefulset -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
+  oc -n openshift-pipelines delete statefulset tekton-results-postgres >/dev/null 2>&1 || true
+  oc -n openshift-pipelines delete pvc -l app.kubernetes.io/name=tekton-results-postgres >/dev/null 2>&1 || true
+  oc -n openshift-pipelines delete pvc postgredb-tekton-results-postgres-0 >/dev/null 2>&1 || true
+}
+
+ensure_disable_tekton_results
+
 # Post-bootstrap permission sanity-checks now that CRDs should exist
 if [[ "$(oc auth can-i get applications.argoproj.io -n openshift-gitops)" != "yes" ]]; then
   err "User $CURRENT_USER lacks access to Argo CD Applications in openshift-gitops"
