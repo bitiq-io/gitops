@@ -191,6 +191,17 @@ wait_for_csv() {
   fatal "Timed out waiting for CSV via Subscription ${sub}"
 }
 
+wait_for_secret() {
+  local ns=$1 name=$2 timeout=${3:-180}
+  log "Waiting for Secret ${ns}/${name}"
+  for _ in $(seq 1 $((timeout/3))); do
+    oc -n "$ns" get secret "$name" >/dev/null 2>&1 && return 0
+    sleep 3
+  done
+  log "WARNING: Secret ${ns}/${name} not found within ${timeout}s"
+  return 1
+}
+
 case "${ACTION}" in
   up)
     apply_manifests
@@ -205,6 +216,21 @@ case "${ACTION}" in
     fi
     ensure_crds externalsecrets.external-secrets.io
     ensure_crds clustersecretstores.external-secrets.io
+    # Wait for ESO-managed Secrets to reconcile, then perform local conveniences
+    wait_for_secret openshift-gitops argocd-image-updater-secret 240 || true
+    wait_for_secret openshift-pipelines quay-auth 240 || true
+    wait_for_secret openshift-pipelines github-webhook-secret 240 || true
+    # Link quay-auth to Tekton SA (idempotent, local-only convenience)
+    if oc -n openshift-pipelines get sa pipeline >/dev/null 2>&1 && \
+       oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
+      oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+      log "Linked quay-auth to SA 'pipeline' in openshift-pipelines"
+    fi
+    # Restart Image Updater to pick up token changes
+    if oc -n openshift-gitops get deploy/argocd-image-updater >/dev/null 2>&1; then
+      oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
+      log "Restarted argocd-image-updater deployment to pick up token"
+    fi
     log "Dev Vault + ESO secrets ready."
     ;;
   down)
