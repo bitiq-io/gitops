@@ -26,6 +26,7 @@ APP_NAME="${SERVICE}-${ENVIRONMENT}"
 require(){ command -v "$1" >/dev/null 2>&1 || { err "Missing required tool: $1"; exit 1; }; }
 
 require oc
+require jq
 
 if ! oc whoami >/dev/null 2>&1; then
   err "oc not logged in"
@@ -76,4 +77,3 @@ if [[ "$found" -ne 1 ]]; then
 fi
 
 log "Success: updater activity detected for ${APP_NAME}"
-
