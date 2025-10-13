@@ -241,43 +241,34 @@ oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-p
 # Fast path: non-interactive secrets and repo creds if env vars are provided
 FAST_PATH=${FAST_PATH:-}
 
-# 1) GitHub webhook secret for Tekton Triggers
+#!/bin/true
+# 1) GitHub webhook secret for Tekton Triggers (ESO-managed)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${GITHUB_WEBHOOK_SECRET:-}" ]]; then
-    log "[fast] Applying GitHub webhook secret (openshift-pipelines/github-webhook-secret)"
-    oc -n openshift-pipelines create secret generic github-webhook-secret \
-      --from-literal=secretToken="${GITHUB_WEBHOOK_SECRET}" \
-      --dry-run=client -o yaml | oc apply -f -
+    log "[fast] ESO is enforced. Seed Vault instead of creating Kubernetes secrets directly."
+    log "      Run: make dev-vault   (seeds gitops/data/github/webhook token)"
   else
-    log "[fast] GITHUB_WEBHOOK_SECRET not set; skipping webhook secret"
+    log "[fast] Skipping webhook secret; ESO-managed via Vault. Use 'make dev-vault' to seed."
   fi
 fi
 
-# 2) Quay credentials for Tekton SA 'pipeline'
+#!/bin/true
+# 2) Quay credentials for Tekton SA 'pipeline' (ESO-managed)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" && -n "${QUAY_EMAIL:-}" ]]; then
-    log "[fast] Applying Quay auth and linking to SA 'pipeline'"
-    oc -n openshift-pipelines create secret docker-registry quay-auth \
-      --docker-server=quay.io \
-      --docker-username="${QUAY_USERNAME}" \
-      --docker-password="${QUAY_PASSWORD}" \
-      --docker-email="${QUAY_EMAIL}" \
-      --dry-run=client -o yaml | oc apply -f -
-    oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-    # Wait for SA and (re)link after creation
-    ensure_quay_link
+    log "[fast] ESO is enforced. Seed Vault with dockerconfigjson and rerun 'make dev-vault'."
   else
-    log "[fast] QUAY_USERNAME/QUAY_PASSWORD/QUAY_EMAIL not fully set; skipping Quay secret"
+    log "[fast] Skipping Quay secret; ESO-managed via Vault. Use 'make dev-vault' to seed."
   fi
 fi
 
-# 3) Argo CD Image Updater API token Secret in openshift-gitops
+#!/bin/true
+# 3) Argo CD Image Updater API token (ESO-managed)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${ARGOCD_TOKEN:-}" ]]; then
-    log "[fast] Applying argocd-image-updater-secret in openshift-gitops"
-    ARGOCD_TOKEN="${ARGOCD_TOKEN}" make -C "$REPO_ROOT" image-updater-secret >/dev/null
+    log "[fast] ESO is enforced. Write token to Vault at gitops/data/argocd/image-updater and rerun 'make dev-vault'."
   else
-    log "[fast] ARGOCD_TOKEN not set; skipping image-updater secret"
+    log "[fast] Skipping Image Updater token; ESO-managed via Vault. Use 'make dev-vault' to seed."
   fi
 fi
 
@@ -358,125 +349,30 @@ if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-pipelines get secret github-webhook-secret >/dev/null 2>&1; then
     log "[fast] github-webhook-secret already present"
   else
-    log "[fast] github-webhook-secret not found; set GITHUB_WEBHOOK_SECRET and rerun or create manually"
+    log "[fast] github-webhook-secret not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  if oc -n openshift-pipelines get secret github-webhook-secret >/dev/null 2>&1; then
-    log "GitHub webhook secret already present (openshift-pipelines/github-webhook-secret)"
-    if prompt_yes "Update github-webhook-secret value?"; then
-      token=$(read_secret "New GitHub webhook secret token: ")
-      if [[ -n "$token" ]]; then
-        log "Updating github-webhook-secret"
-        oc -n openshift-pipelines create secret generic github-webhook-secret \
-          --from-literal=secretToken="$token" --dry-run=client -o yaml | oc apply -f -
-      else
-        log "No secret provided; keeping existing value"
-      fi
-    else
-      log "Keeping existing github-webhook-secret"
-    fi
-  else
-    if prompt_yes "Create GitHub webhook Secret for Tekton?"; then
-      token=$(read_secret "GitHub webhook secret token: ")
-      if [[ -n "$token" ]]; then
-        log "Creating github-webhook-secret"
-        oc -n openshift-pipelines create secret generic github-webhook-secret \
-          --from-literal=secretToken="$token" --dry-run=client -o yaml | oc apply -f -
-      else
-        log "No secret provided; skipping creation"
-      fi
-    else
-      log "Skipping Tekton webhook secret creation"
-    fi
-  fi
+  log "Webhook secret is ESO-managed. Seed Vault (gitops/data/github/webhook) and let ESO reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
     log "[fast] quay-auth secret already present"
   else
-    log "[fast] quay-auth secret not found; set QUAY_* env vars and rerun or create manually"
+    log "[fast] quay-auth not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  if oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
-    log "Quay credentials already configured (openshift-pipelines/quay-auth)"
-    if prompt_yes "Update quay-auth secret?"; then
-      read -r -p "Quay username: " quay_user || true
-      quay_pass=$(read_secret "Quay password/token: ")
-      read -r -p "Quay email: " quay_email || true
-      if [[ -n "$quay_user" && -n "$quay_pass" && -n "$quay_email" ]]; then
-        log "Updating quay-auth secret"
-        oc -n openshift-pipelines create secret docker-registry quay-auth \
-          --docker-server=quay.io \
-          --docker-username="$quay_user" \
-          --docker-password="$quay_pass" \
-          --docker-email="$quay_email" \
-          --dry-run=client -o yaml | oc apply -f -
-        oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-        ensure_quay_link
-      else
-        log "Missing Quay fields; keeping existing secret"
-      fi
-    else
-      log "Keeping existing quay-auth secret"
-    fi
-  else
-    if prompt_yes "Create Quay credentials for pipeline ServiceAccount?"; then
-      read -r -p "Quay username: " quay_user || true
-      quay_pass=$(read_secret "Quay password/token: ")
-      read -r -p "Quay email: " quay_email || true
-      if [[ -n "$quay_user" && -n "$quay_pass" && -n "$quay_email" ]]; then
-        log "Creating quay-auth secret"
-        oc -n openshift-pipelines create secret docker-registry quay-auth \
-          --docker-server=quay.io \
-          --docker-username="$quay_user" \
-          --docker-password="$quay_pass" \
-          --docker-email="$quay_email" \
-          --dry-run=client -o yaml | oc apply -f -
-        oc -n openshift-pipelines annotate secret quay-auth tekton.dev/docker-0=https://quay.io --overwrite >/dev/null 2>&1 || true
-        ensure_quay_link
-      else
-        log "Missing Quay fields; skipping creation"
-      fi
-    else
-      log "Skipping Quay credential configuration"
-    fi
-  fi
+  log "Quay credentials are ESO-managed. Seed Vault (gitops/data/registry/quay) and let ESO reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-gitops get secret argocd-image-updater-secret >/dev/null 2>&1; then
     log "[fast] argocd-image-updater-secret already present"
   else
-    log "[fast] argocd-image-updater-secret not found; set ARGOCD_TOKEN and rerun or create via 'make image-updater-secret'"
+    log "[fast] argocd-image-updater-secret not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  if oc -n openshift-gitops get secret argocd-image-updater-secret >/dev/null 2>&1; then
-    log "argocd-image-updater-secret already exists"
-    if prompt_yes "Update argocd-image-updater-secret token?"; then
-      updater_token=$(read_secret "New Argo CD API token: ")
-      if [[ -n "$updater_token" ]]; then
-        log "Updating argocd-image-updater-secret"
-        ARGOCD_TOKEN="$updater_token" make -C "$REPO_ROOT" image-updater-secret >/dev/null
-      else
-        log "No token provided; keeping existing secret"
-      fi
-    else
-      log "Keeping existing argocd-image-updater-secret"
-    fi
-  else
-    if prompt_yes "Create argocd-image-updater-secret now?"; then
-      updater_token=$(read_secret "Argo CD API token: ")
-      if [[ -n "$updater_token" ]]; then
-        log "Creating argocd-image-updater-secret"
-        ARGOCD_TOKEN="$updater_token" make -C "$REPO_ROOT" image-updater-secret >/dev/null
-      else
-        log "No token provided; skipping creation"
-      fi
-    else
-      log "Skipping argocd-image-updater-secret creation"
-    fi
-  fi
+  log "Image Updater token is ESO-managed. Seed Vault (gitops/data/argocd/image-updater) and let ESO reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
