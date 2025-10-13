@@ -496,19 +496,6 @@ else
   log "argocd CLI not found; skipping repo credential helper"
 fi
 
-refresh_app() {
-  local app=$1
-  log "Forcing Argo CD refresh for $app"
-  oc -n openshift-gitops annotate application "$app" argocd.argoproj.io/refresh=hard --overwrite >/dev/null 2>&1 || \
-    err "Failed to annotate application $app"
-}
-
-refresh_app "ci-pipelines-$ENVIRONMENT"
-refresh_app "image-updater-$ENVIRONMENT"
-refresh_app "toy-service-$ENVIRONMENT"
-refresh_app "toy-web-$ENVIRONMENT"
-
-# Wait for Applications to become Healthy/Synced now that creds are in place
 wait_app() {
   local name=$1; local ns=openshift-gitops; local timeout=${2:-600}; local interval=10; local elapsed=0
   log "Waiting for Application ${name} to reach Synced/Healthy…"
@@ -531,6 +518,26 @@ wait_app() {
   done
   log "WARNING: ${name} did not become Healthy/Synced within ${timeout}s."
 }
+
+refresh_app() {
+  local app=$1
+  if oc -n openshift-gitops get application "$app" >/dev/null 2>&1; then
+    log "Forcing Argo CD refresh for $app"
+    oc -n openshift-gitops annotate application "$app" argocd.argoproj.io/refresh=hard --overwrite >/dev/null 2>&1 || \
+      err "Failed to annotate application $app"
+  else
+    log "Skipping refresh; application $app not found yet"
+  fi
+}
+
+# Ensure umbrella exists and is healthy before dealing with children
+wait_app "bitiq-umbrella-$ENVIRONMENT" 600 || true
+
+refresh_app "bitiq-umbrella-$ENVIRONMENT"
+refresh_app "ci-pipelines-$ENVIRONMENT"
+refresh_app "image-updater-$ENVIRONMENT"
+refresh_app "toy-service-$ENVIRONMENT"
+refresh_app "toy-web-$ENVIRONMENT"
 
 wait_app "image-updater-$ENVIRONMENT" 300 || true
 wait_app "ci-pipelines-$ENVIRONMENT" 300 || true
