@@ -23,3 +23,29 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: /ping
+  - it: renders backend env and secret mappings
+    set:
+      backend:
+        env:
+          - name: LOG_LEVEL
+            value: debug
+        secret:
+          enabled: true
+          name: toy-service-config
+          items:
+            - name: API_KEY
+              key: apiKey
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: toy-service-config
+                key: apiKey

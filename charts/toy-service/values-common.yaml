@@ -20,3 +20,11 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+backend:
+  env: []
+  secret:
+    enabled: false
+    name: toy-service-config
+    optional: false
+    items: []
