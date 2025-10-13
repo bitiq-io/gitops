@@ -132,6 +132,18 @@ Key fields to review:
 - `argocdToken/quayCredentials/webhookSecret.data[].remoteRef.key`: Vault KV paths.
 - `quayCredentials.secretType`: defaults to `kubernetes.io/dockerconfigjson` to ensure Tekton interprets the secret correctly.
 
+Enablement flags (set these to `true` when you are ready to reconcile the resources):
+
+- `enabled`: global switch for the chart.
+- `secretStore.enabled`: renders the `ClusterSecretStore` example (`vault-global`).
+- `argocdToken.enabled`, `quayCredentials.enabled`, `webhookSecret.enabled`: render each `ExternalSecret`.
+
+Vault KV paths expected by the defaults:
+
+- `gitops/data/argocd/image-updater` → `token`
+- `gitops/data/registry/quay` → `dockerconfigjson`
+- `gitops/data/github/webhook` → `token`
+
 Optional (Tekton credential helper): annotate the generated Quay secret so Tekton auto-detects it for `https://quay.io`.
 
 ```yaml
@@ -167,7 +179,23 @@ oc -n openshift-pipelines get secret quay-auth
 oc -n openshift-pipelines get secret github-webhook-secret
 ```
 
-### 2.3 Link ServiceAccounts (Tekton + Argo)
+### 2.3 Validate manifests locally
+
+Run kubeconform against the rendered manifests to ensure the CRDs and ExternalSecrets validate cleanly:
+
+```bash
+helm template charts/eso-vault-examples \
+  --set enabled=true \
+  --set secretStore.enabled=true \
+  --set argocdToken.enabled=true \
+  --set quayCredentials.enabled=true \
+  --set webhookSecret.enabled=true \
+  | kubeconform -strict -ignore-missing-schemas
+```
+
+> `kubeconform` will ignore ESO CRDs by default due to `-ignore-missing-schemas`. The command still verifies structural correctness and required fields like `secretStoreRef`, `refreshInterval`, and Vault references.
+
+### 2.4 Link ServiceAccounts (Tekton + Argo)
 
 For Tekton pipelines, ensure the `pipeline` ServiceAccount mounts the registry secret:
 
