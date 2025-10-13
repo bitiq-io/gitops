@@ -86,7 +86,15 @@ confirm() {
   local prompt=${1:-Continue?}
   local default=${2:-y}
   local ans
-  if truthy "$YES"; then return 0; fi
+  # When running with --yes, honor the provided default
+  # (only auto-accept if the default is yes)
+  if truthy "$YES"; then
+    if [[ "$default" =~ ^[Yy]$ ]]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
   if [[ ! -t 0 ]]; then
     ans=$default
   else
