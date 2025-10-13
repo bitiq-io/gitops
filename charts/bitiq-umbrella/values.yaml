@@ -13,14 +13,15 @@ targetRevision: main
 imageUpdater:
   platforms: linux/amd64
   pullSecret: ""
-  enableFrontend: true
-  pause:
-    backend: false
-    frontend: false
+  toyService:
+    enabled: true
+    pause: false
+  toyWeb:
+    pause: false
 
 sampleAppImages:
-  backend: quay.io/paulcapestany/toy-service
-  frontend: quay.io/paulcapestany/toy-web
+  toyService: quay.io/paulcapestany/toy-service
+  toyWeb: quay.io/paulcapestany/toy-web
 
 ciPipelines:
   serviceAccountName: pipeline
