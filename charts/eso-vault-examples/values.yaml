@@ -89,6 +89,19 @@ toyWebConfig:
   # Optional annotations for the generated Secret
   annotations: {}
 
+updaterPullSecret:
+  enabled: true
+  targetSecretName: quay-creds
+  targetNamespace: openshift-gitops
+  refreshInterval: 5m
+  data:
+    - secretKey: .dockerconfigjson
+      remoteRef:
+        key: gitops/data/registry/quay
+        property: dockerconfigjson
+  secretType: kubernetes.io/dockerconfigjson
+  annotations: {}
+
 # Common fields applied to ExternalSecret resources.
 externalSecretDefaults:
   secretStoreRef:

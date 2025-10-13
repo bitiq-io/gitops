@@ -185,15 +185,8 @@ Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Upd
 Platform and private registry notes:
 - Platform filter: the umbrella chart exposes `imageUpdater.platforms` (default `linux/amd64`) used by annotations to filter manifest architectures during tag selection. All environments map to `linux/amd64` by default (configured in `charts/argocd-apps/values.yaml` under `envs[].platforms`). Override to `linux/arm64` if your cluster nodes are arm64 (for example, Apple Silicon CRC); when bootstrapping, you can set `PLATFORMS_OVERRIDE=linux/arm64 ENV=local ./scripts/bootstrap.sh` to apply it without editing values.
 - Private Quay repos: set `imageUpdater.pullSecret` to a Secret visible to the Argo CD namespace to allow Image Updater to list tags for private repos (annotation `*.pull-secret` is rendered when set). The secret can be referenced as `name` (in `openshift-gitops`) or `namespace/name`.
-  Example (secret in openshift-gitops):
-  ```bash
-  oc -n openshift-gitops create secret docker-registry quay-creds \
-    --docker-server=quay.io \
-    --docker-username=<user or robot> \
-    --docker-password=<token> \
-    --docker-email=noreply@example.com
-  # then set imageUpdater.pullSecret: quay-creds
-  ```
+  ESO manages a pull secret for the updater in `openshift-gitops` (default name `quay-creds`).
+  Seed Vault at `gitops/data/registry/quay` (key `dockerconfigjson`) and set `imageUpdater.pullSecret: quay-creds` in the umbrella values.
 
 Local bump helper (optional)
 

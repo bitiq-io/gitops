@@ -84,6 +84,7 @@ render_chart "$ROOT_DIR/charts/ci-pipelines" "$out"
 if command -v kubeconform >/dev/null 2>&1; then
   kubeconform -strict -ignore-missing-schemas "$out" || true
 fi
+policy_test "$out"
 
 log "Render: argocd-apps per env (CRDs; schema may be skipped)"
 for env in local sno prod; do
