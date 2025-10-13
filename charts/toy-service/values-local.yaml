@@ -1,6 +1,5 @@
 baseDomain: apps-crc.testing
-
 healthPath: "/healthz"
 image:
   repository: quay.io/paulcapestany/toy-service
-  tag: v0.3.19-commit.fcedae7
+  tag: v0.3.23-commit.e26fd2b
