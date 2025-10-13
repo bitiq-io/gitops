@@ -1,0 +1,17 @@
+{{- $eso := .Values.operators.externalSecrets -}}
+{{- if $eso }}
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ $eso.name }}
+  namespace: {{ $eso.installNamespace }}
+spec:
+  channel: {{ $eso.channel }}
+  name: {{ $eso.name }}
+  source: {{ $eso.source }}
+  sourceNamespace: {{ $eso.sourceNamespace }}
+  installPlanApproval: {{ $eso.approval }}
+  {{- if $eso.startingCSV }}
+  startingCSV: {{ $eso.startingCSV | quote }}
+  {{- end }}
+{{- end }}

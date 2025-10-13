@@ -46,6 +46,12 @@ smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...]
 smoke-image-update: ## tail updater logs and show app annotations (ENV=<env> NS=openshift-gitops)
 	@bash scripts/smoke-image-update.sh
 
+dev-vault: ## Deploy a dev Vault, seed secrets, and install ESO resources (ENV=local helper)
+	@bash scripts/dev-vault.sh up
+
+dev-vault-down: ## Tear down the dev Vault helper deployment
+	@bash scripts/dev-vault.sh down
+
 bump-image: ## create a new tag in Quay from SOURCE_TAG to NEW_TAG (uses skopeo|podman|docker)
 	@bash scripts/quay-bump-tag.sh
 

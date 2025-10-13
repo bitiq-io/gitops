@@ -1,9 +1,9 @@
-enabled: false
+enabled: true
 
 # Controls whether a ClusterSecretStore is rendered.
 # Disable if you already manage the store out-of-band.
 secretStore:
-  enabled: false
+  enabled: true
   name: vault-global
   provider:
     vault:
@@ -20,9 +20,9 @@ secretStore:
           name: vault-auth
           namespace: openshift-gitops
 
-# ExternalSecret definitions. Each block is gated by its own enabled flag.
+# ExternalSecret definitions. Each block can still be toggled, but defaults to enabled.
 argocdToken:
-  enabled: false
+  enabled: true
   targetSecretName: argocd-image-updater-secret
   targetNamespace: openshift-gitops
   refreshInterval: 1m
@@ -35,7 +35,7 @@ argocdToken:
   annotations: {}
 
 quayCredentials:
-  enabled: false
+  enabled: true
   targetSecretName: quay-auth
   targetNamespace: openshift-pipelines
   refreshInterval: 5m
@@ -51,7 +51,7 @@ quayCredentials:
   annotations: {}
 
 webhookSecret:
-  enabled: false
+  enabled: true
   targetSecretName: github-webhook-secret
   targetNamespace: openshift-pipelines
   refreshInterval: 1m
@@ -64,7 +64,7 @@ webhookSecret:
   annotations: {}
 
 toyServiceConfig:
-  enabled: false
+  enabled: true
   targetSecretName: toy-service-config
   targetNamespace: bitiq-local
   refreshInterval: 1m
@@ -73,6 +73,19 @@ toyServiceConfig:
       remoteRef:
         key: gitops/data/services/toy-service/config
         property: fake_secret
+  # Optional annotations for the generated Secret
+  annotations: {}
+
+toyWebConfig:
+  enabled: true
+  targetSecretName: toy-web-config
+  targetNamespace: bitiq-local
+  refreshInterval: 1m
+  data:
+    - secretKey: API_BASE_URL
+      remoteRef:
+        key: gitops/data/services/toy-web/config
+        property: api_base_url
   # Optional annotations for the generated Secret
   annotations: {}
 

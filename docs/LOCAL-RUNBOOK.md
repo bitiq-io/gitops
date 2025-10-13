@@ -71,7 +71,23 @@ Notes for local storage usage (CRC):
     - Default (Results disabled): `./scripts/bootstrap.sh`
   - If supported by your operator build, you can also shrink storage via `TEKTON_RESULTS_STORAGE=5Gi`.
 
-## 2) Limit AppSet to local (already done by bootstrap)
+## 2) Seed Vault secrets (ENV=local)
+
+Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and install the `eso-vault-examples` chart pointing to the dev Vault:
+
+```bash
+make dev-vault
+```
+
+Re-run the target whenever you update local credentials or tweak chart values. To clean up the dev Vault and uninstall the chart:
+
+```bash
+make dev-vault-down
+```
+
+Verify that ESO reconciles the secrets in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md).
+
+## 3) Limit AppSet to local (already done by bootstrap)
 
 Bootstrap passes `envFilter=local`. If you ever need to reapply the AppSet manually:
 
@@ -79,7 +95,7 @@ Bootstrap passes `envFilter=local`. If you ever need to reapply the AppSet manua
 oc -n openshift-gitops apply -f <(helm template charts/argocd-apps --set envFilter=local)
 ```
 
-## 3) ArgoCD RBAC and repository credentials
+## 4) ArgoCD RBAC and repository credentials
 
 ArgoCD is operator‑managed on OpenShift. To persist RBAC changes, patch the ArgoCD CR (not the `argocd-rbac-cm` directly).
 
@@ -133,7 +149,7 @@ Tip: the operator writes the effective RBAC into `argocd-rbac-cm`; verify with:
 oc -n openshift-gitops get cm argocd-rbac-cm -o json | jq -r '.data["policy.csv"]'
 ```
 
-## 3) Allow ArgoCD to manage the target namespace
+## 5) Allow ArgoCD to manage the target namespace
 
 ```bash
 oc new-project bitiq-local || true
@@ -147,85 +163,11 @@ oc -n openshift-pipelines create rolebinding argocd-app-admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
 ```
 
-## 4) Seed Image Updater token (dev)
+## 6) (Optional) Rotate Image Updater token via Vault
 
-```bash
-oc -n openshift-gitops create secret generic argocd-image-updater-secret \
-  --from-literal=argocd.token=dummy || true
-oc -n openshift-gitops rollout restart deploy/argocd-image-updater
-```
+Image Updater reads its token from Vault through ESO. If you need to rotate the token, generate a new value in Argo CD, write it to `gitops/data/argocd/image-updater` (using `vault kv put ... token="<new-token>"`), and rerun `make dev-vault` (or apply the vault write in your automation). Do not recreate the Kubernetes Secret manually.
 
-Notes:
-- Dummy token lets the pod run for smoke tests. For a real token, log into ArgoCD via SSO and create a token, then update the Secret.
-- The chart supports `secret.create=false` (default) to use an existing Secret, or `secret.create=true` to create from values.
-
-Preferred: create a dedicated Argo CD local account for Image Updater and generate a token for it (works reliably with SSO):
-
-```bash
-# 4a) Define a local Argo CD account for the updater and RBAC (operator-managed)
-oc -n openshift-gitops patch argocd openshift-gitops \
-  --type merge -p '{
-    "spec":{
-      "extraConfig":{
-        "accounts.argocd-image-updater":"apiKey"
-      },
-      "rbac":{
-        "policy":"g, kubeadmin, role:admin\ng, argocd-image-updater, role:admin\np, role:admin, *, *, *, allow\n",
-        "scopes":"[groups, sub, preferred_username, email]"
-      }
-    }
-  }'
-
-# 4b) Restart the Argo CD server to pick up RBAC/extraConfig changes
-oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
-
-# 4c) Login via SSO and generate a token for the local account
-ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
-argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web --account argocd-image-updater)
-make image-updater-secret
-```
-
-If you see `account '<user>' does not exist` when generating a token for your SSO user:
-
-1) Ensure you log in to Argo CD first via SSO and verify your identity:
-
-```bash
-ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
-argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-argocd account get-user-info --grpc-web   # should print your SSO username (e.g., kubeadmin)
-```
-
-2) Ensure RBAC grants your user admin rights (dev convenience):
-
-```bash
-oc -n openshift-gitops patch argocd openshift-gitops \
-  --type merge -p '{"spec":{"rbac":{"policy":"g, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}'
-oc -n openshift-gitops rollout restart deploy/openshift-gitops-server
-```
-
-3) Re-login and generate the token for your user (or prefer the dedicated account method above):
-
-```bash
-argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
-make image-updater-secret   # uses $ARGOCD_TOKEN to (re)create the secret and restart the deployment
-```
-
-If your environment still refuses SSO token generation for users, create a dedicated local account with API key via the Argo CD config (operator‑managed) as a follow‑up; otherwise, prefer SSO tokens.
-
-Real token flow (optional, for write‑back):
-
-```bash
-ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
-argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure
-TOKEN=$(argocd account generate-token --grpc-web)
-oc -n openshift-gitops create secret generic argocd-image-updater-secret \
-  --from-literal=argocd.token="$TOKEN" --dry-run=client -o yaml | oc apply -f -
-oc -n openshift-gitops rollout restart deploy/argocd-image-updater
-```
-
-## 5) Auto‑sync child apps
+## 7) Auto‑sync child apps
 
 ```bash
 oc -n openshift-gitops patch application toy-service-${ENV} \
@@ -238,7 +180,7 @@ oc -n openshift-gitops patch application ci-pipelines-${ENV} \
   --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 ```
 
-## 6) Smoke check
+## 8) Smoke check
 
 ```bash
 make smoke ENV=local
@@ -249,7 +191,7 @@ APP_HOST=$(oc -n bitiq-local get route toy-service -o jsonpath='{.spec.host}')
 echo "https://$APP_HOST" && curl -k "https://$APP_HOST/healthz" || true
 ```
 
-## 7) Sample app images (public by default)
+## 9) Sample app images (public by default)
 
 - The sample stack ships with two images:
   - Backend (`toy-service`) — defaults to `quay.io/paulcapestany/toy-service` with probes on `/healthz`.

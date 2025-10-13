@@ -14,7 +14,7 @@ We are enabling ENV=prod for the Bitiq GitOps stack on OpenShift Container Platf
 
 2) Secrets management
 - Use External Secrets Operator (ESO) with HashiCorp Vault as the system of record for production secrets.
-- Ship an optional Helm chart (`charts/eso-vault-examples`) disabled by default that renders a `ClusterSecretStore` and selected `ExternalSecret` resources:
+- Ship a Helm chart (`charts/eso-vault-examples`) enabled by default that renders a `ClusterSecretStore` and selected `ExternalSecret` resources:
   - `openshift-gitops/argocd-image-updater-secret`
   - `openshift-pipelines/quay-auth`
   - `openshift-pipelines/github-webhook-secret`

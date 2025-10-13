@@ -20,3 +20,13 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+frontend:
+  env: []
+  secret:
+    enabled: true
+    name: toy-web-config
+    optional: false
+    items:
+      - name: API_BASE_URL
+        key: API_BASE_URL

@@ -20,8 +20,8 @@ Prerequisites:
 
 What it covers:
 - Runs `scripts/bootstrap.sh` (operators + ApplicationSet + umbrella app)
+- Ensures ESO is installed (via bootstrap) and prompts you to seed Vault via `make dev-vault`
 - Grants Argo CD controller admin in `bitiq-local` and `openshift-pipelines`
-- Creates/updates: `openshift-pipelines/github-webhook-secret`, `openshift-pipelines/quay-auth`
 - Prompts to add Argo CD repo credentials and `argocd-image-updater-secret`
 
 For full context and follow-ups (webhook exposure, build triggers, logs), see `docs/LOCAL-CI-CD.md`.
@@ -185,7 +185,23 @@ export ENV=local
   - Keep Results: `TEKTON_RESULTS=true ./scripts/bootstrap.sh`
   - Optionally shrink storage (if supported by your operator): `TEKTON_RESULTS=true TEKTON_RESULTS_STORAGE=5Gi ./scripts/bootstrap.sh`
 
-## 5) Configure repo credentials and Image Updater token
+## 5) Seed Vault secrets (ENV=local)
+
+Run the helper target to stand up a dev-mode Vault (`vault-dev` namespace), configure Kubernetes auth, seed sample credentials under `gitops/data/...`, create the `vault-auth` ServiceAccount, and install/refresh the `eso-vault-examples` Helm release pointing at that Vault:
+
+```bash
+make dev-vault
+```
+
+Re-run the target after modifying values or updating credentials. When you are done with your local cluster, clean up with:
+
+```bash
+make dev-vault-down
+```
+
+Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md).
+
+## 6) Configure repo credentials and Image Updater token
 
 1. OpenShift GitOps route (for CLI/API):
 
@@ -212,7 +228,7 @@ export ENV=local
 
 
 
-## 6) Tekton prerequisites and webhook exposure
+## 7) Tekton prerequisites and webhook exposure
 
 1. Create the CI namespace, grant image pusher rights, and set the GitHub webhook secret (reuse existing helpers):
 
@@ -276,7 +292,7 @@ export ENV=local
    tkn pr logs -f -n openshift-pipelines
    ```
 
-## 7) Smoke tests
+## 8) Smoke tests
 
 ```bash
 make smoke ENV=local
@@ -290,7 +306,7 @@ oc -n bitiq-local get route
 curl -k https://svc-api.apps-crc.testing/healthz
 ```
 
-## 8) Remote Route access tips
+## 9) Remote Route access tips
 
 - Routes (`*.apps-crc.testing`) resolve only inside the CRC VM. From your workstation, use SSH port forwarding to test services:
 
@@ -302,7 +318,7 @@ curl -k https://svc-api.apps-crc.testing/healthz
 
 - Alternatively, run a reverse proxy on the server (e.g., Caddy or Nginx) bound to the public interface. Keep this off by default; only enable if you control firewall access.
 
-## 9) Validation commands (pre-PR)
+## 10) Validation commands (pre-PR)
 
 Run the standard checks before committing changes:
 

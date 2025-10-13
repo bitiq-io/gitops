@@ -107,22 +107,22 @@ oc -n bitiq-prod get routes
 
 ## 7. Configure production secrets & credentials
 
-Production workloads should manage secrets via sealed or externalized workflows. The recommended approach for prod is **External Secrets Operator (ESO) + Vault**, documented in [PROD-SECRETS](PROD-SECRETS.md). High-level steps:
+Production workloads must manage secrets via **External Secrets Operator (ESO) + Vault**. See [PROD-SECRETS](PROD-SECRETS.md) for details. High-level steps:
 
-1. Install ESO, provision a Vault policy/role, and populate Vault paths with the required credentials.
-2. Enable the optional Helm chart `charts/eso-vault-examples` to render a `ClusterSecretStore` and `ExternalSecret` resources for:
-   - `openshift-gitops/argocd-image-updater-secret`
-   - `openshift-pipelines/quay-auth`
-   - `openshift-pipelines/github-webhook-secret`
-3. Link the generated secrets to the Tekton `pipeline` ServiceAccount (`oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount`).
-4. Rotate credentials directly in Vault; ESO reconciles the in-cluster secrets on the configured refresh intervals.
+1. Run `scripts/bootstrap.sh` (step 6) — this now installs ESO (stable channel), waits for the CSV/CRDs, and deploys `charts/eso-vault-examples`.
+2. Provision Vault access:
+   - Enable Kubernetes auth, create the `gitops-prod` policy + role, and point it at the `vault-auth` ServiceAccount in `openshift-gitops`.
+   - Populate the required KV paths under `gitops/data/...` (Argo CD token, Quay dockerconfig, GitHub webhook, toy-service config, toy-web config).
+3. Verify that ESO reconciles the target secrets:
+   - `oc -n openshift-gitops get secret argocd-image-updater-secret`
+   - `oc -n openshift-pipelines get secret quay-auth`
+   - `oc -n openshift-pipelines get secret github-webhook-secret`
+   - `oc -n bitiq-prod get secret toy-service-config`
+   - `oc -n bitiq-prod get secret toy-web-config`
+4. Link the generated registry secret to the Tekton `pipeline` ServiceAccount (`oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount`).
+5. Rotate credentials directly in Vault; ESO refreshes the Kubernetes Secrets based on `refreshInterval`.
 
-Fallback options (if ESO/Vault is not yet available):
-
-- Use SealedSecrets to store encrypted secrets in Git (scope them per namespace).
-- Create secrets manually via `oc create secret ...` (short-term only; document the manual steps and rotate frequently).
-
-Always document the system-of-record for each credential and ensure API tokens grant the minimum required permissions.
+Emergency-only fallback: if Vault or ESO is unavailable, halt deployments instead of dropping to ad-hoc `oc create secret` flows. Document the incident and restore the GitOps path before resuming deploys.
 
 Note (private registries): if your registries are private, configure an image pull secret for Image Updater and set `imageUpdater.pullSecret` in the umbrella chart values (refer to charts/bitiq-umbrella/values-common.yaml:16) or manage it via ESO with a separate ExternalSecret in `openshift-gitops`.
 

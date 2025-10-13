@@ -18,6 +18,16 @@ operators:
     startingCSV: ""
     approval: Automatic
 
+  externalSecrets:
+    channel: stable
+    name: external-secrets-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: external-secrets-operator
+    startingCSV: ""
+    approval: Automatic
+    createNamespace: true
+
 argoInstance:
   create: false                 # If true, create a user-defined ArgoCD instance
   name: example

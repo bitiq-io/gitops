@@ -24,7 +24,9 @@ affinity: {}
 backend:
   env: []
   secret:
-    enabled: false
+    enabled: true
     name: toy-service-config
     optional: false
-    items: []
+    items:
+      - name: FAKE_SECRET
+        key: FAKE_SECRET

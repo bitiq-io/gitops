@@ -68,6 +68,13 @@ if [[ -n "$PLATFORMS_OVERRIDE" ]]; then
   PLATFORM_ARGS=(--set-string "envs[${env_index}].platforms=${PLATFORMS_OVERRIDE}")
 fi
 
+GITOPS_SUBSCRIPTION=${GITOPS_SUBSCRIPTION:-openshift-gitops-operator}
+GITOPS_SUBSCRIPTION_NAMESPACE=${GITOPS_SUBSCRIPTION_NAMESPACE:-openshift-operators}
+PIPELINES_SUBSCRIPTION=${PIPELINES_SUBSCRIPTION:-openshift-pipelines-operator-rh}
+PIPELINES_SUBSCRIPTION_NAMESPACE=${PIPELINES_SUBSCRIPTION_NAMESPACE:-openshift-operators}
+ESO_SUBSCRIPTION=${ESO_SUBSCRIPTION:-external-secrets-operator}
+ESO_SUBSCRIPTION_NAMESPACE=${ESO_SUBSCRIPTION_NAMESPACE:-external-secrets-operator}
+
 # Optional: auto-detect a suitable fsGroup for Tekton workspaces (PVCs)
 # On OpenShift, pods run with a random UID from a namespace range; ensuring the
 # workspace PVC is group-writable avoids git-clone permission errors.
@@ -93,6 +100,47 @@ detect_fsgroup() {
   echo ""
 }
 
+wait_for_subscription_csv() {
+  local ns=$1
+  local sub=$2
+  local timeout=${3:-600}
+  local waited=0
+  log "Waiting for Subscription ${sub} (namespace ${ns}) to report a Succeeded CSV"
+  while (( waited < timeout )); do
+    local current
+    current=$(oc -n "${ns}" get subscription "${sub}" -o jsonpath='{.status.currentCSV}' 2>/dev/null || true)
+    if [[ -n "$current" ]]; then
+      local phase
+      phase=$(oc -n "${ns}" get csv "${current}" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+      if [[ "$phase" == "Succeeded" ]]; then
+        log "Subscription ${sub} -> CSV ${current} is Succeeded"
+        return 0
+      fi
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  log "FATAL: Timed out waiting for Subscription ${sub} in namespace ${ns}"
+  exit 1
+}
+
+wait_for_crd() {
+  local crd=$1
+  local timeout=${2:-300}
+  local waited=0
+  log "Waiting for CRD ${crd}"
+  while (( waited < timeout )); do
+    if oc get crd "${crd}" >/dev/null 2>&1; then
+      log "CRD ${crd} present"
+      return 0
+    fi
+    sleep 3
+    waited=$((waited + 3))
+  done
+  log "FATAL: Timed out waiting for CRD ${crd}"
+  exit 1
+}
+
 # Sanity checks: cluster login
 oc whoami >/dev/null || { log "FATAL: oc not logged in"; exit 1; }
 oc api-resources >/dev/null || { log "FATAL: cannot reach cluster"; exit 1; }
@@ -102,6 +150,13 @@ log "Installing/ensuring OpenShift GitOps & Pipelines operators via OLM Subscrip
 helm upgrade --install bootstrap-operators charts/bootstrap-operators \
   --namespace openshift-operators --create-namespace \
   --wait --timeout 10m
+
+wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION"
+wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
+wait_for_subscription_csv "$ESO_SUBSCRIPTION_NAMESPACE" "$ESO_SUBSCRIPTION"
+wait_for_crd externalsecrets.external-secrets.io
+wait_for_crd secretstores.external-secrets.io
+wait_for_crd clustersecretstores.external-secrets.io
 
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
 for i in {1..60}; do

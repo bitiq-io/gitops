@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+log() { printf '[%s] %s\n' "$(date -Ins)" "$*"; }
+fatal() { log "FATAL: $*"; exit 1; }
+
+require() {
+  command -v "$1" >/dev/null 2>&1 || fatal "'$1' not found in PATH"
+}
+
+ACTION=${1:-up}
+DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
+ESO_NAMESPACE=${ESO_NAMESPACE:-external-secrets-operator}
+VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
+HELM_RELEASE=${ESO_RELEASE_NAME:-eso-vault-examples}
+
+require oc
+require helm
+
+oc whoami >/dev/null 2>&1 || fatal "oc not logged in"
+
+KUBE_HOST=$(oc whoami --show-server)
+
+render_manifests() {
+  cat <<'YAML'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{DEV_NAMESPACE}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{VAULT_RELEASE_NAME}}
+  namespace: {{DEV_NAMESPACE}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{VAULT_RELEASE_NAME}}
+  namespace: {{DEV_NAMESPACE}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{VAULT_RELEASE_NAME}}
+  template:
+    metadata:
+      labels:
+        app: {{VAULT_RELEASE_NAME}}
+    spec:
+      serviceAccountName: {{VAULT_RELEASE_NAME}}
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.15.6
+          args:
+            - "server"
+            - "-dev"
+            - "-dev-root-token-id=root"
+            - "-dev-listen-address=0.0.0.0:8200"
+          ports:
+            - name: http
+              containerPort: 8200
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 8200
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          env:
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: 0.0.0.0:8200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{VAULT_RELEASE_NAME}}
+  namespace: {{DEV_NAMESPACE}}
+spec:
+  selector:
+    app: {{VAULT_RELEASE_NAME}}
+  ports:
+    - name: http
+      port: 8200
+      targetPort: 8200
+YAML
+}
+
+apply_manifests() {
+  log "Deploying dev Vault in namespace ${DEV_NAMESPACE}"
+  render_manifests | sed \
+    -e "s/{{DEV_NAMESPACE}}/${DEV_NAMESPACE}/g" \
+    -e "s/{{VAULT_RELEASE_NAME}}/${VAULT_RELEASE_NAME}/g" \
+    | oc apply -f -
+}
+
+wait_for_deployment() {
+  local dep=$1 ns=$2
+  log "Waiting for deployment/${dep} in ${ns} to become available…"
+  oc -n "${ns}" rollout status deploy/"${dep}" --timeout=180s
+}
+
+configure_kubernetes_auth() {
+  log "Configuring Vault Kubernetes auth + policies"
+  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
+    sh -c "
+      set -euo pipefail
+      export VAULT_ADDR=\"http://127.0.0.1:8200\"
+      export VAULT_TOKEN=\"root\"
+      vault auth enable kubernetes >/dev/null 2>&1 || true
+      vault write auth/kubernetes/config \
+        token_reviewer_jwt=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" \
+        kubernetes_host=\"${KUBE_HOST}\" \
+        kubernetes_ca_cert=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt)\" >/dev/null
+      vault policy write gitops-prod - <<'HCL'
+path \"gitops/data/*\" {
+  capabilities = [\"create\", \"read\", \"update\", \"list\"]
+}
+HCL
+      vault write auth/kubernetes/role/gitops-prod \
+        bound_service_account_names=\"vault-auth\" \
+        bound_service_account_namespaces=\"openshift-gitops\" \
+        policies=\"gitops-prod\" \
+        ttl=\"1h\" >/dev/null
+    "
+}
+
+seed_secrets() {
+  log "Seeding demo secrets into Vault KV path gitops/data/*"
+  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
+    sh -c "
+      set -euo pipefail
+      export VAULT_ADDR=\"http://127.0.0.1:8200\"
+      export VAULT_TOKEN=\"root\"
+      vault kv put gitops/data/argocd/image-updater token=\"local-argocd-token\" >/dev/null
+      vault kv put gitops/data/registry/quay dockerconfigjson=\"\$(printf '{\"auths\":{\"quay.io\":{\"auth\":\"ZGVtbzpkZW1v\"}}}')\" >/dev/null
+      vault kv put gitops/data/github/webhook token=\"local-webhook-secret\" >/dev/null
+      vault kv put gitops/data/services/toy-service/config fake_secret=\"LOCAL_FAKE_SECRET\" >/dev/null
+      vault kv put gitops/data/services/toy-web/config api_base_url=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
+    "
+}
+
+install_eso_chart() {
+  log "Ensuring vault-auth ServiceAccount exists in openshift-gitops"
+  oc -n openshift-gitops create sa vault-auth >/dev/null 2>&1 || true
+
+  log "Installing eso-vault-examples chart with dev Vault overrides"
+  helm upgrade --install "${HELM_RELEASE}" charts/eso-vault-examples \
+    --namespace "${ESO_NAMESPACE}" \
+    --create-namespace \
+    --set enabled=true \
+    --set secretStore.enabled=true \
+    --set secretStore.name=vault-global \
+    --set-string secretStore.provider.vault.server="http://${VAULT_RELEASE_NAME}.${DEV_NAMESPACE}.svc:8200" \
+    --set secretStore.provider.vault.auth.role=gitops-prod \
+    --set secretStore.provider.vault.auth.serviceAccountRef.name=vault-auth \
+    --set secretStore.provider.vault.auth.serviceAccountRef.namespace=openshift-gitops \
+    --set argocdToken.enabled=true \
+    --set quayCredentials.enabled=true \
+    --set webhookSecret.enabled=true \
+    --set toyServiceConfig.enabled=true \
+    --set toyWebConfig.enabled=true
+}
+
+ensure_crds() {
+  local crd=$1
+  log "Waiting for CRD ${crd}"
+  for _ in {1..60}; do
+    oc get crd "${crd}" >/dev/null 2>&1 && return 0
+    sleep 2
+  done
+  fatal "Timed out waiting for CRD ${crd}"
+}
+
+wait_for_csv() {
+  local ns=$1 sub=$2
+  log "Waiting for Subscription ${sub} in ${ns} to report a current CSV…"
+  local current=""
+  for _ in {1..120}; do
+    current=$(oc -n "${ns}" get subscription "${sub}" -o jsonpath='{.status.currentCSV}' 2>/dev/null || true)
+    if [[ -n "${current}" ]]; then
+      local phase
+      phase=$(oc -n "${ns}" get csv "${current}" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+      if [[ "${phase}" == "Succeeded" ]]; then
+        log "Subscription ${sub} -> CSV ${current} is Succeeded"
+        return 0
+      fi
+    fi
+    sleep 5
+  done
+  fatal "Timed out waiting for CSV via Subscription ${sub}"
+}
+
+case "${ACTION}" in
+  up)
+    apply_manifests
+    wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+    configure_kubernetes_auth
+    seed_secrets
+    install_eso_chart
+    if oc -n "${ESO_NAMESPACE}" get subscription external-secrets-operator >/dev/null 2>&1; then
+      wait_for_csv "${ESO_NAMESPACE}" "external-secrets-operator"
+    else
+      log "Subscription external-secrets-operator not found in ${ESO_NAMESPACE}; skipping CSV wait (ensure bootstrap installed ESO)."
+    fi
+    ensure_crds externalsecrets.external-secrets.io
+    ensure_crds clustersecretstores.external-secrets.io
+    log "Dev Vault + ESO secrets ready."
+    ;;
+  down)
+    log "Removing dev Vault resources"
+    oc delete namespace "${DEV_NAMESPACE}" --ignore-not-found
+    log "Deleting eso-vault-examples release (if present)"
+    helm -n "${ESO_NAMESPACE}" uninstall "${HELM_RELEASE}" >/dev/null 2>&1 || true
+    ;;
+  *)
+    fatal "Unknown action '${ACTION}'. Use up or down."
+    ;;
+esac

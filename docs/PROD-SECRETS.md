@@ -1,13 +1,14 @@
 # Production Secrets with External Secrets Operator (ESO) + Vault
 
-This guide describes how to manage production secrets for the `gitops` stack using [External Secrets Operator (ESO)](https://external-secrets.io/) with HashiCorp Vault as the backend. It focuses on the three credentials required by the repo and ships an optional runtime secret for the sample backend:
+This guide describes how to manage production secrets for the `gitops` stack using [External Secrets Operator (ESO)](https://external-secrets.io/) with HashiCorp Vault as the backend. It focuses on the credentials managed by default by this repo:
 
 1. **Argo CD Image Updater token** (`openshift-gitops/argocd-image-updater-secret`)
 2. **Container registry credentials** for the Tekton `pipeline` ServiceAccount (`openshift-pipelines/quay-auth`)
 3. **GitHub webhook secret** (`openshift-pipelines/github-webhook-secret`)
-4. **toy-service runtime config** (`bitiq-local/toy-service-config`, optional)
+4. **toy-service runtime config** (`bitiq-<env>/toy-service-config`)
+5. **toy-web runtime config** (`bitiq-<env>/toy-web-config`)
 
-The repository ships an optional Helm chart (`charts/eso-vault-examples`) that renders a Vault `ClusterSecretStore` and `ExternalSecret` resources for these credentials. By default, the chart is disabled so that production operators can enable and customize it deliberately.
+The repository ships a Helm chart (`charts/eso-vault-examples`) that renders a Vault `ClusterSecretStore` and the ExternalSecrets for these credentials. The chart is installed automatically by `scripts/bootstrap.sh` once ESO is ready; override the values only when you need to point at a different Vault or adjust secret paths.
 
 ## 1. Prerequisites
 
@@ -18,6 +19,8 @@ The repository ships an optional Helm chart (`charts/eso-vault-examples`) that r
 - Vault authentication configured for Kubernetes (recommended) or AppRole.
 
 ### 1.1 Install External Secrets Operator
+
+`scripts/bootstrap.sh` automatically installs ESO (stable channel) and waits for the CSV/CRDs. The steps below are kept for reference if you need to install manually or recover from a failed upgrade.
 
 Use OperatorHub in the OpenShift web console or apply the operator manifests via CLI:
 
@@ -114,34 +117,29 @@ Use the same keys (`token`, `dockerconfigjson`) that the Helm chart references.
 
 ## 2. Deploy ESO + Vault resources via Helm
 
-The `eso-vault-examples` chart is optional and disabled by default. It renders:
+The `eso-vault-examples` chart renders:
 
 - `ClusterSecretStore` (`vault-global`) configured for Vault + Kubernetes auth.
-- `ExternalSecret` resources for the Argo CD token, Quay credentials, GitHub webhook secret, and (optionally) the toy-service runtime config.
+- `ExternalSecret` resources for the Argo CD token, Quay credentials, GitHub webhook secret, toy-service config, and toy-web config.
 
 ### 2.1 Review and customize values
 
-Copy the chart values and edit them to match your Vault deployment:
+Bootstrap installs the chart with the repository defaults. If you need to customize it (e.g., point to a different Vault endpoint, adjust namespaces, or tweak refresh intervals), copy the values and edit them before re-applying:
 
 ```bash
 cat charts/eso-vault-examples/values.yaml > /tmp/eso-values.yaml
 $EDITOR /tmp/eso-values.yaml
 ```
 
-Key fields to review:
+Key fields to review/override:
 
 - `secretStore.provider.vault.server`: Vault HTTPS endpoint.
 - `secretStore.provider.vault.auth.role`: Vault role created in section 1.2.
 - `secretStore.provider.vault.auth.serviceAccountRef`: ServiceAccount that ESO will impersonate.
 - `argocdToken/quayCredentials/webhookSecret.data[].remoteRef.key`: Vault KV paths.
 - `toyServiceConfig.data[].remoteRef.key`: Vault KV path for backend runtime secrets (`fake_secret` by default).
+- `toyWebConfig.data[].remoteRef.key`: Vault KV path for frontend runtime secrets (`api_base_url` by default).
 - `quayCredentials.secretType`: defaults to `kubernetes.io/dockerconfigjson` to ensure Tekton interprets the secret correctly.
-
-Enablement flags (set these to `true` when you are ready to reconcile the resources):
-
-- `enabled`: global switch for the chart.
-- `secretStore.enabled`: renders the `ClusterSecretStore` example (`vault-global`).
-- `argocdToken.enabled`, `quayCredentials.enabled`, `webhookSecret.enabled`, `toyServiceConfig.enabled`: render each `ExternalSecret`.
 
 Vault KV paths expected by the defaults:
 
@@ -149,6 +147,7 @@ Vault KV paths expected by the defaults:
 - `gitops/data/registry/quay` → `dockerconfigjson`
 - `gitops/data/github/webhook` → `token`
 - `gitops/data/services/toy-service/config` → `fake_secret`
+- `gitops/data/services/toy-web/config` → `api_base_url`
 
 Optional (Tekton credential helper): annotate the generated Quay secret so Tekton auto-detects it for `https://quay.io`.
 
@@ -161,23 +160,14 @@ quayCredentials:
 
 ### 2.2 Install the chart
 
-Enable the chart and desired secrets by setting `enabled=true` and toggling individual blocks:
-
 ```bash
 helm upgrade --install eso-vault-examples charts/eso-vault-examples \
   --namespace external-secrets-operator \
   --create-namespace \
-  --values /tmp/eso-values.yaml \
-  --set enabled=true \
-  --set secretStore.enabled=true \
-  --set argocdToken.enabled=true \
-  --set quayCredentials.enabled=true \
-  --set webhookSecret.enabled=true
+  --values /tmp/eso-values.yaml
 ```
 
-This deploys the `ClusterSecretStore` and ExternalSecrets. ESO will reconcile the target secrets in their respective namespaces.
-
-Include `--set toyServiceConfig.enabled=true` when you want ESO to manage the toy-service runtime secret.
+This deploys/updates the `ClusterSecretStore` and ExternalSecrets. ESO will reconcile the target secrets in their respective namespaces.
 
 Verify that the secrets materialize:
 
@@ -185,8 +175,8 @@ Verify that the secrets materialize:
 oc -n openshift-gitops get secret argocd-image-updater-secret
 oc -n openshift-pipelines get secret quay-auth
 oc -n openshift-pipelines get secret github-webhook-secret
-# Optional when toyServiceConfig.enabled=true
 oc -n bitiq-local get secret toy-service-config
+oc -n bitiq-local get secret toy-web-config
 ```
 
 ### 2.3 Validate manifests locally
@@ -214,6 +204,24 @@ oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount
 ```
 
 For Argo CD Image Updater, ESO writes the token to the expected secret; no additional linking is necessary.
+
+### 2.5 Local developer shortcut (`make dev-vault`)
+
+For CRC/local parity testing, run:
+
+```bash
+make dev-vault
+```
+
+This target:
+
+1. Deploys a dev-mode Vault (`vault-dev` namespace) with the default root token.
+2. Enables Kubernetes auth, creates the `gitops-prod` policy + role, and seeds sample credentials under `gitops/data/...`.
+3. Ensures `vault-auth` exists in `openshift-gitops`.
+4. Installs/refreshes the `eso-vault-examples` Helm release with overrides pointing to the dev Vault.
+5. Waits for the ESO Subscription to reconcile and for CRDs to register.
+
+Run `make dev-vault-down` to remove the dev Vault and uninstall the chart.
 
 ## 3. Operational considerations
 

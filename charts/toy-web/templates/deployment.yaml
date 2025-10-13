@@ -1,3 +1,10 @@
+{{- $frontend := default (dict) .Values.frontend -}}
+{{- $frontendEnv := default (list) $frontend.env -}}
+{{- $frontendSecret := default (dict) $frontend.secret -}}
+{{- $frontendSecretItems := default (list) $frontendSecret.items -}}
+{{- $frontendSecretEnabled := and $frontendSecret.enabled (gt (len $frontendSecretItems) 0) -}}
+{{- $renderFrontendEnv := or (gt (len $frontendEnv) 0) $frontendSecretEnabled -}}
+{{- $frontendSecretName := default "toy-web-config" $frontendSecret.name -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,6 +40,31 @@ spec:
             initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if $renderFrontendEnv }}
+          env:
+            {{- range $entry := $frontendEnv }}
+            - name: {{ required "frontend.env entries must define name" $entry.name }}
+              {{- if hasKey $entry "valueFrom" }}
+              valueFrom:
+{{ toYaml $entry.valueFrom | indent 16 }}
+              {{- else }}
+              value: {{ default "" $entry.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $frontendSecretEnabled }}
+            {{- range $item := $frontendSecretItems }}
+            - name: {{ required "frontend.secret.items entries must define name" $item.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default $frontendSecretName $item.secretName | quote }}
+                  key: {{ required (printf "frontend.secret.items entry %s must define key" (default "<missing>" $item.name)) $item.key | quote }}
+                  {{- $itemOptional := default $frontendSecret.optional $item.optional }}
+                  {{- if $itemOptional }}
+                  optional: {{ $itemOptional }}
+                  {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

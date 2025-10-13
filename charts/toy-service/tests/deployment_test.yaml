@@ -7,6 +7,16 @@ release:
   name: toy-service
   namespace: bitiq-local
 tests:
+  - it: includes FAKE_SECRET secret ref by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FAKE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: toy-service-config
+                key: FAKE_SECRET
   - it: uses repository + tag from values
     set:
       image:
