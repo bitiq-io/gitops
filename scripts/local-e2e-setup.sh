@@ -530,10 +530,24 @@ refresh_app() {
   fi
 }
 
-# Ensure umbrella exists and is healthy before dealing with children
-wait_app "bitiq-umbrella-$ENVIRONMENT" 600 || true
+# Ensure umbrella exists, force a hard refresh, then (optionally) wait for Healthy
+wait_app_present() {
+  local name=$1; local ns=openshift-gitops; local timeout=${2:-300}; local interval=5; local elapsed=0
+  log "Waiting for Application ${name} to be created…"
+  while (( elapsed < timeout )); do
+    if oc -n "$ns" get application "$name" >/dev/null 2>&1; then
+      log "${name} is present"
+      return 0
+    fi
+    sleep ${interval}; elapsed=$((elapsed+interval))
+  done
+  log "WARNING: ${name} not created within ${timeout}s"
+  return 1
+}
 
+wait_app_present "bitiq-umbrella-$ENVIRONMENT" 300 || true
 refresh_app "bitiq-umbrella-$ENVIRONMENT"
+wait_app "bitiq-umbrella-$ENVIRONMENT" 600 || true
 refresh_app "ci-pipelines-$ENVIRONMENT"
 refresh_app "image-updater-$ENVIRONMENT"
 refresh_app "toy-service-$ENVIRONMENT"
