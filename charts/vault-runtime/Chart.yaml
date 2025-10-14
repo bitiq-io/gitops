@@ -4,4 +4,3 @@ description: VSO-based runtime secret delivery (VaultConnection/Auth + Static/Dy
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-

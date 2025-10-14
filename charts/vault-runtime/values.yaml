@@ -41,4 +41,3 @@ secrets:
     namespace: "{{ .Values.namespaces.app }}"
     destinationName: toy-web-config
     path: gitops/data/services/toy-web/config
-

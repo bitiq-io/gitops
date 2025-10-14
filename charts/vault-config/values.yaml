@@ -17,4 +17,3 @@ roles:
       - default
     policies:
       - gitops-local
-

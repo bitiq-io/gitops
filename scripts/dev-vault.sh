@@ -13,6 +13,7 @@ DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
 ESO_NAMESPACE=${ESO_NAMESPACE:-external-secrets-operator}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
 HELM_RELEASE=${ESO_RELEASE_NAME:-eso-vault-examples}
+USE_VAULT_OPERATORS=${VAULT_OPERATORS:-false}
 
 require oc
 require helm
@@ -186,6 +187,21 @@ install_eso_chart() {
     --set toyWebConfig.enabled=true
 }
 
+install_vso_runtime_chart() {
+  local runtime_release=${VSO_RUNTIME_RELEASE_NAME:-vault-runtime}
+  local addr="http://${VAULT_RELEASE_NAME}.${DEV_NAMESPACE}.svc:8200"
+  log "Installing VSO runtime chart pointing at ${addr}"
+  helm upgrade --install "${runtime_release}" charts/vault-runtime \
+    --namespace openshift-gitops \
+    --set enabled=true \
+    --set-string vault.address="${addr}" \
+    --set vault.kubernetesMount=kubernetes \
+    --set vault.roleName=gitops-prod \
+    --set-string namespaces.gitops=openshift-gitops \
+    --set-string namespaces.pipelines=openshift-pipelines \
+    --set-string namespaces.app=bitiq-local
+}
+
 ensure_crds() {
   local crd=$1
   log "Waiting for CRD ${crd}"
@@ -232,30 +248,56 @@ case "${ACTION}" in
     wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
     configure_kubernetes_auth
     seed_secrets
-    install_eso_chart
-    if oc -n "${ESO_NAMESPACE}" get subscription external-secrets-operator >/dev/null 2>&1; then
-      wait_for_csv "${ESO_NAMESPACE}" "external-secrets-operator"
+    if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+      log "VAULT_OPERATORS=true: using VSO runtime instead of ESO"
+      # Best-effort uninstall legacy ESO chart to avoid dual-writer in local
+      helm -n "${ESO_NAMESPACE}" uninstall "${HELM_RELEASE}" >/dev/null 2>&1 || true
+      # Ensure VSO CRDs
+      ensure_crds vaultconnections.secrets.hashicorp.com
+      ensure_crds vaultauths.secrets.hashicorp.com
+      ensure_crds vaultstaticsecrets.secrets.hashicorp.com
+      install_vso_runtime_chart
+      # Wait for VSO-managed Secrets to appear
+      wait_for_secret openshift-gitops argocd-image-updater-secret 240 || true
+      wait_for_secret openshift-pipelines quay-auth 240 || true
+      wait_for_secret openshift-pipelines github-webhook-secret 240 || true
+      # Local conveniences
+      if oc -n openshift-pipelines get sa pipeline >/dev/null 2>&1 && \
+         oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
+        oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+        log "Linked quay-auth to SA 'pipeline' in openshift-pipelines"
+      fi
+      if oc -n openshift-gitops get deploy/argocd-image-updater >/dev/null 2>&1; then
+        oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
+        log "Restarted argocd-image-updater deployment to pick up token"
+      fi
+      log "Dev Vault + VSO secrets ready."
     else
-      log "Subscription external-secrets-operator not found in ${ESO_NAMESPACE}; skipping CSV wait (ensure bootstrap installed ESO)."
+      install_eso_chart
+      if oc -n "${ESO_NAMESPACE}" get subscription external-secrets-operator >/dev/null 2>&1; then
+        wait_for_csv "${ESO_NAMESPACE}" "external-secrets-operator"
+      else
+        log "Subscription external-secrets-operator not found in ${ESO_NAMESPACE}; skipping CSV wait (ensure bootstrap installed ESO)."
+      fi
+      ensure_crds externalsecrets.external-secrets.io
+      ensure_crds clustersecretstores.external-secrets.io
+      # Wait for ESO-managed Secrets to reconcile, then perform local conveniences
+      wait_for_secret openshift-gitops argocd-image-updater-secret 240 || true
+      wait_for_secret openshift-pipelines quay-auth 240 || true
+      wait_for_secret openshift-pipelines github-webhook-secret 240 || true
+      # Link quay-auth to Tekton SA (idempotent, local-only convenience)
+      if oc -n openshift-pipelines get sa pipeline >/dev/null 2>&1 && \
+         oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
+        oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
+        log "Linked quay-auth to SA 'pipeline' in openshift-pipelines"
+      fi
+      # Restart Image Updater to pick up token changes
+      if oc -n openshift-gitops get deploy/argocd-image-updater >/dev/null 2>&1; then
+        oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
+        log "Restarted argocd-image-updater deployment to pick up token"
+      fi
+      log "Dev Vault + ESO secrets ready."
     fi
-    ensure_crds externalsecrets.external-secrets.io
-    ensure_crds clustersecretstores.external-secrets.io
-    # Wait for ESO-managed Secrets to reconcile, then perform local conveniences
-    wait_for_secret openshift-gitops argocd-image-updater-secret 240 || true
-    wait_for_secret openshift-pipelines quay-auth 240 || true
-    wait_for_secret openshift-pipelines github-webhook-secret 240 || true
-    # Link quay-auth to Tekton SA (idempotent, local-only convenience)
-    if oc -n openshift-pipelines get sa pipeline >/dev/null 2>&1 && \
-       oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
-      oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
-      log "Linked quay-auth to SA 'pipeline' in openshift-pipelines"
-    fi
-    # Restart Image Updater to pick up token changes
-    if oc -n openshift-gitops get deploy/argocd-image-updater >/dev/null 2>&1; then
-      oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
-      log "Restarted argocd-image-updater deployment to pick up token"
-    fi
-    log "Dev Vault + ESO secrets ready."
     ;;
   down)
     log "Removing dev Vault resources"
