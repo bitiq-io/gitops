@@ -113,7 +113,11 @@ Production workloads must manage secrets via **External Secrets Operator (ESO) +
 2. Provision Vault access:
    - Enable Kubernetes auth, create the `gitops-prod` policy + role, and point it at the `vault-auth` ServiceAccount in `openshift-gitops`.
    - Populate the required KV paths under `gitops/data/...` (Argo CD token, Quay dockerconfig, GitHub webhook, toy-service config, toy-web config).
-3. Verify that ESO reconciles the target secrets:
+3. Verify that secrets reconcile:
+   - If VSO/VCO is enabled for the env in the ApplicationSet values, the umbrella will deploy `vault-config-<env>` and `vault-runtime-<env>` and gate off the legacy ESO examples. See `docs/ESO-TO-VSO-MIGRATION.md` for cutover steps.
+   - Otherwise, the legacy ESO example app will reconcile ExternalSecrets.
+   
+   Verify the target secrets exist:
    - `oc -n openshift-gitops get secret argocd-image-updater-secret`
    - `oc -n openshift-pipelines get secret quay-auth`
    - `oc -n openshift-pipelines get secret github-webhook-secret`
