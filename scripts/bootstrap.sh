@@ -33,6 +33,7 @@ require helm
 
 ENV="${ENV:-local}"
 TARGET_REV="${TARGET_REV:-main}"
+USE_VAULT_OPERATORS="${VAULT_OPERATORS:-}"
 
 # Detect repo URL if not provided
 if [[ -z "${GIT_REPO_URL:-}" ]]; then
@@ -52,6 +53,9 @@ case "$ENV" in
 esac
 
 log "ENV=${ENV}  BASE_DOMAIN=${BASE_DOMAIN}  GIT_REPO_URL=${GIT_REPO_URL}  TARGET_REV=${TARGET_REV}"
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  log "VAULT_OPERATORS=true: preferring VSO/VCO; disabling ESO in bootstrap"
+fi
 
 # Optional platforms override (helps when node architecture differs from defaults)
 PLATFORMS_OVERRIDE="${PLATFORMS_OVERRIDE:-}"
@@ -153,13 +157,25 @@ oc api-resources >/dev/null || { log "FATAL: cannot reach cluster"; exit 1; }
 
 # 1) Install operators (Subscriptions) into openshift-operators
 log "Installing/ensuring GitOps, Pipelines, and Vault operators (VSO/VCO) via OLM Subscriptions…"
-helm upgrade --install bootstrap-operators charts/bootstrap-operators \
-  --namespace openshift-operators --create-namespace \
-  --wait --timeout 10m
+helm_args_ops=(
+  --namespace openshift-operators
+  --create-namespace
+  --wait
+  --timeout 10m
+)
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  # Disable ESO Subscription rendering in the chart via enabled=false
+  helm_args_ops+=(--set operators.externalSecrets.enabled=false)
+fi
+helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}"
 
 wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION"
 wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
-wait_for_subscription_csv "$ESO_SUBSCRIPTION_NAMESPACE" "$ESO_SUBSCRIPTION"
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  log "VAULT_OPERATORS=true: skipping wait for ESO Subscription"
+else
+  wait_for_subscription_csv "$ESO_SUBSCRIPTION_NAMESPACE" "$ESO_SUBSCRIPTION"
+fi
 wait_for_subscription_csv "$VSO_SUBSCRIPTION_NAMESPACE" "$VSO_SUBSCRIPTION"
 wait_for_subscription_csv "$VCO_SUBSCRIPTION_NAMESPACE" "$VCO_SUBSCRIPTION"
 # VSO core CRDs
@@ -172,9 +188,13 @@ wait_for_crd kubernetesauthengineconfigs.redhatcop.redhat.io
 wait_for_crd kubernetesauthengineroles.redhatcop.redhat.io
 wait_for_crd policies.redhatcop.redhat.io || true
 # ESO core CRDs (until decommissioned)
-wait_for_crd externalsecrets.external-secrets.io
-wait_for_crd secretstores.external-secrets.io
-wait_for_crd clustersecretstores.external-secrets.io
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  log "VAULT_OPERATORS=true: skipping ESO CRD waits"
+else
+  wait_for_crd externalsecrets.external-secrets.io
+  wait_for_crd secretstores.external-secrets.io
+  wait_for_crd clustersecretstores.external-secrets.io
+fi
 
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
 for i in {1..60}; do

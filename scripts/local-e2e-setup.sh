@@ -53,6 +53,14 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 ENVIRONMENT=${ENV:-local}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 TARGET_REV=${TARGET_REV:-main}
+USE_VAULT_OPERATORS=${VAULT_OPERATORS:-}
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  VAULT_RECONCILER_NAME="VSO"
+  VAULT_RECONCILER_LONG="Vault operators (VSO/VCO)"
+else
+  VAULT_RECONCILER_NAME="ESO"
+  VAULT_RECONCILER_LONG="External Secrets Operator (ESO)"
+fi
 
 require oc
 require helm
@@ -183,7 +191,7 @@ ensure_disable_tekton_results() {
 
 ensure_disable_tekton_results
 
-# Offer to seed dev Vault if required ESO-managed Secrets are missing (ENV=local only)
+# Offer to seed dev Vault if required Vault-managed Secrets are missing (ENV=local only)
 suggest_dev_vault_if_missing() {
   if [[ "$ENVIRONMENT" != "local" ]]; then
     return 0
@@ -286,33 +294,33 @@ oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-p
 FAST_PATH=${FAST_PATH:-}
 
 #!/bin/true
-# 1) GitHub webhook secret for Tekton Triggers (Vault-managed via VSO)
+# 1) GitHub webhook secret for Tekton Triggers (managed via ${VAULT_RECONCILER_LONG})
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${GITHUB_WEBHOOK_SECRET:-}" ]]; then
-    log "[fast] Vault via operators is enforced. Seed Vault instead of creating Kubernetes secrets directly."
+    log "[fast] Vault flow enforced. Seed Vault instead of creating Kubernetes secrets directly."
     log "      Run: make dev-vault   (seeds gitops/data/github/webhook token)"
   else
-    log "[fast] Skipping webhook secret; managed via Vault operators. Use 'make dev-vault' to seed."
+    log "[fast] Skipping webhook secret; managed via ${VAULT_RECONCILER_LONG}. Use 'make dev-vault' to seed."
   fi
 fi
 
 #!/bin/true
-# 2) Quay credentials for Tekton SA 'pipeline' (Vault-managed via VSO)
+# 2) Quay credentials for Tekton SA 'pipeline' (managed via ${VAULT_RECONCILER_LONG})
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" && -n "${QUAY_EMAIL:-}" ]]; then
-    log "[fast] Vault via operators is enforced. Seed Vault with dockerconfigjson and rerun 'make dev-vault'."
+    log "[fast] Vault flow enforced. Seed Vault with dockerconfigjson and rerun 'make dev-vault'."
   else
-    log "[fast] Skipping Quay secret; managed via Vault operators. Use 'make dev-vault' to seed."
+    log "[fast] Skipping Quay secret; managed via ${VAULT_RECONCILER_LONG}. Use 'make dev-vault' to seed."
   fi
 fi
 
 #!/bin/true
-# 3) Argo CD Image Updater API token (Vault-managed via VSO)
+# 3) Argo CD Image Updater API token (managed via ${VAULT_RECONCILER_LONG})
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${ARGOCD_TOKEN:-}" ]]; then
-    log "[fast] Vault via operators is enforced. Write token to Vault at gitops/data/argocd/image-updater and rerun 'make dev-vault'."
+    log "[fast] Vault flow enforced. Write token to Vault at gitops/data/argocd/image-updater and rerun 'make dev-vault'."
   else
-    log "[fast] Skipping Image Updater token; managed via Vault operators. Use 'make dev-vault' to seed."
+    log "[fast] Skipping Image Updater token; managed via ${VAULT_RECONCILER_LONG}. Use 'make dev-vault' to seed."
   fi
 fi
 
@@ -393,30 +401,30 @@ if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-pipelines get secret github-webhook-secret >/dev/null 2>&1; then
     log "[fast] github-webhook-secret already present"
   else
-    log "[fast] github-webhook-secret not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
+    log "[fast] github-webhook-secret not found; ${VAULT_RECONCILER_NAME} will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  log "Webhook secret is ESO-managed. Seed Vault (gitops/data/github/webhook) and let ESO reconcile."
+  log "Webhook secret is managed by ${VAULT_RECONCILER_LONG}. Seed Vault (gitops/data/github/webhook) and let ${VAULT_RECONCILER_NAME} reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
     log "[fast] quay-auth secret already present"
   else
-    log "[fast] quay-auth not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
+    log "[fast] quay-auth not found; ${VAULT_RECONCILER_NAME} will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  log "Quay credentials are ESO-managed. Seed Vault (gitops/data/registry/quay) and let ESO reconcile."
+  log "Quay credentials are managed by ${VAULT_RECONCILER_LONG}. Seed Vault (gitops/data/registry/quay) and let ${VAULT_RECONCILER_NAME} reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
   if oc -n openshift-gitops get secret argocd-image-updater-secret >/dev/null 2>&1; then
     log "[fast] argocd-image-updater-secret already present"
   else
-    log "[fast] argocd-image-updater-secret not found; ESO will reconcile it once Vault is seeded. Use 'make dev-vault'."
+    log "[fast] argocd-image-updater-secret not found; ${VAULT_RECONCILER_NAME} will reconcile it once Vault is seeded. Use 'make dev-vault'."
   fi
 else
-  log "Image Updater token is ESO-managed. Seed Vault (gitops/data/argocd/image-updater) and let ESO reconcile."
+  log "Image Updater token is managed by ${VAULT_RECONCILER_LONG}. Seed Vault (gitops/data/argocd/image-updater) and let ${VAULT_RECONCILER_NAME} reconcile."
 fi
 
 if [[ "${FAST_PATH}" == "true" ]]; then
