@@ -75,7 +75,9 @@ Notes for local storage usage (CRC):
 
 ## 2) Seed Vault secrets (ENV=local)
 
-Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and reconcile secrets via the installed Vault operators. During migration this still installs/refreshes the legacy `eso-vault-examples` chart.
+Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and reconcile secrets via the installed Vault operators.
+
+Tip: set `VAULT_OPERATORS=true` to force the VSO runtime path locally (uninstalls the legacy ESO chart if present and installs the `vault-runtime` chart pointing to the dev Vault).
 
 ```bash
 make dev-vault
@@ -87,7 +89,7 @@ Re-run the target whenever you update local credentials or tweak chart values. T
 make dev-vault-down
 ```
 
-Verify that secrets reconcile in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md). During migration, ESO may still own these until cutover.
+Verify that secrets reconcile in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md). The umbrella gates off ESO when VSO is enabled for local.
 
 ## 3) Limit AppSet to local (already done by bootstrap)
 
