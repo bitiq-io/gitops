@@ -53,7 +53,16 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 ENVIRONMENT=${ENV:-local}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 TARGET_REV=${TARGET_REV:-main}
-USE_VAULT_OPERATORS=${VAULT_OPERATORS:-}
+# Decide reconciler default: prefer VSO/VCO for ENV=local unless explicitly overridden
+if [[ -z "${VAULT_OPERATORS:-}" ]]; then
+  if [[ "${ENVIRONMENT}" == "local" ]]; then
+    USE_VAULT_OPERATORS="true"
+  else
+    USE_VAULT_OPERATORS="false"
+  fi
+else
+  USE_VAULT_OPERATORS="${VAULT_OPERATORS}"
+fi
 if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
   VAULT_RECONCILER_NAME="VSO"
   VAULT_RECONCILER_LONG="Vault operators (VSO/VCO)"

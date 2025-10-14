@@ -33,7 +33,16 @@ require helm
 
 ENV="${ENV:-local}"
 TARGET_REV="${TARGET_REV:-main}"
-USE_VAULT_OPERATORS="${VAULT_OPERATORS:-}"
+# Decide whether to prefer Vault operators (VSO/VCO). Default to true for ENV=local
+if [[ -z "${VAULT_OPERATORS:-}" ]]; then
+  if [[ "${ENV}" == "local" ]]; then
+    USE_VAULT_OPERATORS="true"
+  else
+    USE_VAULT_OPERATORS="false"
+  fi
+else
+  USE_VAULT_OPERATORS="${VAULT_OPERATORS}"
+fi
 
 # Detect repo URL if not provided
 if [[ -z "${GIT_REPO_URL:-}" ]]; then
@@ -54,7 +63,11 @@ esac
 
 log "ENV=${ENV}  BASE_DOMAIN=${BASE_DOMAIN}  GIT_REPO_URL=${GIT_REPO_URL}  TARGET_REV=${TARGET_REV}"
 if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
-  log "VAULT_OPERATORS=true: preferring VSO/VCO; disabling ESO in bootstrap"
+  if [[ -z "${VAULT_OPERATORS:-}" && "${ENV}" == "local" ]]; then
+    log "Defaulting VAULT_OPERATORS=true for ENV=local (prefer VSO/VCO; disable ESO)"
+  else
+    log "VAULT_OPERATORS=true: preferring VSO/VCO; disabling ESO in bootstrap"
+  fi
 fi
 
 # Optional platforms override (helps when node architecture differs from defaults)
