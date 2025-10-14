@@ -90,7 +90,7 @@
    description: Secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) using VSO. Define a `VaultStaticSecret` (or `VaultDynamicSecret` where applicable) that writes to a Kubernetes Secret named `toy-service-config` across all envs.
    why: Demonstrates end-to-end secret propagation with VSO, keeping Secret names stable for the Deployment while enabling rotation.
    dependencies: [T6]
-   status: planned (migrates from ESO)
+   status: in-progress (ENV=local enabled via umbrella; ESO gated off)
    acceptance_criteria:
      - Deployment consumes env exclusively from the VSO-managed Secret; no plain env defaults for sensitive data.
      - VSO resources render by default and reconcile `toy-service-config` from the documented Vault path/keys.
@@ -102,7 +102,7 @@
    description: Mirror T7 for frontend (`frontend.secret.*`, `frontend.env`) with a `VaultStaticSecret` that writes to `toy-web-config` for sensitive runtime configuration.
    why: Completes the secrets story for frontend with VSO.
    dependencies: [T7]
-   status: planned (mirrors toy-service migration)
+   status: in-progress (ENV=local enabled via umbrella; mirrors toy-service)
    acceptance_criteria:
      - Deployment consumes sensitive env solely via VSO-managed Secret; non-sensitive values may use ConfigMap.
      - VSO resources render by default and validate in `make validate` for all envs.

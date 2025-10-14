@@ -43,7 +43,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
-- `charts/eso-vault-examples/` — ESO + Vault automation (enabled by default; renders ClusterSecretStore and ExternalSecrets) — deprecated; migration to VSO/VCO in progress
+- `charts/eso-vault-examples/` — ESO + Vault automation (legacy; renders ClusterSecretStore and ExternalSecrets). The umbrella gates this off when `vault.runtime.enabled=true` for an env to prevent dual writers. Migration to VSO/VCO is in progress; VSO/VCO are enabled for ENV=local by default in the umbrella values.
 - `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
 - `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
@@ -70,7 +70,7 @@ CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep lo
 For Single-Node OpenShift parity work, follow `docs/SNO-RUNBOOK.md` and run `./scripts/sno-preflight.sh` before invoking `scripts/bootstrap.sh`.
 Note: SNO requires out‑of‑band ignition/discovery ISO and cannot be sanity‑checked locally like CRC. Prefer `ENV=local` for quick validation.
 
-For production secrets management, follow `docs/PROD-SECRETS.md`; `charts/eso-vault-examples` is now installed by default once ESO is ready (bootstrap handles the operator install).
+For production secrets management, follow `docs/PROD-SECRETS.md`. ESO content is transitional; the umbrella deploys VSO/VCO per env when `vault.runtime.enabled=true` and suppresses the ESO examples to avoid dual writers. Bootstrap installs the VSO/VCO operators and waits for CRDs.
 
 If adding/altering Helm values:
 

@@ -146,10 +146,16 @@ Production (ENV=prod) quick path
 2. Waits for the default **Argo CD** instance in `openshift-gitops` (unless disabled). ([Red Hat Docs][3])
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
 4. Installs **Vault operators** — HashiCorp Vault Secrets Operator (VSO) and Red Hat COP Vault Config Operator (VCO) — via OLM Subscriptions per the [Operator Version Matrix](docs/OPERATOR-VERSIONS.md).
-5. The umbrella app deploys:
+5. For ENV=local, the umbrella enables VSO/VCO Applications and gates off the legacy ESO examples to avoid dual writers. For other envs, enable VSO/VCO per env in the ApplicationSet values when ready.
+6. The umbrella app deploys:
 
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-  * (Legacy) **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds). Migration to VSO/VCO is in progress (see docs/OPERATOR-VERSIONS.md and improvement plan T6/T17).
+  * (Legacy) **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds). This is gated off when VSO is enabled for an env. Migration to VSO/VCO is in progress (see docs/OPERATOR-VERSIONS.md and improvement plan T6/T17).
+
+### Secret reload behavior
+
+- Default: mount Secrets as files (no `subPath`) and let your app re‑read on change, optionally with a `configmap-reload` sidecar to call a reload webhook.
+- For apps that cannot reload: use VSO’s `spec.rolloutRestartTargets` on the VaultStaticSecret to trigger a precise rolling restart only when the Secret’s HMAC changes. Tune `refreshAfter` to a sensible interval.
   * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
   * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
 
