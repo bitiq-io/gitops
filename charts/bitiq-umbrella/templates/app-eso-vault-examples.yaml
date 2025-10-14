@@ -43,9 +43,9 @@ spec:
       values: |
         enabled: true
         vault:
-          address: https://vault.vault-dev.svc:8200
-          kubernetesMount: kubernetes
-          roleName: gitops-{{ .Values.env }}
+          address: {{ .Values.vault.runtime.address | quote }}
+          kubernetesMount: {{ .Values.vault.runtime.kubernetesMount | default "kubernetes" | quote }}
+          roleName: {{ .Values.vault.runtime.roleName | default (printf "gitops-%s" .Values.env) | quote }}
         namespaces:
           gitops: {{ .Values.gitopsNamespace }}
           pipelines: {{ .Values.pipelinesNamespace }}
@@ -81,18 +81,18 @@ spec:
       values: |
         enabled: true
         vault:
-          address: https://vault.vault-dev.svc:8200
-          kubernetesHost: https://kubernetes.default.svc
-          mountPath: kubernetes
-          connectionRole: kube-auth
+          address: {{ .Values.vault.config.address | quote }}
+          kubernetesHost: {{ .Values.vault.config.kubernetesHost | default "https://kubernetes.default.svc" | quote }}
+          mountPath: {{ .Values.vault.config.mountPath | default "kubernetes" | quote }}
+          connectionRole: {{ .Values.vault.config.connectionRole | default "kube-auth" | quote }}
         roles:
-          - name: gitops-{{ .Values.env }}
+          - name: {{ .Values.vault.config.roleName | default (printf "gitops-%s" .Values.env) | quote }}
             targetNamespaces:
               - {{ .Values.appNamespace }}
             targetServiceAccounts:
               - default
             policies:
-              - gitops-{{ .Values.env }}
+              - {{ .Values.vault.config.policyName | default (printf "gitops-%s" .Values.env) | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.gitopsNamespace }}
