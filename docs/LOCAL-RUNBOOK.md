@@ -1,5 +1,7 @@
 # Local Runbook (OpenShift Local / CRC)
 
+> Migration note: Secrets are moving from ESO to Vault operators (VSO/VCO). VSO/VCO are installed by bootstrap (see docs/OPERATOR-VERSIONS.md). Until cutover completes, you may still see ESO-managed resources; follow VSO/VCO guidance for new secrets.
+
 This is a concise, copy/pasteable sequence to get ENV=local running end‑to‑end on OpenShift Local (CRC) for smoke testing.
 
 ## Quick Interactive Setup
@@ -73,7 +75,7 @@ Notes for local storage usage (CRC):
 
 ## 2) Seed Vault secrets (ENV=local)
 
-Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and install the `eso-vault-examples` chart pointing to the dev Vault:
+Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and reconcile secrets via the installed Vault operators. During migration this still installs/refreshes the legacy `eso-vault-examples` chart.
 
 ```bash
 make dev-vault
@@ -85,7 +87,7 @@ Re-run the target whenever you update local credentials or tweak chart values. T
 make dev-vault-down
 ```
 
-Verify that ESO reconciles the secrets in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md).
+Verify that secrets reconcile in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md). During migration, ESO may still own these until cutover.
 
 ## 3) Limit AppSet to local (already done by bootstrap)
 

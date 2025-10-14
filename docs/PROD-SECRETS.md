@@ -1,6 +1,8 @@
-# Production Secrets with External Secrets Operator (ESO) + Vault
+# Production Secrets — Vault via VSO/VCO (migration in progress)
 
-This guide describes how to manage production secrets for the `gitops` stack using [External Secrets Operator (ESO)](https://external-secrets.io/) with HashiCorp Vault as the backend. It focuses on the credentials managed by default by this repo:
+> Migration note: We are standardizing on HashiCorp Vault Secrets Operator (VSO) for runtime secret delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration (see docs/OPERATOR-VERSIONS.md and T6/T17 in the improvement plan). Until the application charts are fully cut over, the legacy ESO-based flow described below may still be present. Prefer the VSO/VCO approach for new integrations and treat ESO content as transitional.
+
+This guide describes how to manage production secrets for the `gitops` stack using Vault. The target model is VSO/VCO; the legacy ESO-based instructions are retained below during migration. It focuses on the credentials managed by default by this repo:
 
 1. **Argo CD Image Updater token** (`openshift-gitops/argocd-image-updater-secret`)
 2. **Container registry credentials** for the Tekton `pipeline` ServiceAccount (`openshift-pipelines/quay-auth`)
@@ -8,7 +10,7 @@ This guide describes how to manage production secrets for the `gitops` stack usi
 4. **toy-service runtime config** (`bitiq-<env>/toy-service-config`)
 5. **toy-web runtime config** (`bitiq-<env>/toy-web-config`)
 
-The repository ships a Helm chart (`charts/eso-vault-examples`) that renders a Vault `ClusterSecretStore` and the ExternalSecrets for these credentials. The chart is installed automatically by `scripts/bootstrap.sh` once ESO is ready; override the values only when you need to point at a different Vault or adjust secret paths.
+The repository installs Vault operators via OLM (see docs/OPERATOR-VERSIONS.md). During migration, a legacy Helm chart (`charts/eso-vault-examples`) renders a Vault `ClusterSecretStore` and the ExternalSecrets for these credentials; it will be replaced by VSO/VCO-managed resources.
 
 ## 1. Prerequisites
 

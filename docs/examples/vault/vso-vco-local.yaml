@@ -1,0 +1,95 @@
+# Minimal examples for local (ENV=local) using Vault operators
+# Fill in placeholders before applying.
+
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: local-vault
+  namespace: bitiq-local
+spec:
+  address: "https://vault.vault-dev.svc:8200"   # adjust to your dev Vault service
+  tls:
+    # If using OpenShift service-ca, mount a ConfigMap with injected CA and set VAULT_CACERT via operator Subscription config (see OPERATOR-VERSIONS)
+    caCertSecretRef:
+      name: vault-ca
+      key: ca.crt
+
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: local-k8s-auth
+  namespace: bitiq-local
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: gitops-local
+    serviceAccount: default
+  vaultConnectionRef: local-vault
+
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: toy-service-config
+  namespace: bitiq-local
+spec:
+  mount: kv
+  type: kv-v2
+  path: gitops/data/services/toy-service/config
+  destination:
+    create: true
+    name: toy-service-config
+  refreshAfter: 1m
+  vaultAuthRef: local-k8s-auth
+
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: toy-web-config
+  namespace: bitiq-local
+spec:
+  mount: kv
+  type: kv-v2
+  path: gitops/data/services/toy-web/config
+  destination:
+    create: true
+    name: toy-web-config
+  refreshAfter: 1m
+  vaultAuthRef: local-k8s-auth
+
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineConfig
+metadata:
+  name: local-k8s
+  namespace: bitiq-local
+spec:
+  authentication:
+    path: kubernetes
+    role: kube-auth
+  connection:
+    address: "https://vault.vault-dev.svc:8200"
+  kubernetesHost: "https://kubernetes.default.svc"
+
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: gitops-local
+  namespace: bitiq-local
+spec:
+  authentication:
+    path: kubernetes
+    role: kube-auth
+  connection:
+    address: "https://vault.vault-dev.svc:8200"
+  policies:
+    - gitops-local
+  targetServiceAccounts:
+    - default
+  targetNamespaces:
+    - bitiq-local

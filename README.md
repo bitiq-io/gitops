@@ -23,7 +23,7 @@ It uses:
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook via dynamic DNS or tunnel)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
-- [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with ESO + Vault
+- [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with Vault via VSO/VCO (ESO legacy flow noted)
 - [OPERATOR-VERSIONS](docs/OPERATOR-VERSIONS.md) — pinned operator channels/CSVs and documentation links
 
 ## Prereqs
@@ -149,7 +149,7 @@ Production (ENV=prod) quick path
 5. The umbrella app deploys:
 
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
-  * **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds).
+  * (Legacy) **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds). Migration to VSO/VCO is in progress (see docs/OPERATOR-VERSIONS.md and improvement plan T6/T17).
   * **ci-pipelines** in `openshift-pipelines` (Tekton pipelines + shared GitHub webhook triggers; configurable unit-test step + Buildah image build). ([Red Hat Docs][4])
   * **toy-service** and **toy-web** Argo Applications in a `bitiq-${ENV}` namespace, each with its own Deployment, Service, Route, and Image Updater automation.
 

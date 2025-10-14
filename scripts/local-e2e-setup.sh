@@ -199,7 +199,7 @@ suggest_dev_vault_if_missing() {
     fi
   done
   if (( missing > 0 )); then
-    log "Detected ${missing} missing ESO-managed Secret(s)."
+    log "Detected ${missing} missing Vault-managed Secret(s)."
     # Auto-run path: explicit opt-in via AUTO_DEV_VAULT=true, or FAST_PATH with likely credentials provided
     local AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-}
     local have_env_creds="false"
@@ -219,7 +219,7 @@ suggest_dev_vault_if_missing() {
       fi
     fi
   else
-    log "ESO-managed platform secrets present; skipping dev-vault prompt."
+    log "Vault-managed platform secrets present; skipping dev-vault prompt."
   fi
 }
 
@@ -286,33 +286,33 @@ oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-p
 FAST_PATH=${FAST_PATH:-}
 
 #!/bin/true
-# 1) GitHub webhook secret for Tekton Triggers (ESO-managed)
+# 1) GitHub webhook secret for Tekton Triggers (Vault-managed via VSO)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${GITHUB_WEBHOOK_SECRET:-}" ]]; then
-    log "[fast] ESO is enforced. Seed Vault instead of creating Kubernetes secrets directly."
+    log "[fast] Vault via operators is enforced. Seed Vault instead of creating Kubernetes secrets directly."
     log "      Run: make dev-vault   (seeds gitops/data/github/webhook token)"
   else
-    log "[fast] Skipping webhook secret; ESO-managed via Vault. Use 'make dev-vault' to seed."
+    log "[fast] Skipping webhook secret; managed via Vault operators. Use 'make dev-vault' to seed."
   fi
 fi
 
 #!/bin/true
-# 2) Quay credentials for Tekton SA 'pipeline' (ESO-managed)
+# 2) Quay credentials for Tekton SA 'pipeline' (Vault-managed via VSO)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" && -n "${QUAY_EMAIL:-}" ]]; then
-    log "[fast] ESO is enforced. Seed Vault with dockerconfigjson and rerun 'make dev-vault'."
+    log "[fast] Vault via operators is enforced. Seed Vault with dockerconfigjson and rerun 'make dev-vault'."
   else
-    log "[fast] Skipping Quay secret; ESO-managed via Vault. Use 'make dev-vault' to seed."
+    log "[fast] Skipping Quay secret; managed via Vault operators. Use 'make dev-vault' to seed."
   fi
 fi
 
 #!/bin/true
-# 3) Argo CD Image Updater API token (ESO-managed)
+# 3) Argo CD Image Updater API token (Vault-managed via VSO)
 if [[ "${FAST_PATH}" == "true" ]]; then
   if [[ -n "${ARGOCD_TOKEN:-}" ]]; then
-    log "[fast] ESO is enforced. Write token to Vault at gitops/data/argocd/image-updater and rerun 'make dev-vault'."
+    log "[fast] Vault via operators is enforced. Write token to Vault at gitops/data/argocd/image-updater and rerun 'make dev-vault'."
   else
-    log "[fast] Skipping Image Updater token; ESO-managed via Vault. Use 'make dev-vault' to seed."
+    log "[fast] Skipping Image Updater token; managed via Vault operators. Use 'make dev-vault' to seed."
   fi
 fi
 
