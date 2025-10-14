@@ -160,7 +160,7 @@ seed_secrets() {
       vault kv put gitops/data/argocd/image-updater token=\"${argocd_token}\" >/dev/null
       vault kv put gitops/data/registry/quay dockerconfigjson=\"${docker_json_esc}\" >/dev/null
       vault kv put gitops/data/github/webhook token=\"${webhook_secret}\" >/dev/null
-      vault kv put gitops/data/services/toy-service/config fake_secret=\"LOCAL_FAKE_SECRET\" >/dev/null
+      vault kv put gitops/data/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\" >/dev/null
       vault kv put gitops/data/services/toy-web/config api_base_url=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
     "
 }
