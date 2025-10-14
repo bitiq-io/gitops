@@ -44,6 +44,8 @@ ARGOCD_REPO_PASSWORD='<github-pat>' \
 ARGOCD_REPOCREDS_URL='https://github.com' \
 ARGOCD_REPOCREDS_USERNAME='git' \
 ARGOCD_REPOCREDS_PASSWORD='<github-pat>' \
+# Optional: auto-seed Vault if ESO secrets are missing
+AUTO_DEV_VAULT=true \
 ./scripts/local-e2e-setup.sh
 ```
 
@@ -51,6 +53,18 @@ Notes:
 - The script runs `bootstrap.sh` with `SKIP_APP_WAIT=true`, then configures RBAC/secrets and forces an Argo CD refresh before waiting for Healthy/Synced.
 - If you provide `GH_PAT`, it is accepted as an alias for `ARGOCD_REPO_PASSWORD`/`ARGOCD_REPOCREDS_PASSWORD`.
 - If a secret already exists, the helper leaves it as-is unless updated interactively (when `FAST_PATH` is not set).
+- If `AUTO_DEV_VAULT=true` (or `FAST_PATH=true` with any of `ARGOCD_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `QUAY_DOCKERCONFIGJSON`, or `QUAY_USERNAME`+`QUAY_PASSWORD` set), the helper runs `dev-vault` automatically to seed Vault so ESO reconciles the Secrets.
+
+Seeding ESO/Vault non-interactively (optional):
+
+```bash
+# Use the same env vars to seed real credentials into Vault so ESO reconciles
+ARGOCD_TOKEN='<argocd-api-token>' \
+GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
+QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
+make dev-vault
+```
+The `dev-vault` helper prefers these env vars when present; otherwise it seeds demo placeholders so Secrets exist but components like Image Updater will not authenticate until you rotate with real values.
 
 ## 0) Host prerequisites
 
@@ -198,6 +212,14 @@ Re-run the target after modifying values or updating credentials. When you are d
 ```bash
 make dev-vault-down
 ```
+
+Environment overrides supported by `make dev-vault`:
+
+- `ARGOCD_TOKEN` → writes to `gitops/data/argocd/image-updater.token`
+- `GITHUB_WEBHOOK_SECRET` → writes to `gitops/data/github/webhook.token`
+- `QUAY_DOCKERCONFIGJSON` or `QUAY_USERNAME` + `QUAY_PASSWORD` [+ `QUAY_EMAIL`] → writes to `gitops/data/registry/quay.dockerconfigjson`
+
+If unset, the helper seeds safe demo placeholders to get Secrets created; rotate by setting the envs above and re-running `make dev-vault`.
 
 Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md).
 
