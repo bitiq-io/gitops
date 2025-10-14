@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+{{- $addr := .Values.vault.address -}}
+{{- $mount := .Values.vault.kubernetesMount | default "kubernetes" -}}
+{{- $role := .Values.vault.roleName | default "gitops-local" -}}
+{{- $nsGitops := .Values.namespaces.gitops -}}
+{{- $nsPipelines := .Values.namespaces.pipelines -}}
+{{- $nsApp := .Values.namespaces.app -}}
+{{- range $ns := list $nsGitops $nsPipelines $nsApp }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault
+  namespace: {{ $ns }}
+spec:
+  address: {{ $addr | quote }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: k8s
+  namespace: {{ $ns }}
+spec:
+  method: kubernetes
+  mount: {{ $mount | quote }}
+  kubernetes:
+    role: {{ $role | quote }}
+    serviceAccount: default
+  vaultConnectionRef: vault
+{{- end }}
+{{- end }}
+

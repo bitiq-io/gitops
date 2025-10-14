@@ -1,0 +1,44 @@
+enabled: false
+
+vault:
+  address: https://vault.vault-dev.svc:8200
+  kubernetesMount: kubernetes
+  roleName: gitops-local
+
+namespaces:
+  gitops: openshift-gitops
+  pipelines: openshift-pipelines
+  app: bitiq-local
+
+secrets:
+  argocdImageUpdater:
+    enabled: true
+    namespace: "{{ .Values.namespaces.gitops }}"
+    destinationName: argocd-image-updater-secret
+    path: gitops/data/argocd/image-updater
+    type: Opaque
+  quayAuth:
+    enabled: true
+    namespace: "{{ .Values.namespaces.pipelines }}"
+    destinationName: quay-auth
+    path: gitops/data/registry/quay
+    type: kubernetes.io/dockerconfigjson
+    sourceKey: dockerconfigjson
+  githubWebhook:
+    enabled: true
+    namespace: "{{ .Values.namespaces.pipelines }}"
+    destinationName: github-webhook-secret
+    path: gitops/data/github/webhook
+    type: Opaque
+    sourceKey: token
+  toyServiceConfig:
+    enabled: true
+    namespace: "{{ .Values.namespaces.app }}"
+    destinationName: toy-service-config
+    path: gitops/data/services/toy-service/config
+  toyWebConfig:
+    enabled: true
+    namespace: "{{ .Values.namespaces.app }}"
+    destinationName: toy-web-config
+    path: gitops/data/services/toy-web/config
+

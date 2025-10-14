@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+{{- $mp := .Values.vault.mountPath -}}
+{{- $role := .Values.vault.connectionRole -}}
+{{- $addr := .Values.vault.address -}}
+{{- range $r := .Values.roles }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: {{ $r.name }}
+  namespace: openshift-gitops
+spec:
+  authentication:
+    path: {{ $mp }}
+    role: {{ $role }}
+  connection:
+    address: {{ $addr | quote }}
+  policies:
+{{- range $p := $r.policies }}
+    - {{ $p }}
+{{- end }}
+  targetServiceAccounts:
+{{- range $sa := $r.targetServiceAccounts }}
+    - {{ $sa }}
+{{- end }}
+  targetNamespaces:
+{{- range $ns := $r.targetNamespaces }}
+    - {{ $ns }}
+{{- end }}
+{{- end }}
+{{- end }}
+

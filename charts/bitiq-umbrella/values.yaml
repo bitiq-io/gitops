@@ -19,6 +19,12 @@ imageUpdater:
   toyWeb:
     pause: false
 
+vault:
+  runtime:
+    enabled: false
+  config:
+    enabled: false
+
 sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service
   toyWeb: quay.io/paulcapestany/toy-web

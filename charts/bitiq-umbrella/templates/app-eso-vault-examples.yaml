@@ -21,3 +21,83 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+{{- if .Values.vault.runtime.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-runtime-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/vault-runtime
+    helm:
+      values: |
+        enabled: true
+        vault:
+          address: https://vault.vault-dev.svc:8200
+          kubernetesMount: kubernetes
+          roleName: gitops-{{ .Values.env }}
+        namespaces:
+          gitops: {{ .Values.gitopsNamespace }}
+          pipelines: {{ .Values.pipelinesNamespace }}
+          app: {{ .Values.appNamespace }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
+
+{{- if .Values.vault.config.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-config-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/vault-config
+    helm:
+      values: |
+        enabled: true
+        vault:
+          address: https://vault.vault-dev.svc:8200
+          kubernetesHost: https://kubernetes.default.svc
+          mountPath: kubernetes
+          connectionRole: kube-auth
+        roles:
+          - name: gitops-{{ .Values.env }}
+            targetNamespaces:
+              - {{ .Values.appNamespace }}
+            targetServiceAccounts:
+              - default
+            policies:
+              - gitops-{{ .Values.env }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
