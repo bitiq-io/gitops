@@ -31,7 +31,7 @@ Bootstrap this repo
   - `./scripts/bootstrap.sh`
 - This installs the GitOps and Pipelines operators and creates an ApplicationSet that renders one umbrella app for `local`.
 
-Argo CD access and token for Image Updater (ESO)
+Argo CD access and token for Image Updater (Vault operators)
 - Get the Argo CD host:
   - `ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')`
 - Open the UI and log in via OAuth:
@@ -49,7 +49,7 @@ Generate an Argo CD API token and write it to Vault
   - `TOKEN=$(argocd account generate-token --grpc-web)`
 - Or UI: user menu → Generate token → copy value.
 
-Seed Vault (ESO will reconcile the Kubernetes Secret):
+Seed Vault (VSO will reconcile the Kubernetes Secret):
 - `vault kv put gitops/data/argocd/image-updater token="$TOKEN"`
 - For local CRC, you can run `make dev-vault` to seed demo values; then replace the token using the same path.
 
@@ -91,7 +91,7 @@ Tekton pipeline (optional)
 - Create namespace and allow pipeline SA to push:
   - `oc new-project bitiq-ci || true`
   - `oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci`
-- Webhook: ESO manages the webhook Secret. Seed Vault at `gitops/data/github/webhook` (key `token`) and point a GitHub webhook to the EventListener Route.
+- Webhook: VSO manages the webhook Secret. Seed Vault at `gitops/data/github/webhook` (key `token`) and point a GitHub webhook to the EventListener Route.
 
 Validate and inspect
 - Lint and template:

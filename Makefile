@@ -46,7 +46,7 @@ smoke: ## run cluster smoke checks (ENV=<env> [BOOTSTRAP=true] [BASE_DOMAIN=...]
 smoke-image-update: ## tail updater logs and show app annotations (ENV=<env> NS=openshift-gitops)
 	@bash scripts/smoke-image-update.sh
 
-dev-vault: ## Deploy a dev Vault, seed secrets, and install ESO resources (ENV=local helper)
+dev-vault: ## Deploy a dev Vault, seed secrets, and reconcile via Vault operators (ENV=local helper; ESO legacy during migration)
 	@bash scripts/dev-vault.sh up
 
 dev-vault-down: ## Tear down the dev Vault helper deployment
@@ -58,19 +58,19 @@ bump-image: ## create a new tag in Quay from SOURCE_TAG to NEW_TAG (uses skopeo|
 bump-and-tail: ## bump image in Quay then tail updater logs (ENV=<env> NS=openshift-gitops)
 	@bash scripts/quay-bump-tag.sh && bash scripts/smoke-image-update.sh
 
-tekton-setup: ## create image ns + grant pusher (webhook secret is ESO-managed; seed Vault instead)
+tekton-setup: ## create image ns + grant pusher (webhook secret is Vault-managed via operators; seed Vault instead)
 	@oc new-project bitiq-ci >/dev/null 2>&1 || true
 	@oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci >/dev/null 2>&1 || true
-	@echo "[INFO] Webhook secret is ESO-managed. Seed Vault at gitops/data/github/webhook (key: token) and run 'make dev-vault'."
+	@echo "[INFO] Webhook secret is managed via Vault operators (VSO). Seed Vault at gitops/data/github/webhook (key: token) and run 'make dev-vault'."
 
 local-e2e: ## interactive helper to prep ENV=local CI/CD flow
 	@bash scripts/local-e2e-setup.sh
 
-quay-secret: ## DEPRECATED: use ESO/Vault (seed gitops/data/registry/quay) then make dev-vault
-	@echo "[DEPRECATED] Quay credentials are ESO-managed. Seed Vault at gitops/data/registry/quay (key: dockerconfigjson) and run 'make dev-vault'." && exit 1
+quay-secret: ## DEPRECATED: use Vault (VSO) (seed gitops/data/registry/quay) then make dev-vault
+	@echo "[DEPRECATED] Quay credentials are managed via Vault (VSO). Seed Vault at gitops/data/registry/quay (key: dockerconfigjson) and run 'make dev-vault'." && exit 1
 
-image-updater-secret: ## DEPRECATED: use ESO/Vault (seed gitops/data/argocd/image-updater) then make dev-vault
-	@echo "[DEPRECATED] Argo CD Image Updater token is ESO-managed. Seed Vault at gitops/data/argocd/image-updater (key: token) and run 'make dev-vault'." && exit 1
+image-updater-secret: ## DEPRECATED: use Vault (VSO) (seed gitops/data/argocd/image-updater) then make dev-vault
+	@echo "[DEPRECATED] Argo CD Image Updater token is managed via Vault (VSO). Seed Vault at gitops/data/argocd/image-updater (key: token) and run 'make dev-vault'." && exit 1
 dev-setup: ## install local commit-msg hook (requires Node/npm)
 	@bash scripts/dev-setup.sh
 

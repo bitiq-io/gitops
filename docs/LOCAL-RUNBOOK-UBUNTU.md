@@ -201,7 +201,7 @@ export ENV=local
 
 ## 5) Seed Vault secrets (ENV=local)
 
-Run the helper target to stand up a dev-mode Vault (`vault-dev` namespace), configure Kubernetes auth, seed sample credentials under `gitops/data/...`, create the `vault-auth` ServiceAccount, and install/refresh the `eso-vault-examples` Helm release pointing at that Vault:
+Run the helper target to stand up a dev-mode Vault (`vault-dev` namespace), configure Kubernetes auth, seed sample credentials under `gitops/data/...`, create the `vault-auth` ServiceAccount, and reconcile secrets via the installed Vault operators. During migration this still installs/refreshes the legacy `eso-vault-examples` chart pointing at that Vault:
 
 ```bash
 make dev-vault
@@ -221,7 +221,7 @@ Environment overrides supported by `make dev-vault`:
 
 If unset, the helper seeds safe demo placeholders to get Secrets created; rotate by setting the envs above and re-running `make dev-vault`.
 
-Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md).
+Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md). During migration, ESO may still own these until cutover.
 
 ## 6) Configure repo credentials and Image Updater token
 
