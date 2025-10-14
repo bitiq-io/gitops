@@ -77,7 +77,7 @@ make local-e2e
 Headless fast path (non-interactive, remote server):
 
 ```bash
-# Bootstrap + RBAC (secrets via ESO; no 'oc create secret')
+# Bootstrap + RBAC (secrets via Vault operators; no 'oc create secret')
 FAST_PATH=true \
 ENV=local BASE_DOMAIN=apps-crc.testing \
 # Per-repo credentials (write access for this repo)
@@ -86,12 +86,12 @@ ARGOCD_REPO_USERNAME='git' \
 ARGOCD_REPO_PASSWORD='<github-pat>' \
 ./scripts/local-e2e-setup.sh
 
-# Seed dev Vault with demo secrets (ESO will reconcile)
+# Seed dev Vault with demo secrets (VSO will reconcile)
 make dev-vault
 ```
 
 Notes:
-- Secrets are ESO/Vault‑managed. Rotate by writing to Vault (paths under `gitops/data/...`) and rerun `make dev-vault`.
+- Secrets are managed via Vault using VSO (runtime) and VCO (config). Rotate by writing to Vault (paths under `gitops/data/...`) and rerun `make dev-vault`.
 
 After bootstrap finishes, run `./scripts/preflight.sh` to confirm the cluster meets the pinned GitOps 1.18 / Pipelines 1.20 baseline before syncing applications.
 
@@ -134,7 +134,7 @@ Production (ENV=prod) quick path
   export ENV=prod
   ENV=prod BASE_DOMAIN="$BASE_DOMAIN" ./scripts/bootstrap.sh
   ```
-- After secrets are in place (recommended: ESO + Vault per `docs/PROD-SECRETS.md`), you can run:
+- After secrets are in place (Vault via VSO/VCO per `docs/PROD-SECRETS.md`), you can run:
   ```bash
   ./scripts/prod-smoke.sh
   ```
@@ -145,7 +145,8 @@ Production (ENV=prod) quick path
 1. Installs/ensures **OpenShift GitOps** (channel `gitops-1.18`) and **OpenShift Pipelines** (channel `pipelines-1.20`) via OLM Subscriptions aligned with the official compatibility matrices. ([GitOps 1.18 release notes][gitops-1-18-compat], [Pipelines 1.20 release notes][pipelines-1-20-compat])
 2. Waits for the default **Argo CD** instance in `openshift-gitops` (unless disabled). ([Red Hat Docs][3])
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
-4. The umbrella app deploys:
+4. Installs **Vault operators** — HashiCorp Vault Secrets Operator (VSO) and Red Hat COP Vault Config Operator (VCO) — via OLM Subscriptions per the [Operator Version Matrix](docs/OPERATOR-VERSIONS.md).
+5. The umbrella app deploys:
 
   * **image-updater** in `openshift-gitops` (as a k8s workload). ([Argo CD Image Updater][7])
   * **eso-vault-examples** in `external-secrets-operator` (ClusterSecretStore + ExternalSecrets for platform/app creds).
@@ -186,7 +187,7 @@ Ensure ArgoCD has repo creds with **write access** (SSH key or token). Image Upd
 Platform and private registry notes:
 - Platform filter: the umbrella chart exposes `imageUpdater.platforms` (default `linux/amd64`) used by annotations to filter manifest architectures during tag selection. All environments map to `linux/amd64` by default (configured in `charts/argocd-apps/values.yaml` under `envs[].platforms`). Override to `linux/arm64` if your cluster nodes are arm64 (for example, Apple Silicon CRC); when bootstrapping, you can set `PLATFORMS_OVERRIDE=linux/arm64 ENV=local ./scripts/bootstrap.sh` to apply it without editing values.
 - Private Quay repos: set `imageUpdater.pullSecret` to a Secret visible to the Argo CD namespace to allow Image Updater to list tags for private repos (annotation `*.pull-secret` is rendered when set). The secret can be referenced as `name` (in `openshift-gitops`) or `namespace/name`.
-  ESO manages a pull secret for the updater in `openshift-gitops` (default name `quay-creds`).
+  VSO manages a pull secret for the updater in `openshift-gitops` (default name `quay-creds`).
   Seed Vault at `gitops/data/registry/quay` (key `dockerconfigjson`) and set `imageUpdater.pullSecret: quay-creds` in the umbrella values.
 
 Local bump helper (optional)
@@ -212,18 +213,18 @@ Defaults used by the helper:
 - `SOURCE_TAG=latest`
 - `NEW_TAG=dev-<timestamp>`
 
-Token secret configuration for Image Updater (ESO)
+Token secret configuration for Image Updater (VSO)
 
-- Image Updater reads its API token from an ESO‑managed Secret (`openshift-gitops/argocd-image-updater-secret`).
+- Image Updater reads its API token from a VSO‑managed Secret (`openshift-gitops/argocd-image-updater-secret`).
 - Write the token to Vault at `gitops/data/argocd/image-updater` (key: `token`) and run `make dev-vault` (local) or follow [PROD-SECRETS](docs/PROD-SECRETS.md) for sno/prod.
- - Rotation: after Vault updates and ESO reconciles the Secret, restart the deployment to pick up the new env var:
+ - Rotation: after Vault updates and VSO reconciles the Secret, restart the deployment to pick up the new env var:
    `oc -n openshift-gitops rollout restart deploy/argocd-image-updater`.
 
 ### Tekton triggers
 
 The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, TriggerBinding, TriggerTemplate). Point your GitHub webhook to the exposed Route of the EventListener to kick off builds on push/PR. ([Red Hat][11], [Tekton][12])
 
-Secret management note: the webhook Secret is ESO‑managed. Seed Vault (path `gitops/data/github/webhook`, key `token`) and let ESO reconcile the Kubernetes Secret. Avoid `triggers.createSecret=true` under this policy.
+Secret management note: the webhook Secret is VSO‑managed. Seed Vault (path `gitops/data/github/webhook`, key `token`) and let VSO reconcile the Kubernetes Secret. Avoid `triggers.createSecret=true` under this policy.
 
 ### Notes
 

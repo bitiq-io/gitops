@@ -72,6 +72,12 @@ GITOPS_SUBSCRIPTION=${GITOPS_SUBSCRIPTION:-openshift-gitops-operator}
 GITOPS_SUBSCRIPTION_NAMESPACE=${GITOPS_SUBSCRIPTION_NAMESPACE:-openshift-operators}
 PIPELINES_SUBSCRIPTION=${PIPELINES_SUBSCRIPTION:-openshift-pipelines-operator-rh}
 PIPELINES_SUBSCRIPTION_NAMESPACE=${PIPELINES_SUBSCRIPTION_NAMESPACE:-openshift-operators}
+# VSO/VCO (new)
+VSO_SUBSCRIPTION=${VSO_SUBSCRIPTION:-hashicorp-vault-secrets-operator}
+VSO_SUBSCRIPTION_NAMESPACE=${VSO_SUBSCRIPTION_NAMESPACE:-hashicorp-vault-secrets-operator}
+VCO_SUBSCRIPTION=${VCO_SUBSCRIPTION:-vault-config-operator}
+VCO_SUBSCRIPTION_NAMESPACE=${VCO_SUBSCRIPTION_NAMESPACE:-vault-config-operator}
+# ESO (legacy; kept during migration)
 ESO_SUBSCRIPTION=${ESO_SUBSCRIPTION:-external-secrets-operator}
 ESO_SUBSCRIPTION_NAMESPACE=${ESO_SUBSCRIPTION_NAMESPACE:-external-secrets-operator}
 
@@ -146,7 +152,7 @@ oc whoami >/dev/null || { log "FATAL: oc not logged in"; exit 1; }
 oc api-resources >/dev/null || { log "FATAL: cannot reach cluster"; exit 1; }
 
 # 1) Install operators (Subscriptions) into openshift-operators
-log "Installing/ensuring OpenShift GitOps & Pipelines operators via OLM Subscriptions…"
+log "Installing/ensuring GitOps, Pipelines, and Vault operators (VSO/VCO) via OLM Subscriptions…"
 helm upgrade --install bootstrap-operators charts/bootstrap-operators \
   --namespace openshift-operators --create-namespace \
   --wait --timeout 10m
@@ -154,6 +160,18 @@ helm upgrade --install bootstrap-operators charts/bootstrap-operators \
 wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION"
 wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
 wait_for_subscription_csv "$ESO_SUBSCRIPTION_NAMESPACE" "$ESO_SUBSCRIPTION"
+wait_for_subscription_csv "$VSO_SUBSCRIPTION_NAMESPACE" "$VSO_SUBSCRIPTION"
+wait_for_subscription_csv "$VCO_SUBSCRIPTION_NAMESPACE" "$VCO_SUBSCRIPTION"
+# VSO core CRDs
+wait_for_crd vaultconnections.secrets.hashicorp.com
+wait_for_crd vaultauths.secrets.hashicorp.com
+wait_for_crd vaultstaticsecrets.secrets.hashicorp.com
+wait_for_crd vaultdynamicsecrets.secrets.hashicorp.com
+# VCO representative CRDs (auth + policy/config)
+wait_for_crd kubernetesauthengineconfigs.redhatcop.redhat.io
+wait_for_crd kubernetesauthengineroles.redhatcop.redhat.io
+wait_for_crd policies.redhatcop.redhat.io || true
+# ESO core CRDs (until decommissioned)
 wait_for_crd externalsecrets.external-secrets.io
 wait_for_crd secretstores.external-secrets.io
 wait_for_crd clustersecretstores.external-secrets.io
