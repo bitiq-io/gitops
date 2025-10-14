@@ -24,12 +24,13 @@ It uses:
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
 - [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with ESO + Vault
+- [OPERATOR-VERSIONS](docs/OPERATOR-VERSIONS.md) — pinned operator channels/CSVs and documentation links
 
 ## Prereqs
 
 - OpenShift 4.x cluster (OpenShift Local, SNO, or full) and `oc`, `helm` in PATH
 - Cluster-admin for bootstrap (OLM subscriptions, operators)
-- Operator catalog access to install **OpenShift GitOps 1.18** (`channel: gitops-1.18`) and **OpenShift Pipelines 1.20** (`channel: pipelines-1.20`). Review the compatibility matrices: [GitOps 1.18][gitops-1-18-compat], [Pipelines 1.20][pipelines-1-20-compat].
+- Operator catalog access to install **OpenShift GitOps 1.18** (`channel: gitops-1.18`) and **OpenShift Pipelines 1.20** (`channel: pipelines-1.20`). See the [Operator Version Matrix](docs/OPERATOR-VERSIONS.md) for the exact CSVs and documentation targets (GitOps 1.18 / Pipelines 1.20).
 - Git repo hosting (HTTPS or SSH) with ArgoCD repo credentials configured
 - For OpenShift Local: the app base domain is `apps-crc.testing`. :contentReference[oaicite:7]{index=7}
 
