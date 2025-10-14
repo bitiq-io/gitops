@@ -76,13 +76,14 @@
    dependencies: [T0]
    status: in-progress (operator Subscriptions + bootstrap waits merged; charts/cutover pending)
    acceptance_criteria:
-     - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
-     - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
-     - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are delivered by VSO-managed Kubernetes Secrets (names unchanged for consumers).
-     - Make targets and docs prohibit direct `oc create secret`; local/dev seeding happens by writing to Vault and reconciling via VSO/VCO.
-     - `make validate` renders VSO/VCO resources and passes kubeconform (ignoring CRDs as needed) for local|sno|prod.
-     - A version matrix (docs/CONVENTIONS.md or new `docs/OPERATOR-VERSIONS.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
-   notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy). Subscriptions/CRD waits added in PR #54.
+      - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
+      - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
+      - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are delivered by VSO-managed Kubernetes Secrets (names unchanged for consumers).
+      - Make targets and docs prohibit direct `oc create secret`; local/dev seeding happens by writing to Vault and reconciling via VSO/VCO.
+      - `make validate` renders VSO/VCO resources and passes kubeconform (ignoring CRDs as needed) for local|sno|prod.
+      - A version matrix (docs/CONVENTIONS.md or new `docs/OPERATOR-VERSIONS.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
+      - Umbrella gating exists to enable VSO/VCO per env without enabling ESO concurrently; avoids dual-writer risk during migration.
+   notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy). Subscriptions/CRD waits added in PR #54; gated umbrella apps added in PR #57.
 
 8. id: T7
    name: Secrets — toy-service via VSO
@@ -209,6 +210,7 @@
     acceptance_criteria:
       - A migration table exists in docs (ExternalSecret → VaultStaticSecret/VaultDynamicSecret; ClusterSecretStore → VaultConnection/VaultAuth). Secret consumer names remain unchanged.
       - ESO CRs are removed from the repo; the namespace(s) no longer contain ExternalSecrets for these apps; Argo reports Healthy/Synced post-cutover.
+      - The umbrella disables `eso-vault-examples` when `vault-runtime` is enabled for a given env to prevent dual writers.
       - CI and local validation pass with only VSO/VCO resources.
     notes: Keep a rollback branch with ESO resources for emergency reversion; do not run ESO and VSO against the same Secret concurrently.
 
