@@ -209,6 +209,14 @@ else
   wait_for_crd clustersecretstores.external-secrets.io
 fi
 
+# Best-effort cleanup if ESO Subscription exists but we gated it off (avoid noisy resolution failures)
+if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
+  if oc -n "${ESO_SUBSCRIPTION_NAMESPACE}" get subscription "${ESO_SUBSCRIPTION}" >/dev/null 2>&1; then
+    log "VAULT_OPERATORS=true: removing existing ESO Subscription ${ESO_SUBSCRIPTION_NAMESPACE}/${ESO_SUBSCRIPTION}"
+    oc -n "${ESO_SUBSCRIPTION_NAMESPACE}" delete subscription "${ESO_SUBSCRIPTION}" --ignore-not-found || true
+  fi
+fi
+
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
 for i in {1..60}; do
   if oc get ns openshift-pipelines >/dev/null 2>&1; then
