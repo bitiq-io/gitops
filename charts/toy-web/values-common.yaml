@@ -30,3 +30,13 @@ frontend:
     items:
       - name: API_BASE_URL
         key: API_BASE_URL
+  # Optional: mount Secret keys as files for hot-reload patterns.
+  secretMount:
+    enabled: true
+    mainContainerMount: true
+    mountPath: /etc/frontend-secret
+    reloadSidecar:
+      enabled: false
+      image: ghcr.io/jimmidyson/configmap-reload:latest
+      webhookUrl: ""       # e.g., http://127.0.0.1:8080/-/reload
+      webhookMethod: POST

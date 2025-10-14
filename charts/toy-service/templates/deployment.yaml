@@ -23,6 +23,13 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+      {{- $mount := .Values.backend.secretMount }}
+      {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+      volumes:
+        - name: backend-secret
+          secret:
+            secretName: {{ $backendSecretName | quote }}
+      {{- end }}
       containers:
         - name: toy-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -50,6 +57,12 @@ spec:
             initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+          volumeMounts:
+            - name: backend-secret
+              mountPath: {{ default "/etc/backend-secret" $mount.mountPath | quote }}
+              readOnly: true
+          {{- end }}
           {{- if $renderBackendEnv }}
           env:
             {{- range $entry := $backendEnv }}
@@ -75,6 +88,21 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
+      {{- if and $mount.enabled (default false $mount.reloadSidecar.enabled) }}
+      - name: configmap-reload
+        image: {{ default "ghcr.io/jimmidyson/configmap-reload:latest" $mount.reloadSidecar.image }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - --volume-dir={{ default "/etc/backend-secret" $mount.mountPath }}
+          {{- if $mount.reloadSidecar.webhookUrl }}
+          - --webhook-url={{ $mount.reloadSidecar.webhookUrl }}
+          - --webhook-method={{ default "POST" $mount.reloadSidecar.webhookMethod }}
+          {{- end }}
+        volumeMounts:
+          - name: backend-secret
+            mountPath: {{ default "/etc/backend-secret" $mount.mountPath | quote }}
+            readOnly: true
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
