@@ -4,4 +4,3 @@ description: VCO-based Vault control-plane config (auth mount/config, roles, pol
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-
