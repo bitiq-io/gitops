@@ -1,0 +1,16 @@
+{{- if .Values.enabled }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineConfig
+metadata:
+  name: {{ .Values.vault.mountPath }}
+  namespace: openshift-gitops
+spec:
+  authentication:
+    path: {{ .Values.vault.mountPath }}
+    role: {{ .Values.vault.connectionRole }}
+  connection:
+    address: {{ .Values.vault.address | quote }}
+  kubernetesHost: {{ .Values.vault.kubernetesHost | quote }}
+{{- end }}
+

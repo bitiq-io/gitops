@@ -1,0 +1,20 @@
+enabled: false
+
+vault:
+  address: https://vault.vault-dev.svc:8200
+  kubernetesHost: https://kubernetes.default.svc
+  mountPath: kubernetes
+  connectionRole: kube-auth
+
+policies:
+  - gitops-local
+
+roles:
+  - name: gitops-local
+    targetNamespaces:
+      - bitiq-local
+    targetServiceAccounts:
+      - default
+    policies:
+      - gitops-local
+
