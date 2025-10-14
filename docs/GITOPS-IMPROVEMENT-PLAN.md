@@ -74,7 +74,7 @@
    description: Standardize on HashiCorp Vault Secrets Operator (VSO) for runtime secret delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration across all envs. Remove ESO usage and avoid ad-hoc `oc create secret` flows entirely.
    why: Uses OpenShift-certified operators, unlocks dynamic secrets/rotation, reduces layers, and keeps Vault config declarative under Git.
    dependencies: [T0]
-   status: planned (policy change + migration required)
+   status: in-progress (operator Subscriptions + bootstrap waits merged; charts/cutover pending)
    acceptance_criteria:
      - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
      - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
@@ -82,7 +82,7 @@
      - Make targets and docs prohibit direct `oc create secret`; local/dev seeding happens by writing to Vault and reconciling via VSO/VCO.
      - `make validate` renders VSO/VCO resources and passes kubeconform (ignoring CRDs as needed) for local|sno|prod.
      - A version matrix (docs/CONVENTIONS.md or new `docs/OPERATOR-VERSIONS.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
-   notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy).
+   notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy). Subscriptions/CRD waits added in PR #54.
 
 8. id: T7
    name: Secrets — toy-service via VSO
@@ -147,7 +147,7 @@
     description: Re-affirm pinned operator channels and require PR notes + maintainer approval before changing; add release notes links. Include VSO and VCO channels.
     why: Avoids accidental upgrades diverging from tested docs and runbooks.
     dependencies: [T0]
-    status: planned (doc update + policy guardrail)
+    status: in-progress (matrix doc + README/AGENTS links merged; runbook links pending)
     acceptance_criteria:
       - bootstrap-operators values document channels with links to GitOps 1.18, Pipelines 1.20, VSO, and VCO release notes.
       - A committed operator version matrix lists the exact starting CSV / semantic version per operator and references the precise documentation set to follow during upgrades (e.g., GitOps 1.18.z install guide, VSO v1.0.1 docs).
@@ -159,7 +159,7 @@
     description: Expand `make validate` to always render/validate VSO and VCO resources (no flag) and sanity-check ApplicationSet per env. Update conftest policies to allowlist VSO/VCO CRDs while continuing to forbid Kubernetes Secret manifests in Git.
     why: Enforced VSO/VCO means validation and policy must cover them by default.
     dependencies: [T6]
-    status: planned
+    status: in-progress (policy text updated; validation renders VSO/VCO)
     acceptance_criteria:
       - `make validate` renders VSO/VCO resources with repo values and passes kubeconform (ignoring CRDs as needed).
       - Conftest/regos updated to allow CRD groups `secrets.hashicorp.com` and `redhatcop.redhat.io` and to keep rejecting `apiVersion: v1`, `kind: Secret` in repo manifests.
@@ -171,7 +171,7 @@
     description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, include enforced VSO/VCO + Vault usage, and local Vault automation.
     why: Keeps docs version-correct and reduces onboarding friction under the new policy.
     dependencies: [T1, T2, T3, T10]
-    status: planned (documentation refresh)
+    status: in-progress (README/AGENTS updated; runbooks pending)
     acceptance_criteria:
       - README/runbooks reference correct doc versions; ROLLBACK includes multi-service + updater freeze guidance.
       - LOCAL/PROD runbooks document VSO/VCO as mandatory and describe `make dev-vault` flow; no fallback to Opaque secrets.
@@ -182,7 +182,7 @@
     description: Extend bootstrap to install VSO and VCO via OLM Subscriptions and add preflight checks for their CRDs/CSV readiness before applying VSO/VCO resources.
     why: Ensures clusters are reconciliation-ready and avoids timing issues when applying secrets/config resources.
     dependencies: [T6]
-    status: planned
+    status: complete (subscriptions, waits merged in PR #54)
     acceptance_criteria:
       - scripts/bootstrap.sh: creates Subscriptions, waits for CSV InstallSucceeded, verifies VSO/VCO CRDs present.
       - Subsequent chart installs (`vault-runtime`, `vault-config`) succeed repeatably on fresh clusters.
@@ -217,7 +217,7 @@
     description: Author and maintain a single source of truth for operator versions (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) including their CSV names, catalog channels, support statements, and authoritative documentation links.
     why: Ensures everyone follows the correct install/upgrade guidance and avoids mixing docs across incompatible operator versions.
     dependencies: [T6, T12, T15]
-    status: in-progress (matrix drafted; broaden links to runbooks outstanding)
+    status: in-progress (matrix merged in PR #53; runbook links outstanding)
     acceptance_criteria:
       - `docs/OPERATOR-VERSIONS.md` (or an agreed existing doc) lists: operator name, channel, startingCSV/version, Red Hat/HashiCorp documentation URL, and upgrade cadence expectations.
       - README, AGENTS.md, and runbooks link to the matrix when referencing operator setup steps.
