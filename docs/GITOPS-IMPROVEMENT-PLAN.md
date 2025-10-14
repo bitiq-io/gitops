@@ -209,6 +209,7 @@
     status: planned (execute after VSO rollout)
     acceptance_criteria:
       - A migration table exists in docs (ExternalSecret → VaultStaticSecret/VaultDynamicSecret; ClusterSecretStore → VaultConnection/VaultAuth). Secret consumer names remain unchanged.
+      - Docs include the migration guide: `docs/ESO-TO-VSO-MIGRATION.md` and reference it from runbooks.
       - ESO CRs are removed from the repo; the namespace(s) no longer contain ExternalSecrets for these apps; Argo reports Healthy/Synced post-cutover.
       - The umbrella disables `eso-vault-examples` when `vault-runtime` is enabled for a given env to prevent dual writers.
       - CI and local validation pass with only VSO/VCO resources.

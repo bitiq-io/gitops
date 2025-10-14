@@ -22,6 +22,17 @@ spec:
             toyServiceUpdaterPause: {{ default false $e.toyServiceImageUpdater.pause }}
             toyWebUpdaterPause: {{ default false $e.toyWebImageUpdater.pause }}
             tektonFsGroup: {{ $e.tektonFsGroup | quote }}
+            vaultRuntimeEnabled: {{ default false $e.vaultRuntimeEnabled }}
+            vaultRuntimeAddress: {{ $e.vaultRuntimeAddress | quote }}
+            vaultRuntimeKubernetesMount: {{ $e.vaultRuntimeKubernetesMount | default "kubernetes" | quote }}
+            vaultRuntimeRoleName: {{ $e.vaultRuntimeRoleName | quote }}
+            vaultConfigEnabled: {{ default false $e.vaultConfigEnabled }}
+            vaultConfigAddress: {{ $e.vaultConfigAddress | quote }}
+            vaultConfigKubernetesHost: {{ $e.vaultConfigKubernetesHost | default "https://kubernetes.default.svc" | quote }}
+            vaultConfigMountPath: {{ $e.vaultConfigMountPath | default "kubernetes" | quote }}
+            vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
+            vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
+            vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
 {{- end }}
 {{- end }}
   template:
@@ -59,6 +70,28 @@ spec:
               value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
+            - name: vault.runtime.enabled
+              value: '{{ "{{ .vaultRuntimeEnabled | default false }}" }}'
+            - name: vault.runtime.address
+              value: '{{ "{{ .vaultRuntimeAddress }}" }}'
+            - name: vault.runtime.kubernetesMount
+              value: '{{ "{{ .vaultRuntimeKubernetesMount }}" }}'
+            - name: vault.runtime.roleName
+              value: '{{ "{{ .vaultRuntimeRoleName }}" }}'
+            - name: vault.config.enabled
+              value: '{{ "{{ .vaultConfigEnabled | default false }}" }}'
+            - name: vault.config.address
+              value: '{{ "{{ .vaultConfigAddress }}" }}'
+            - name: vault.config.kubernetesHost
+              value: '{{ "{{ .vaultConfigKubernetesHost }}" }}'
+            - name: vault.config.mountPath
+              value: '{{ "{{ .vaultConfigMountPath }}" }}'
+            - name: vault.config.connectionRole
+              value: '{{ "{{ .vaultConfigConnectionRole }}" }}'
+            - name: vault.config.roleName
+              value: '{{ "{{ .vaultConfigRoleName }}" }}'
+            - name: vault.config.policyName
+              value: '{{ "{{ .vaultConfigPolicyName }}" }}'
       destination:
         server: '{{ "{{ .cluster }}" }}'
         namespace: '{{ "{{ .appNamespace }}" }}'

@@ -25,8 +25,17 @@ imageUpdater:
 vault:
   runtime:
     enabled: false
+    address: ""
+    kubernetesMount: "kubernetes"
+    roleName: ""
   config:
     enabled: false
+    address: ""
+    kubernetesHost: "https://kubernetes.default.svc"
+    mountPath: "kubernetes"
+    connectionRole: "kube-auth"
+    roleName: ""
+    policyName: ""
 
 # Sample app images (Image Updater watches these)
 # Use Quay for easier public tag discovery in local e2e

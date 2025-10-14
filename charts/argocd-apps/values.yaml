@@ -26,6 +26,17 @@ envs:
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
     # Leave empty to use cluster defaults/SCC.
     tektonFsGroup: "1000660000"
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: http://vault-dev.vault-dev.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-prod
+    vaultConfigEnabled: true
+    vaultConfigAddress: http://vault-dev.vault-dev.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-local
+    vaultConfigPolicyName: gitops-local
   - name: sno
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno
