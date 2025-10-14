@@ -3,3 +3,9 @@ healthPath: "/healthz"
 image:
   repository: quay.io/paulcapestany/toy-service
   tag: v0.3.23-commit.f4f58ac
+
+backend:
+  secretMount:
+    reloadSidecar:
+      enabled: true
+      webhookUrl: http://127.0.0.1:8080/-/reload
