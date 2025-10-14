@@ -28,6 +28,26 @@ operators:
     approval: Automatic
     createNamespace: true
 
+  vso:
+    channel: stable
+    name: hashicorp-vault-secrets-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: hashicorp-vault-secrets-operator
+    startingCSV: ""
+    approval: Automatic
+    createNamespace: true
+
+  vco:
+    channel: stable
+    name: vault-config-operator
+    source: community-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: vault-config-operator
+    startingCSV: ""
+    approval: Automatic
+    createNamespace: true
+
 argoInstance:
   create: false                 # If true, create a user-defined ArgoCD instance
   name: example

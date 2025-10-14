@@ -1,0 +1,20 @@
+{{- $vso := .Values.operators.vso -}}
+{{- if and $vso (ne $vso.installNamespace "openshift-operators") $vso.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $vso.installNamespace | quote }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+---
+{{- end }}
+{{- $vco := .Values.operators.vco -}}
+{{- if and $vco (ne $vco.installNamespace "openshift-operators") $vco.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $vco.installNamespace | quote }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+{{- end }}
+

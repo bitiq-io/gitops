@@ -5,7 +5,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 ## Golden Rules (GitOps‑first)
 
 - Small, reviewable PRs; one purpose per PR.
-- Never commit secrets, kubeconfigs, or tokens. Secrets are sourced exclusively via External Secrets Operator (ESO) + Vault.
+- Never commit secrets, kubeconfigs, or tokens. Secrets are sourced exclusively via Vault operators — HashiCorp Vault Secrets Operator (VSO) for runtime delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration.
 - Follow Conventional Commits. Common scopes: `charts`, `umbrella`, `pipelines`, `image-updater`, `operators`.
 - Enforce the versioning and naming rules in `docs/CONVENTIONS.md` (image tags, composite appVersion, env overlays).
 - Keep operator versions aligned with `docs/OPERATOR-VERSIONS.md` (channels, CSVs, and reference docs).
@@ -13,28 +13,28 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - Do not change operator channels or critical defaults without explicit approval and notes in the PR body.
 - Git is the source of truth. Do not create or mutate Kubernetes resources by hand. The only sanctioned cluster‑side scripts are:
   - `scripts/bootstrap.sh` — installs operators (OLM Subscriptions), sets up ApplicationSet + umbrella apps, and waits for CRDs/CSVs.
-  - `scripts/dev-vault.sh` — local‑only helper to spin up dev Vault, seed `gitops/data/...` paths, and let ESO reconcile secrets. It also links `quay-auth` to Tekton `pipeline` SA and restarts Image Updater for token pickup.
+  - `scripts/dev-vault.sh` — local‑only helper to spin up dev Vault, seed `gitops/data/...` paths, apply VCO/VSO minimal CRs, and let VSO reconcile secrets. It also links `quay-auth` to Tekton `pipeline` SA and restarts Image Updater for token pickup.
 - Validate templates locally before opening a PR (`make validate`).
 
-### Secrets Policy (Mandatory ESO/Vault)
+### Secrets Policy (Mandatory Vault via VSO/VCO)
 
-- All credentials and runtime secrets must flow from Vault via ESO to Kubernetes Secrets. Examples:
-  - Argo CD Image Updater token → `gitops/data/argocd/image-updater` → `openshift-gitops/argocd-image-updater-secret`.
-  - Quay dockerconfig → `gitops/data/registry/quay` → `openshift-pipelines/quay-auth`.
-  - GitHub webhook → `gitops/data/github/webhook` → `openshift-pipelines/github-webhook-secret`.
+- All credentials and runtime secrets must flow from Vault: VCO manages Vault config (auth mounts/roles/policies) and VSO syncs to Kubernetes Secrets. Examples:
+  - Argo CD Image Updater token → `gitops/data/argocd/image-updater` → `openshift-gitops/argocd-image-updater-secret` (VSO-managed).
+  - Quay dockerconfig → `gitops/data/registry/quay` → `openshift-pipelines/quay-auth` (VSO-managed).
+  - GitHub webhook → `gitops/data/github/webhook` → `openshift-pipelines/github-webhook-secret` (VSO-managed).
 - Apps consume secrets through chart values (`backend.secret.*`, `frontend.secret.*`), not literal env defaults.
 - Local development: run `make dev-vault` to seed demo values; rotate by writing to Vault and re‑running the helper. Do not use `oc create secret`.
 
 ### Anti‑patterns (disallowed)
 
-- `oc create secret …` or manual mutation of cluster resources to “unblock” changes. Fix manifests in Git or seed Vault for ESO.
+- `oc create secret …` or manual mutation of cluster resources to “unblock” changes. Fix manifests in Git or seed Vault for VSO to reconcile.
 - Editing Argo CD Applications in the UI. Change templates/values and let Argo reconcile.
 - Ad‑hoc operator channel bumps. Propose in a PR with release notes and maintainers’ approval.
 
 ### Exceptions (time‑boxed, documented)
 
 - Diagnosing production incidents may require one‑off `oc get`, logs, and read‑only inspection. If any write is unavoidable, document it in the incident and open a PR immediately to codify the change.
-- Initial cluster bring‑up follows `scripts/bootstrap.sh`. For local CRC parity only, `make dev-vault` is permitted to demonstrate ESO flows — it does not replace Git as the source of truth; it seeds Vault so ESO can reconcile.
+- Initial cluster bring‑up follows `scripts/bootstrap.sh`. For local CRC parity only, `make dev-vault` is permitted to demonstrate Vault flows — it does not replace Git as the source of truth; it seeds Vault so VSO can reconcile.
 
 ## Repo Map
 
@@ -43,7 +43,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
-- `charts/eso-vault-examples/` — ESO + Vault automation (enabled by default; renders ClusterSecretStore and ExternalSecrets)
+- `charts/eso-vault-examples/` — ESO + Vault automation (enabled by default; renders ClusterSecretStore and ExternalSecrets) — deprecated; migration to VSO/VCO in progress
 - `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
 - `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
