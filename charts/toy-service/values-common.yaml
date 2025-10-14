@@ -30,3 +30,13 @@ backend:
     items:
       - name: FAKE_SECRET
         key: FAKE_SECRET
+  # Optional: mount Secret keys as files for hot-reload patterns.
+  secretMount:
+    enabled: true
+    mainContainerMount: true
+    mountPath: /etc/backend-secret
+    reloadSidecar:
+      enabled: false
+      image: ghcr.io/jimmidyson/configmap-reload:latest
+      webhookUrl: ""       # e.g., http://127.0.0.1:8080/-/reload
+      webhookMethod: POST

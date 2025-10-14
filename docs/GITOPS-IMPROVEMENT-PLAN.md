@@ -194,10 +194,11 @@
     description: Decide and implement a strategy for reacting to Kubernetes Secret updates produced by VSO (e.g., Stakater Reloader operator, or checksum annotations triggering rollouts). Apply minimally to toy apps and document guidance for production services.
     why: Secrets rotate without guaranteed pod reload; having a predictable pattern prevents stale credentials.
     dependencies: [T6, T7, T8]
-    status: planned (design decision required)
+    status: in-progress (file mounts added; optional sidecar scaffold; targeted rollout restarts wired)
     acceptance_criteria:
-      - Documented choice with trade-offs; implementation for toy-service and toy-web verified (pods roll on Secret change without manual intervention).
-      - If using checksum pattern, templates include annotations sourced from the VSO-managed Secret metadata/version where feasible; otherwise, reloader operator is installed and scoped.
+      - Default: toys mount Secrets as files (no subPath). Optional configmap-reload sidecar scaffold present and documented; disabled by default.
+      - Non-reloadable example: `VaultStaticSecret` for toy-service includes `rolloutRestartTargets` to trigger a rolling restart only on real Secret changes.
+      - Documented trade-offs in README/runbooks; pods react correctly (reload or restart) without manual intervention.
       - Rollback guidance included (disable reloader or remove annotations) without service disruption.
     notes: Prefer least privilege and opt-in per Deployment; avoid global restarts.
 

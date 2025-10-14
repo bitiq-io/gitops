@@ -36,6 +36,11 @@ secrets:
     namespace: "{{ .Values.namespaces.app }}"
     destinationName: toy-service-config
     path: gitops/data/services/toy-service/config
+    restartTargets:
+      enabled: true
+      items:
+        - kind: Deployment
+          name: toy-service
   toyWebConfig:
     enabled: true
     namespace: "{{ .Values.namespaces.app }}"
