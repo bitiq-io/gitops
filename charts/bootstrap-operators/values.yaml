@@ -40,7 +40,7 @@ operators:
     createNamespace: true
 
   vco:
-    channel: stable
+    channel: alpha
     name: vault-config-operator
     source: community-operators
     sourceNamespace: openshift-marketplace

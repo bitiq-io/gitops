@@ -7,7 +7,7 @@ Source of truth for the operator versions we target on OpenShift 4.19 clusters. 
 | OpenShift GitOps | `openshift-gitops-operator` | `redhat-operators` | `openshift-operators` | `gitops-1.18` | `openshift-gitops-operator.v1.18.0` | https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18 |
 | OpenShift Pipelines | `openshift-pipelines-operator-rh` | `redhat-operators` | `openshift-operators` | `pipelines-1.20` | `openshift-pipelines-operator-rh.v1.20.0` | https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20 |
 | Vault Secrets Operator (VSO) | `vault-secrets-operator` | `certified-operators` (verify availability in your catalog; fallback to `community-operators` if needed) | `hashicorp-vault-secrets-operator` | `stable` | `vault-secrets-operator.v1.0.1` | https://developer.hashicorp.com/vault/docs/platform/k8s/vso |
-| Vault Config Operator (VCO) | `vault-config-operator` | `community-operators` | `vault-config-operator` | `stable` | `vault-config-operator.v0.8.34` | https://github.com/redhat-cop/vault-config-operator |
+| Vault Config Operator (VCO) | `vault-config-operator` | `community-operators` | `vault-config-operator` | `alpha` | `vault-config-operator.v0.8.34` | https://github.com/redhat-cop/vault-config-operator |
 
 ## Verification Commands
 
