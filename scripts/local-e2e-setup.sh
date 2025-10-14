@@ -14,6 +14,8 @@ set -Eeuo pipefail
 #   ARGOCD_REPOCREDS_URL=https://github.com \
 #   ARGOCD_REPOCREDS_USERNAME=<github-username-or-git> \
 #   ARGOCD_REPOCREDS_PASSWORD=<github-pat-or-password> \
+#   # Optional: automatically seed Vault if ESO-managed Secrets are missing
+#   AUTO_DEV_VAULT=true \
 #   ./scripts/local-e2e-setup.sh
 #
 # Notes:
@@ -198,10 +200,23 @@ suggest_dev_vault_if_missing() {
   done
   if (( missing > 0 )); then
     log "Detected ${missing} missing ESO-managed Secret(s)."
-    if prompt_yes "Run 'make dev-vault' now to seed Vault and reconcile secrets?"; then
+    # Auto-run path: explicit opt-in via AUTO_DEV_VAULT=true, or FAST_PATH with likely credentials provided
+    local AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-}
+    local have_env_creds="false"
+    if [[ -n "${ARGOCD_TOKEN:-}" || -n "${GITHUB_WEBHOOK_SECRET:-}" || -n "${QUAY_DOCKERCONFIGJSON:-}" || ( -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" ) ]]; then
+      have_env_creds="true"
+    fi
+    if [[ "${AUTO_DEV_VAULT}" == "true" || ( "${FAST_PATH:-}" == "true" && "${have_env_creds}" == "true" ) ]]; then
+      log "Auto-seeding Vault via dev-vault (AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-false}, FAST_PATH=${FAST_PATH:-false})"
       bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+    elif [[ "${FAST_PATH:-}" == "true" ]]; then
+      log "FAST_PATH set but AUTO_DEV_VAULT not enabled; skipping auto seed. Set AUTO_DEV_VAULT=true to run dev-vault automatically."
     else
-      log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
+      if prompt_yes "Run 'make dev-vault' now to seed Vault and reconcile secrets?"; then
+        bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+      else
+        log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
+      fi
     fi
   else
     log "ESO-managed platform secrets present; skipping dev-vault prompt."
@@ -556,5 +571,12 @@ Manual follow-up:
 - Tail argocd-image-updater logs to confirm tag detection and Git write-back.
 ---
 EONOTES
+
+# Highlight the most common next action for local/remote setups
+if [[ "${ENVIRONMENT}" == "local" ]]; then
+  log "Next: expose the Tekton EventListener (GitHub webhook):"
+  log "  oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener 8080:8080"
+  log "  Then set webhook Payload URL to: http://<your-hostname>:8080"
+fi
 
 log "Local e2e setup helper finished"

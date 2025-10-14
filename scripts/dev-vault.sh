@@ -126,15 +126,39 @@ HCL
 }
 
 seed_secrets() {
-  log "Seeding demo secrets into Vault KV path gitops/data/*"
+  # Prefer user-provided env vars; fall back to demo placeholders
+  local argocd_token webhook_secret docker_json
+  argocd_token="${ARGOCD_TOKEN:-local-argocd-token}"
+  webhook_secret="${GITHUB_WEBHOOK_SECRET:-local-webhook-secret}"
+
+  if [[ -n "${QUAY_DOCKERCONFIGJSON:-}" ]]; then
+    docker_json="${QUAY_DOCKERCONFIGJSON}"
+  elif [[ -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" ]]; then
+    # Cross-platform base64 (no wrap)
+    local auth_b64
+    auth_b64=$(printf '%s' "${QUAY_USERNAME}:${QUAY_PASSWORD}" | base64 | tr -d '\n')
+    docker_json=$(printf '{"auths":{"quay.io":{"auth":"%s","email":"%s"}}}' \
+      "$auth_b64" "${QUAY_EMAIL:-you@example.com}")
+  else
+    # demo:demo base64
+    local demo_b64
+    demo_b64=$(printf 'demo:demo' | base64 | tr -d '\n')
+    docker_json=$(printf '{"auths":{"quay.io":{"auth":"%s"}}}' "$demo_b64")
+  fi
+
+  # Escape for inclusion in a double-quoted shell here-string
+  local docker_json_esc
+  docker_json_esc=$(printf '%s' "$docker_json" | sed -e 's/[\\"]/\\&/g')
+
+  log "Seeding secrets into Vault KV path gitops/data/* (using provided env overrides when set)"
   oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
     sh -c "
       set -euo pipefail
       export VAULT_ADDR=\"http://127.0.0.1:8200\"
       export VAULT_TOKEN=\"root\"
-      vault kv put gitops/data/argocd/image-updater token=\"local-argocd-token\" >/dev/null
-      vault kv put gitops/data/registry/quay dockerconfigjson=\"\$(printf '{\"auths\":{\"quay.io\":{\"auth\":\"ZGVtbzpkZW1v\"}}}')\" >/dev/null
-      vault kv put gitops/data/github/webhook token=\"local-webhook-secret\" >/dev/null
+      vault kv put gitops/data/argocd/image-updater token=\"${argocd_token}\" >/dev/null
+      vault kv put gitops/data/registry/quay dockerconfigjson=\"${docker_json_esc}\" >/dev/null
+      vault kv put gitops/data/github/webhook token=\"${webhook_secret}\" >/dev/null
       vault kv put gitops/data/services/toy-service/config fake_secret=\"LOCAL_FAKE_SECRET\" >/dev/null
       vault kv put gitops/data/services/toy-web/config api_base_url=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
     "
