@@ -31,8 +31,8 @@ operators:
 
   vso:
     channel: stable
-    name: hashicorp-vault-secrets-operator
-    source: redhat-operators
+    name: vault-secrets-operator
+    source: certified-operators
     sourceNamespace: openshift-marketplace
     installNamespace: hashicorp-vault-secrets-operator
     startingCSV: ""
