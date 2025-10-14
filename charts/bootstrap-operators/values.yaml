@@ -19,6 +19,7 @@ operators:
     approval: Automatic
 
   externalSecrets:
+    enabled: true
     channel: stable
     name: external-secrets-operator
     source: redhat-operators
