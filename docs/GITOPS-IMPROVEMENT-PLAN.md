@@ -70,59 +70,63 @@
    notes: No relocation is needed given current repos; just document and link.
 
 7. id: T6
-   name: Secrets — Enforce ESO/Vault (Platform)
-   description: Make ESO/Vault mandatory for all secrets (platform and app). Bootstrap installs ESO via OperatorHub; Git manages ClusterSecretStore and ExternalSecrets. No ad-hoc `oc create secret` flows remain.
-   why: Enforces GitOps for credentials, eliminates manual CLI drift, and centralizes audit (Vault) and reconciliation (ESO).
+   name: Secrets — Enforce Vault via VSO + VCO (Platform)
+   description: Standardize on HashiCorp Vault Secrets Operator (VSO) for runtime secret delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration across all envs. Remove ESO usage and avoid ad-hoc `oc create secret` flows entirely.
+   why: Uses OpenShift-certified operators, unlocks dynamic secrets/rotation, reduces layers, and keeps Vault config declarative under Git.
    dependencies: [T0]
-   status: planned (policy change + automation required)
+   status: planned (policy change + migration required)
    acceptance_criteria:
-     - scripts/bootstrap.sh installs ESO Subscription (stable channel) automatically and waits for CRDs.
-     - charts/eso-vault-examples renders by default with `enabled=true` for all envs; ClusterSecretStore configured via values.
-     - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are sourced exclusively via ExternalSecrets.
-     - No Make targets or docs recommend creating Opaque secrets directly; CLI examples are removed or explicitly forbidden.
-     - kubeconform validation of ESO resources is part of `make validate` (CRDs ignored as needed) for all envs.
-   notes: Pipelines 1.20 configuring: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/configuring_openshift_pipelines/
+     - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
+     - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
+     - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are delivered by VSO-managed Kubernetes Secrets (names unchanged for consumers).
+     - Make targets and docs prohibit direct `oc create secret`; local/dev seeding happens by writing to Vault and reconciling via VSO/VCO.
+     - `make validate` renders VSO/VCO resources and passes kubeconform (ignoring CRDs as needed) for local|sno|prod.
+     - A version matrix (docs/CONVENTIONS.md or new `docs/OPERATOR-VERSIONS.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
+   notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy).
 
 8. id: T7
-   name: Secrets — toy-service via ExternalSecret
-   description: Secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) with a required ExternalSecret (`toy-service-config`) across all envs.
-   why: Demonstrates and enforces end-to-end secrets propagation for backend runtime.
+   name: Secrets — toy-service via VSO
+   description: Secret-backed env injection for toy-service (`backend.secret.*`, `backend.env`) using VSO. Define a `VaultStaticSecret` (or `VaultDynamicSecret` where applicable) that writes to a Kubernetes Secret named `toy-service-config` across all envs.
+   why: Demonstrates end-to-end secret propagation with VSO, keeping Secret names stable for the Deployment while enabling rotation.
    dependencies: [T6]
-   status: complete (toy-service secrets wired; ESO enforced by policy)
+   status: planned (migrates from ESO)
    acceptance_criteria:
-     - Deployment consumes env exclusively from ExternalSecret-backed Secret; no plain env defaults for sensitive data.
-     - ExternalSecret renders by default and reconciles `toy-service-config` with required keys.
-     - Local/CI template shows env wiring; `make validate` passes without opt-in flags.
-   notes: Document Vault KV path and keys; require Vault seeding via automated script for local.
+     - Deployment consumes env exclusively from the VSO-managed Secret; no plain env defaults for sensitive data.
+     - VSO resources render by default and reconcile `toy-service-config` from the documented Vault path/keys.
+     - `make validate` passes without flags; docs show local seeding via `make dev-vault` and VSO/VCO CRs.
+   notes: Prefer `VaultStaticSecret` for KV; optionally add a `VaultDynamicSecret` example (DB creds) to showcase rotation semantics.
 
 9. id: T8
-   name: Secrets — toy-web via ExternalSecret
-   description: Mirror T7 for frontend (`frontend.secret.*`, `frontend.env`) with a required ExternalSecret (`toy-web-config`) for sensitive runtime config.
-   why: Completes secrets story for frontend runtime configuration with enforced ESO usage.
+   name: Secrets — toy-web via VSO
+   description: Mirror T7 for frontend (`frontend.secret.*`, `frontend.env`) with a `VaultStaticSecret` that writes to `toy-web-config` for sensitive runtime configuration.
+   why: Completes the secrets story for frontend with VSO.
    dependencies: [T7]
+   status: planned (mirrors toy-service migration)
    acceptance_criteria:
-     - Deployment consumes sensitive env solely via ExternalSecret-backed Secret; non-sensitive values may use ConfigMap.
-     - ExternalSecret renders by default and validates in `make validate` for all envs.
+     - Deployment consumes sensitive env solely via VSO-managed Secret; non-sensitive values may use ConfigMap.
+     - VSO resources render by default and validate in `make validate` for all envs.
    notes: Keep non-sensitive params in ConfigMap where appropriate; no direct env literals for secrets.
 
 10. id: T9
     name: Local Vault Automation (ENV=local)
-    description: Replace Opaque secret fallback with automated local Vault + ESO flow. Provide a `make dev-vault` (or similar) target that deploys a dev Vault, seeds required KV paths, ensures ESO is installed, and reconciles ExternalSecrets for local.
+    description: Replace Opaque secret fallback with automated local Vault + VCO/VSO flow. Provide a `make dev-vault` target that deploys a dev Vault, seeds required paths, applies VCO CRs (auth backends/roles, policies), and reconciles VSO resources for local.
     why: Preserves GitOps discipline locally; removes manual CLI secret creation and keeps parity with sno/prod.
     dependencies: [T6, T7, T8]
+    status: planned (local parity after VSO migration)
     acceptance_criteria:
       - `make dev-vault` deploys a dev Vault (ephemeral) or connects to a configured Vault, writes sample values to `gitops/data/...` paths.
-      - scripts/bootstrap.sh detects/installs ESO in local and ensures ClusterSecretStore references the correct SA/role.
+      - scripts/bootstrap.sh detects/installs VSO + VCO in local and applies minimal `VaultConnection`/`VaultAuth` and VCO `KubernetesAuthEngineConfig/Role`.
       - Pods in `bitiq-local` show env vars present via /internal/config; no Opaque secret creation path remains in docs.
     notes: Dev Vault must be clearly marked non-production; provide cleanup command.
 
 11. id: T10
-    name: Triggers & Registry Auth Hardening (ESO-only)
-    description: EventListener and Tekton SA must consume secrets only via ESO-managed Secrets; replace `make quay-secret` with Vault seeding + ESO reconciliation. Document resolver versions.
-    why: Eliminates manual secret management in CI; aligns with enforced ESO policy.
+    name: Triggers & Registry Auth Hardening (VSO-only)
+    description: EventListener and Tekton SA must consume secrets only via VSO-managed Kubernetes Secrets; replace `make quay-secret` with Vault seeding + VSO reconciliation. Document resolver versions.
+    why: Eliminates manual secret management in CI; aligns with enforced Vault/VSO policy.
     dependencies: [T6]
+    status: planned (post-VSO cutover)
     acceptance_criteria:
-      - EventListener references ESO-managed GitHub secret; pipeline SA mounts ESO-managed Quay dockerconfig.
+      - EventListener references a VSO-managed GitHub secret; pipeline SA mounts a VSO-managed Quay dockerconfig.
       - Provide `make dev-vault` seeding for required CI creds; remove direct `oc create secret` helper.
       - Docs updated with Pipelines 1.20 links and verification steps.
     notes: `triggers.createSecret` default remains false; all secrets sourced via Vault.
@@ -132,6 +136,7 @@
     description: Tighten ApplicationSet generator scoping to intended envs/clusters; ensure `ignoreMissingValueFiles: true` and env parameterization are consistent; add lint/static checks.
     why: Prevents unintended app generation and keeps env overlays predictable.
     dependencies: [T0]
+    status: planned
     acceptance_criteria:
       - ApplicationSet values include explicit env filters and correct param wiring for baseDomain/appNamespace/platforms/fsGroup.
       - `make validate` renders each env without missing values; conftest/policy checks (if present) pass.
@@ -139,40 +144,82 @@
 
 13. id: T12
     name: Operator Channels & Upgrade Guardrails
-    description: Re-affirm pinned operator channels and require PR notes + maintainer approval before changing; add release notes links.
+    description: Re-affirm pinned operator channels and require PR notes + maintainer approval before changing; add release notes links. Include VSO and VCO channels.
     why: Avoids accidental upgrades diverging from tested docs and runbooks.
     dependencies: [T0]
+    status: planned (doc update + policy guardrail)
     acceptance_criteria:
-      - bootstrap-operators values document channels with links to GitOps 1.18 and Pipelines 1.20 release notes.
+      - bootstrap-operators values document channels with links to GitOps 1.18, Pipelines 1.20, VSO, and VCO release notes.
+      - A committed operator version matrix lists the exact starting CSV / semantic version per operator and references the precise documentation set to follow during upgrades (e.g., GitOps 1.18.z install guide, VSO v1.0.1 docs).
       - AGENTS.md/README state the approval requirement; CI remains green after edits.
-    notes: GitOps 1.18 release notes: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/release_notes/; Pipelines 1.20 release notes: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/release_notes/
+    notes: GitOps 1.18 release notes: https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.18/html/release_notes/; Pipelines 1.20 release notes: https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.20/html/release_notes/; VSO: https://github.com/hashicorp/vault-secrets-operator/releases; VCO: https://github.com/redhat-cop/vault-config-operator/releases
 
 14. id: T13
-    name: Validation Pipeline — ESO & AppSet Coverage
-    description: Expand `make validate` to always render/validate ESO resources (no flag) and sanity-check ApplicationSet per env.
-    why: Enforced ESO means validation must cover it by default.
+    name: Validation Pipeline — VSO/VCO & AppSet Coverage
+    description: Expand `make validate` to always render/validate VSO and VCO resources (no flag) and sanity-check ApplicationSet per env. Update conftest policies to allowlist VSO/VCO CRDs while continuing to forbid Kubernetes Secret manifests in Git.
+    why: Enforced VSO/VCO means validation and policy must cover them by default.
     dependencies: [T6]
+    status: planned
     acceptance_criteria:
-      - `make validate` renders ESO with repo values and passes kubeconform (ignoring CRDs as needed).
+      - `make validate` renders VSO/VCO resources with repo values and passes kubeconform (ignoring CRDs as needed).
+      - Conftest/regos updated to allow CRD groups `secrets.hashicorp.com` and `redhatcop.redhat.io` and to keep rejecting `apiVersion: v1`, `kind: Secret` in repo manifests.
       - Validation outputs show pass/fail clearly for each chart and env.
     notes: Keep runtime short; parallelize if needed.
 
 15. id: T14
     name: Documentation Cross-links & Examples
-    description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, include enforced ESO/Vault usage, and local Vault automation.
+    description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, include enforced VSO/VCO + Vault usage, and local Vault automation.
     why: Keeps docs version-correct and reduces onboarding friction under the new policy.
     dependencies: [T1, T2, T3, T10]
+    status: planned (documentation refresh)
     acceptance_criteria:
       - README/runbooks reference correct doc versions; ROLLBACK includes multi-service + updater freeze guidance.
-      - LOCAL/PROD runbooks document ESO as mandatory and describe `make dev-vault` flow; no fallback to Opaque secrets.
+      - LOCAL/PROD runbooks document VSO/VCO as mandatory and describe `make dev-vault` flow; no fallback to Opaque secrets.
     notes: Avoid duplicating upstream docs; link and show minimal verified commands.
 
 16. id: T15
-    name: Bootstrap — ESO install and preflight
-    description: Extend bootstrap to install ESO via OLM Subscription and add preflight checks for ESO CRDs/CSV readiness before applying ExternalSecrets.
-    why: Ensures clusters are reconciliation-ready and avoids timing issues when applying ESO resources.
+    name: Bootstrap — VSO/VCO install and preflight
+    description: Extend bootstrap to install VSO and VCO via OLM Subscriptions and add preflight checks for their CRDs/CSV readiness before applying VSO/VCO resources.
+    why: Ensures clusters are reconciliation-ready and avoids timing issues when applying secrets/config resources.
     dependencies: [T6]
+    status: planned
     acceptance_criteria:
-      - scripts/bootstrap.sh: creates Subscription, waits for CSV InstallSucceeded, verifies CRDs present.
-      - Subsequent chart installs (eso-vault-examples) succeed repeatably on fresh clusters.
+      - scripts/bootstrap.sh: creates Subscriptions, waits for CSV InstallSucceeded, verifies VSO/VCO CRDs present.
+      - Subsequent chart installs (`vault-runtime`, `vault-config`) succeed repeatably on fresh clusters.
     notes: Keep operator channels pinned in bootstrap-operators or in docs per T12.
+
+17. id: T16
+    name: Secret Reload Strategy (opt-in)
+    description: Decide and implement a strategy for reacting to Kubernetes Secret updates produced by VSO (e.g., Stakater Reloader operator, or checksum annotations triggering rollouts). Apply minimally to toy apps and document guidance for production services.
+    why: Secrets rotate without guaranteed pod reload; having a predictable pattern prevents stale credentials.
+    dependencies: [T6, T7, T8]
+    status: planned (design decision required)
+    acceptance_criteria:
+      - Documented choice with trade-offs; implementation for toy-service and toy-web verified (pods roll on Secret change without manual intervention).
+      - If using checksum pattern, templates include annotations sourced from the VSO-managed Secret metadata/version where feasible; otherwise, reloader operator is installed and scoped.
+      - Rollback guidance included (disable reloader or remove annotations) without service disruption.
+    notes: Prefer least privilege and opt-in per Deployment; avoid global restarts.
+
+18. id: T17
+    name: ESO Decommission & Migration Tracking
+    description: Fully remove ESO usage and artifacts after VSO/VCO are in place. Provide a mapping of each ExternalSecret/ClusterSecretStore to the corresponding VSO/VCO resources, and delete/deprecate `charts/eso-vault-examples/`.
+    why: Avoids dual-writer risks and reduces operator footprint.
+    dependencies: [T6, T7, T8, T9, T10, T13, T15]
+    status: planned (execute after VSO rollout)
+    acceptance_criteria:
+      - A migration table exists in docs (ExternalSecret → VaultStaticSecret/VaultDynamicSecret; ClusterSecretStore → VaultConnection/VaultAuth). Secret consumer names remain unchanged.
+      - ESO CRs are removed from the repo; the namespace(s) no longer contain ExternalSecrets for these apps; Argo reports Healthy/Synced post-cutover.
+      - CI and local validation pass with only VSO/VCO resources.
+    notes: Keep a rollback branch with ESO resources for emergency reversion; do not run ESO and VSO against the same Secret concurrently.
+
+19. id: T18
+    name: Operator Version Matrix & Doc Alignment
+    description: Author and maintain a single source of truth for operator versions (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) including their CSV names, catalog channels, support statements, and authoritative documentation links.
+    why: Ensures everyone follows the correct install/upgrade guidance and avoids mixing docs across incompatible operator versions.
+    dependencies: [T6, T12, T15]
+    status: in-progress (matrix drafted; broaden links to runbooks outstanding)
+    acceptance_criteria:
+      - `docs/OPERATOR-VERSIONS.md` (or an agreed existing doc) lists: operator name, channel, startingCSV/version, Red Hat/HashiCorp documentation URL, and upgrade cadence expectations.
+      - README, AGENTS.md, and runbooks link to the matrix when referencing operator setup steps.
+      - Process documented for updating the matrix during upgrades (new PR checklist item referencing T12 guardrails).
+    notes: Confirm versions against OperatorHub for OCP 4.19 before publishing; include a sanity command (`oc get csv -n <ns>`) to verify deployed versions post-bootstrap.

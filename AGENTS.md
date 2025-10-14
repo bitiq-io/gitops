@@ -8,6 +8,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - Never commit secrets, kubeconfigs, or tokens. Secrets are sourced exclusively via External Secrets Operator (ESO) + Vault.
 - Follow Conventional Commits. Common scopes: `charts`, `umbrella`, `pipelines`, `image-updater`, `operators`.
 - Enforce the versioning and naming rules in `docs/CONVENTIONS.md` (image tags, composite appVersion, env overlays).
+- Keep operator versions aligned with `docs/OPERATOR-VERSIONS.md` (channels, CSVs, and reference docs).
 - Rollbacks happen in Git: use `docs/ROLLBACK.md`. Do not patch live resources to “fix” state — reconcile via Git.
 - Do not change operator channels or critical defaults without explicit approval and notes in the PR body.
 - Git is the source of truth. Do not create or mutate Kubernetes resources by hand. The only sanctioned cluster‑side scripts are:
