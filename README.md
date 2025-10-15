@@ -232,6 +232,53 @@ The **ci-pipelines** chart includes GitHub webhook **Triggers** (EventListener, 
 
 Secret management note: the webhook Secret is VSO‑managed. Seed Vault (path `gitops/data/github/webhook`, key `token`) and let VSO reconcile the Kubernetes Secret. Avoid `triggers.createSecret=true` under this policy.
 
+## Vault Operators (VSO/VCO)
+
+- Runtime (VSO) manages Kubernetes Secrets from Vault. Control‑plane (VCO) manages Vault itself (auth mount/config, roles, and policies). Both are installed via OLM in `scripts/bootstrap.sh`.
+- The umbrella renders two Apps when enabled for an env:
+  - `vault-config-<env>` (VCO): configures Kubernetes auth and ACL policy in Vault
+  - `vault-runtime-<env>` (VSO): creates `VaultConnection`, `VaultAuth`, and `VaultStaticSecret` in target namespaces
+
+What `vault-config` (VCO) creates
+
+- `AuthEngineMount` (type `kubernetes`) and `KubernetesAuthEngineConfig` at the configured mount (default `kubernetes`).
+- `Policy` (ACL) for the app KV mount (default `gitops`), granting kv‑v2 permissions to:
+  - `path "<kvMount>/data/*"` (data) and `path "<kvMount>/metadata/*"` (metadata) — default capabilities: `read`, `list`.
+- `KubernetesAuthEngineRole` (default name `gitops-<env>` or configured) bound to the `default` SA in three namespaces: gitops, pipelines, and app. The CR is annotated with Argo sync options `Replace=true,Force=true` to avoid immutable field update failures in VCO.
+
+What `vault-runtime` (VSO) creates
+
+- Per‑namespace `VaultConnection` and `VaultAuth` (method `kubernetes`, mount `kubernetes`, role `gitops-<env>`).
+- `VaultStaticSecret` objects for:
+  - `openshift-gitops/argocd-image-updater-secret` (path `gitops/argocd/image-updater`)
+  - `openshift-pipelines/quay-auth` (path `gitops/registry/quay`)
+  - `openshift-pipelines/github-webhook-secret` (path `gitops/github/webhook`)
+  - App configs under the app namespace.
+
+Key values
+
+- Enablement is gated per env in the umbrella values (`vault.runtime.enabled`, `vault.config.enabled`).
+- VCO chart (`charts/vault-config`):
+  - `vault.kvMountPath` (default `gitops`) — KV v2 mount for app secrets
+  - `policyCapabilities` (default `[read, list]`) — ACL capabilities applied to data/metadata paths
+  - `vault.connectionRole`/`vault.serviceAccountName` — used for VCO’s own auth to Vault
+- VSO chart (`charts/vault-runtime`):
+  - `vault.address`, `vault.kubernetesMount`, `vault.roleName` — used for runtime auth
+  - `namespaces.gitops|pipelines|app` — where to create runtime resources
+
+Local dev (ENV=local)
+
+- `make dev-vault` deploys a dev Vault and seeds demo secrets under `gitops/...`.
+- The helper configures a permissive `kube-auth` policy so VCO can manage `/sys/policies/acl/*` locally and enables a kv‑v2 mount at `gitops/`.
+- Use `VAULT_OPERATORS=true make dev-vault` to deploy the VSO runtime chart against the dev Vault.
+
+Verification (handy commands)
+
+- `oc -n openshift-gitops get application vault-config-<env> -o jsonpath='{.status.sync.status} {.status.health.status}\n'`
+- `oc -n openshift-gitops get kubernetesauthenginerole gitops-<env> -o jsonpath='{.spec.targetNamespaces.targetNamespaces}\n'`
+- `for ns in openshift-gitops openshift-pipelines <app-ns>; do oc -n $ns get vaultauth k8s -o jsonpath='{.spec.kubernetes.role}{"\n"}'; done`
+- `for ns in openshift-gitops openshift-pipelines <app-ns>; do oc -n $ns get vaultstaticsecret -o name; done`
+
 ### Notes
 
 * **OpenShift Local** app domain: `apps-crc.testing`. The chart defaults handle this when `ENV=local`. ([crc.dev][5])
