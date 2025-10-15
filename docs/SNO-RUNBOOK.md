@@ -232,7 +232,7 @@ The SNO environment now uses HashiCorp Vault Secrets Operator (VSO) and Vault Co
 
 - **No default storage class**: install OpenShift Data Foundation or LVM Storage; set the class default before running Tekton pipelines.
 - **Routes fail to resolve**: double-check wildcard DNS and that `BASE_DOMAIN` matches your ingress domain.
-- **Pipeline fails to push image**: ensure Quay credentials are linked to `openshift-pipelines/pipeline` service account (ESO will reconcile `quay-auth`).
+- **Pipeline fails to push image**: ensure Quay credentials are linked to `openshift-pipelines/pipeline` service account (VSO will reconcile `quay-auth`).
 - **Image Updater authentication errors**: verify the Argo CD token permissions and that Argo CD has write access to the Git repo.
 - **Cluster managed by central Argo CD**: set `clusterServer` in `charts/argocd-apps/values.yaml` to the external API URL and register the cluster via `argocd cluster add` before syncing.
 
