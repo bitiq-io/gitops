@@ -13,6 +13,8 @@ spec:
   authentication:
     path: {{ $mp }}
     role: {{ $role }}
+    serviceAccount:
+      name: {{ $.Values.vault.serviceAccountName | default "default" }}
   connection:
     address: {{ $addr | quote }}
   policies:

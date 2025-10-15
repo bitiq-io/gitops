@@ -9,8 +9,9 @@ spec:
   authentication:
     path: {{ .Values.vault.mountPath }}
     role: {{ .Values.vault.connectionRole }}
+    serviceAccount:
+      name: {{ .Values.vault.serviceAccountName | default "default" }}
   connection:
     address: {{ .Values.vault.address | quote }}
   kubernetesHost: {{ .Values.vault.kubernetesHost | quote }}
 {{- end }}
-

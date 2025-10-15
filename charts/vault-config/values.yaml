@@ -5,6 +5,8 @@ vault:
   kubernetesHost: https://kubernetes.default.svc
   mountPath: kubernetes
   connectionRole: kube-auth
+  # ServiceAccount used by VCO to authenticate to Vault (namespace is this chart's target namespace, openshift-gitops)
+  serviceAccountName: default
 
 policies:
   - gitops-local
