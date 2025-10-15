@@ -88,6 +88,8 @@ spec:
         roles:
           - name: {{ .Values.vault.config.roleName | default (printf "gitops-%s" .Values.env) | quote }}
             targetNamespaces:
+              - {{ .Values.gitopsNamespace }}
+              - {{ .Values.pipelinesNamespace }}
               - {{ .Values.appNamespace }}
             targetServiceAccounts:
               - default
