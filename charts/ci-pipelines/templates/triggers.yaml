@@ -77,14 +77,10 @@ spec:
 {{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
 {{- $filter := "" -}}
 {{- if $pipeline.repoFullNames }}
-  {{- /* Case-insensitive match: compare lower(full_name) against lowercased configured names */ -}}
-  {{- $lowerNames := list -}}
-  {{- range $n := $pipeline.repoFullNames -}}
-    {{- $lowerNames = append $lowerNames ($n | lower) -}}
-  {{- end -}}
-  {{- $filter = printf "lower(body.repository.full_name) in %s" ($lowerNames | toJson) -}}
+  {{- /* Exact match on repository full_name; include all expected variants in values */ -}}
+  {{- $filter = printf "body.repository.full_name in %s" ($pipeline.repoFullNames | toJson) -}}
 {{- else if $pipeline.repoFullName }}
-  {{- $filter = printf "lower(body.repository.full_name) == \"%s\"" ($pipeline.repoFullName | lower) -}}
+  {{- $filter = printf "body.repository.full_name == \"%s\"" $pipeline.repoFullName -}}
 {{- end }}
 {{- if $filter }}
   {{- $celParams := list (dict "name" "filter" "value" $filter) }}
