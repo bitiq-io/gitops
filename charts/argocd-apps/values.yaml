@@ -49,6 +49,17 @@ envs:
     toyWebImageUpdater:
       pause: false
     tektonFsGroup: ""
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: http://vault-sno.vault.sno.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-sno
+    vaultConfigEnabled: true
+    vaultConfigAddress: http://vault-sno.vault.sno.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-sno
+    vaultConfigPolicyName: gitops-sno
   - name: prod
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
