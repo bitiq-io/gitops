@@ -137,7 +137,7 @@
     description: Tighten ApplicationSet generator scoping to intended envs/clusters; ensure `ignoreMissingValueFiles: true` and env parameterization are consistent; add lint/static checks.
     why: Prevents unintended app generation and keeps env overlays predictable.
     dependencies: [T0]
-    status: planned
+    status: complete (policy added; env parameter wiring validated in CI)
     acceptance_criteria:
       - ApplicationSet values include explicit env filters and correct param wiring for baseDomain/appNamespace/platforms/fsGroup.
       - `make validate` renders each env without missing values; conftest/policy checks (if present) pass.
