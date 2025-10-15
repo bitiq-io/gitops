@@ -20,7 +20,7 @@ createImageNamespaces: false
 # - EventListener trigger wiring (see triggers.* below)
 pipelines:
   - name: bitiq-build-and-push
-    gitUrl: https://github.com/paulcapestany/toy-service.git
+    gitUrl: https://github.com/bitiq-io/toy-service.git
     gitRevision: main
     dockerfile: Dockerfile
     contextDir: .
@@ -32,14 +32,17 @@ pipelines:
     imageName: toy-service
     tlsVerify: "true"
     # CEL filter applied inside the EventListener trigger
-    repoFullName: PaulCapestany/toy-service
+    # Accept pushes from either personal or org repo
+    repoFullNames:
+      - PaulCapestany/toy-service
+      - bitiq-io/toy-service
     # Optional override per pipeline; falls back to top-level defaults when empty
     serviceAccountName: ""
     fsGroup: ""
     eventTypes: ["push"]
 
   - name: bitiq-web-build-and-push
-    gitUrl: https://github.com/paulcapestany/toy-web.git
+    gitUrl: https://github.com/bitiq-io/toy-web.git
     gitRevision: main
     dockerfile: Dockerfile
     contextDir: .
@@ -64,7 +67,9 @@ pipelines:
     imageNamespace: paulcapestany
     imageName: toy-web
     tlsVerify: "true"
-    repoFullName: PaulCapestany/toy-web
+    repoFullNames:
+      - PaulCapestany/toy-web
+      - bitiq-io/toy-web
     serviceAccountName: ""
     fsGroup: ""
     eventTypes: ["push"]
