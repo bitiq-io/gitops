@@ -195,6 +195,10 @@ HCL
       path \"auth/kubernetes/*\" {
         capabilities = [\"create\", \"read\", \"update\", \"list\"]
       }
+      # Allow managing ACL policies so VCO can create/update /sys/policies/acl/<name>
+      path \"sys/policies/acl/*\" {
+        capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"]
+      }
       # Token self-introspection (often used by operators)
       path \"auth/token/lookup-self\" { capabilities = [\"read\"] }
       path \"auth/token/lookup\" { capabilities = [\"read\"] }
