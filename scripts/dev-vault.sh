@@ -183,6 +183,20 @@ HCL
         bound_service_account_namespaces=\"openshift-gitops,openshift-pipelines,bitiq-local\" \
         policies=\"gitops-prod\" \
         ttl=\"1h\" >/dev/null
+      # VCO control-plane auth: allow managing k8s auth roles
+      vault policy write kube-auth - <<'HCL'
+      path \"auth/kubernetes/role/*\" {
+        capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"]
+      }
+      path \"sys/mounts\" { capabilities = [\"read\"] }
+      path \"sys/auth\" { capabilities = [\"read\"] }
+      path \"sys/policies/acl\" { capabilities = [\"read\", \"list\"] }
+HCL
+      vault write auth/kubernetes/role/kube-auth \
+        bound_service_account_names=\"default\" \
+        bound_service_account_namespaces=\"openshift-gitops\" \
+        policies=\"kube-auth\" \
+        ttl=\"1h\" >/dev/null
     "
 }
 
