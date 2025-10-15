@@ -191,6 +191,9 @@ HCL
       path \"auth/kubernetes/config\" {
         capabilities = [\"read\", \"update\"]
       }
+      path \"auth/role/*\" {
+        capabilities = [\"read\", \"list\"]
+      }
       path \"sys/mounts\" { capabilities = [\"read\"] }
       path \"sys/auth\" { capabilities = [\"read\"] }
       path \"sys/policies/acl\" { capabilities = [\"read\", \"list\"] }
