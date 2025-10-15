@@ -78,6 +78,10 @@ triggers:
   # Create with: oc -n openshift-pipelines create secret generic github-webhook-secret \
   #   --from-literal=secretToken=YOUR_RANDOM_SECRET
   githubSecretName: github-webhook-secret
+  # Key name inside the Secret referenced by the GitHub interceptor.
+  # VSO-managed default is "token"; Tekton samples often use "secretToken".
+  # Set to match how your Secret stores the value.
+  secretKey: token
   # Only used if createSecret=true; required in that case
   secretToken: ""
   # Expose an OpenShift Route for the EventListener
