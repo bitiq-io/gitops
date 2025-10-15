@@ -20,7 +20,7 @@ createImageNamespaces: false
 # - EventListener trigger wiring (see triggers.* below)
 pipelines:
   - name: bitiq-build-and-push
-    gitUrl: https://github.com/bitiq-io/toy-service.git
+    gitUrl: https://github.com/PaulCapestany/toy-service.git
     gitRevision: main
     dockerfile: Dockerfile
     contextDir: .
@@ -42,7 +42,7 @@ pipelines:
     eventTypes: ["push"]
 
   - name: bitiq-web-build-and-push
-    gitUrl: https://github.com/bitiq-io/toy-web.git
+    gitUrl: https://github.com/PaulCapestany/toy-web.git
     gitRevision: main
     dockerfile: Dockerfile
     contextDir: .
