@@ -279,6 +279,21 @@ Verification (handy commands)
 - `for ns in openshift-gitops openshift-pipelines <app-ns>; do oc -n $ns get vaultauth k8s -o jsonpath='{.spec.kubernetes.role}{"\n"}'; done`
 - `for ns in openshift-gitops openshift-pipelines <app-ns>; do oc -n $ns get vaultstaticsecret -o name; done`
 
+Prod secrets verification (quick checklist)
+
+- Applications are Healthy/Synced:
+  - `oc -n openshift-gitops get application vault-config-prod vault-runtime-prod`
+- Secrets materialized by VSO:
+  - `oc -n openshift-gitops get secret argocd-image-updater-secret`
+  - `oc -n openshift-pipelines get secret quay-auth github-webhook-secret`
+  - `oc -n bitiq-prod get secret toy-service-config toy-web-config`
+- Link Quay secret to Tekton SA (idempotent):
+  - `oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount`
+- Argo CD repo write access (for Image Updater):
+  - `argocd repo list` or `git ls-remote https://<user>:$GH_PAT@github.com/bitiq-io/gitops.git | head`
+  
+See docs/PROD-RUNBOOK.md for the full production flow and docs/OPERATOR-VERSIONS.md for pinned operator channels/CSVs.
+
 ### Notes
 
 * **OpenShift Local** app domain: `apps-crc.testing`. The chart defaults handle this when `ENV=local`. ([crc.dev][5])
