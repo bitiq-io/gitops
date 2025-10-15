@@ -226,6 +226,22 @@ If unset, the helper seeds safe demo placeholders to get Secrets created; rotate
 
 Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md). The umbrella gates off ESO when VSO is enabled for local.
 
+### Vault operators (VSO/VCO) quick reference
+
+- See README section: README.md:## Vault Operators (VSO/VCO)
+- Enablement is per‑env via the umbrella values: `vault.runtime.enabled` and `vault.config.enabled`.
+- `vault-config-<env>` (VCO) configures:
+  - Kubernetes auth mount/config (default mount `kubernetes`).
+  - ACL Policy for the KV v2 mount (default `gitops`), granting data/* and metadata/* with read/list.
+  - Kubernetes auth role (default name `gitops-<env>`) bound to the default ServiceAccount in gitops, pipelines, and the app namespace.
+- `vault-runtime-<env>` (VSO) configures per‑namespace:
+  - `VaultConnection`, `VaultAuth` (method `kubernetes`, role `gitops-<env>`), and `VaultStaticSecret` for platform + app secrets.
+- Verify quickly:
+  - `oc -n openshift-gitops get application vault-config-<env> -o jsonpath='{.status.sync.status} {.status.health.status}\n'`
+  - `oc -n openshift-gitops get kubernetesauthenginerole gitops-<env> -o jsonpath='{.spec.targetNamespaces.targetNamespaces}\n'`
+  - `for ns in openshift-gitops openshift-pipelines bitiq-local; do oc -n $ns get vaultauth k8s -o jsonpath='{.spec.kubernetes.role}{"\n"}'; done`
+  - `for ns in openshift-gitops openshift-pipelines bitiq-local; do oc -n $ns get vaultstaticsecret -o name; done`
+
 ## 6) Configure repo credentials and Image Updater token
 
 1. OpenShift GitOps route (for CLI/API):
