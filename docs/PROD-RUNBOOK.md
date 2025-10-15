@@ -12,7 +12,7 @@ This runbook documents how to bootstrap the `gitops` repository onto a productio
   - Outbound connectivity to Git hosting, container registry (e.g., Quay.io), and Red Hat Operator Catalog sources.
 - **Workstation**: `oc`, `helm` 3.14+, `git`, `make`, and this repository cloned.
 - **Access**: Cluster-admin privileges on the target cluster; credentials to write to the Git repository and container registry.
-- **Security**: Plan how you will manage secrets (SealedSecrets, External Secrets Operator (ESO), or manually via `oc`). Never commit secrets to Git.
+- **Security**: Secrets are managed via Vault operators — HashiCorp Vault Secrets Operator (VSO) for runtime delivery and Red Hat COP Vault Config Operator (VCO) for control-plane configuration. Never commit secrets to Git or create them manually with `oc`.
 
 ## 2. Decide operator channels (GitOps & Pipelines)
 
@@ -130,6 +130,41 @@ Emergency-only fallback: if Vault or ESO is unavailable, halt deployments instea
 
 Note (private registries): if your registries are private, configure an image pull secret for Image Updater and set `imageUpdater.pullSecret` in the umbrella chart values (refer to charts/bitiq-umbrella/values-common.yaml:16) or manage it via ESO with a separate ExternalSecret in `openshift-gitops`.
 
+## 7. Configure secrets & credentials (Vault operators)
+
+Production now uses VSO/VCO by default. The umbrella renders `vault-config-prod` (VCO) and `vault-runtime-prod` (VSO). Review values in `charts/argocd-apps/values.yaml` under the `prod` block — addresses and role/policy names should match your Vault deployment.
+
+1) Verify Applications:
+
+```bash
+oc -n openshift-gitops get application vault-config-prod vault-runtime-prod
+```
+
+2) Seed Vault (no `oc create secret`):
+
+```bash
+# Argo CD Image Updater token
+vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
+
+# Quay dockerconfigjson for Tekton pipeline SA
+vault kv put gitops/data/registry/quay dockerconfigjson='{"auths":{"quay.io":{"auth":"<base64 user:token>"}}}'
+
+# GitHub webhook secret used by Tekton triggers
+vault kv put gitops/data/github/webhook token='<random-string>'
+
+# Optional runtime configs for sample apps
+vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
+vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-api.apps.<cluster-domain>'
+```
+
+3) Link Quay secret to the Tekton SA (idempotent):
+
+```bash
+oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount
+```
+
+4) Ensure Argo CD has write-enabled repo credentials (PAT/SSH) for Image Updater write-back.
+
 ## 8. Argo CD RBAC & SSO hardening
 
 Strengthen access to the `openshift-gitops` Argo CD instance before granting production access.
@@ -178,9 +213,8 @@ Notes:
 - `role:readonly` grants dashboard visibility without sync permissions. Adjust policies to match your org’s needs.
 - Keeping `system:cluster-admins` mapped to `role:admin` ensures cluster-admins retain emergency access.
 
-### 8.3 Configure ServiceAccounts and tokens
+### 8.3 Configure automation tokens
 
-- Create a ServiceAccount for Vault Kubernetes auth (if using ESO), for example `openshift-gitops/vault-auth`, to match the `ClusterSecretStore` in the examples. This ServiceAccount is unrelated to the Argo CD token and requires no special RBAC. See `PROD-SECRETS.md` for details.
 - Generate API tokens for automation:
 
   ```bash
@@ -216,7 +250,7 @@ Tekton pipelines run in the `openshift-pipelines` namespace by default. Apply th
 
 ### 9.2 Secrets and image pulls
 
-- Use ESO/Vault (see [PROD-SECRETS](PROD-SECRETS.md)) to materialize registry and webhook secrets.
+- Use VSO/Vault (see [PROD-SECRETS](PROD-SECRETS.md)) to materialize registry and webhook secrets.
 - Link the Quay secret to the ServiceAccount for both pull and mount usage:
 
   ```bash
