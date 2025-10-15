@@ -37,6 +37,6 @@ backend:
     mountPath: /etc/backend-secret
     reloadSidecar:
       enabled: false
-      image: ghcr.io/jimmidyson/configmap-reload:latest
+      image: ghcr.io/jimmidyson/configmap-reload:v0.14.0
       webhookUrl: ""       # e.g., http://127.0.0.1:8080/-/reload
       webhookMethod: POST
