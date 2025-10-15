@@ -1,0 +1,30 @@
+{{- if .Values.enabled }}
+{{- $addr := .Values.vault.address -}}
+{{- $mp := .Values.vault.mountPath -}}
+{{- $role := .Values.vault.connectionRole -}}
+{{- $kv := .Values.vault.kvMountPath | default "gitops" -}}
+{{- $caps := .Values.policyCapabilities | default (list "read" "list") -}}
+{{- range $p := .Values.policies }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: Policy
+metadata:
+  name: {{ $p }}
+  namespace: openshift-gitops
+spec:
+  authentication:
+    path: {{ $mp }}
+    role: {{ $role }}
+    serviceAccount:
+      name: {{ $.Values.vault.serviceAccountName | default "default" }}
+  connection:
+    address: {{ $addr | quote }}
+  type: acl
+  # Grant apps access to KV v2 under the configured mount
+  policy: |
+    path "{{ $kv }}/data/*" {
+      capabilities = [{{- $first := true -}}{{- range $i, $c := $caps -}}{{if not $first}}, {{end}}"{{$c}}"{{- $first = false -}}{{- end }}]
+    }
+{{- end }}
+{{- end }}
+
