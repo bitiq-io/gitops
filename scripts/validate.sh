@@ -66,6 +66,71 @@ for chart in toy-service toy-web; do
   done
 done
 
+log "Render + validate: argocd-apps ApplicationSet (local, sno, prod)"
+for env in local sno prod; do
+  out="$OUT_DIR/argocd-apps-$env.yaml"
+  render_chart "$ROOT_DIR/charts/argocd-apps" "$out" --set envFilter=$env
+  validate_file "$out"
+  policy_test "$out"
+done
+
+log "Render + validate: vault-runtime (local, sno, prod)"
+for env in local sno prod; do
+  out="$OUT_DIR/vault-runtime-$env.yaml"
+  app_ns="bitiq-$env"
+  role="gitops-$env"
+  render_chart "$ROOT_DIR/charts/vault-runtime" "$out" \
+    --set enabled=true \
+    --set-string vault.roleName="$role" \
+    --set-string namespaces.gitops=openshift-gitops \
+    --set-string namespaces.pipelines=openshift-pipelines \
+    --set-string namespaces.app="$app_ns"
+  validate_file "$out"
+  policy_test "$out"
+done
+
+log "Render + validate: vault-config (local, sno, prod)"
+for env in local sno prod; do
+  out="$OUT_DIR/vault-config-$env.yaml"
+  ns="bitiq-$env"
+  role="gitops-$env"
+  render_chart "$ROOT_DIR/charts/vault-config" "$out" \
+    --set enabled=true \
+    --set-string policies[0]="$role" \
+    --set-string roles[0].name="$role" \
+    --set-string roles[0].policies[0]="$role" \
+    --set-string roles[0].targetNamespaces[0]="$ns"
+  validate_file "$out"
+  policy_test "$out"
+done
+
+log "Render + validate: bitiq-umbrella chart (local, sno, prod)"
+for env in local sno prod; do
+  out="$OUT_DIR/bitiq-umbrella-$env.yaml"
+  case "$env" in
+    local) base_domain="apps-crc.testing" ;;
+    sno)   base_domain="apps.sno.example" ;;
+    prod)  base_domain="apps.prod.example" ;;
+  esac
+  # Reflect env gating from charts/argocd-apps/values.yaml
+  vso_enabled=false
+  vco_enabled=false
+  if [[ "$env" == "local" ]]; then
+    vso_enabled=true
+    vco_enabled=true
+  fi
+  render_chart "$ROOT_DIR/charts/bitiq-umbrella" "$out" \
+    --set env=$env \
+    --set-string baseDomain="$base_domain" \
+    --set-string appNamespace="bitiq-$env" \
+    --set-string repoUrl="https://github.com/bitiq-io/gitops.git" \
+    --set-string targetRevision="main" \
+    --set vault.runtime.enabled=$vso_enabled \
+    --set vault.config.enabled=$vco_enabled
+  validate_file "$out"
+  policy_test "$out"
+done
+
 log "Render + validate: eso-vault-examples"
 out="$OUT_DIR/eso-vault-examples.yaml"
 render_chart "$ROOT_DIR/charts/eso-vault-examples" "$out"

@@ -74,7 +74,7 @@
    description: Standardize on HashiCorp Vault Secrets Operator (VSO) for runtime secret delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration across all envs. Remove ESO usage and avoid ad-hoc `oc create secret` flows entirely.
    why: Uses OpenShift-certified operators, unlocks dynamic secrets/rotation, reduces layers, and keeps Vault config declarative under Git.
    dependencies: [T0]
-   status: in-progress (operator Subscriptions + bootstrap waits merged; charts/cutover pending)
+   status: in-progress (operator Subscriptions + bootstrap waits merged; vault-runtime/config charts present; ENV=local enabled via umbrella; sno/prod enablement + docs pending)
    acceptance_criteria:
       - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
       - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
@@ -113,7 +113,7 @@
     description: Replace Opaque secret fallback with automated local Vault + VCO/VSO flow. Provide a `make dev-vault` target that deploys a dev Vault, seeds required paths, applies VCO CRs (auth backends/roles, policies), and reconciles VSO resources for local.
     why: Preserves GitOps discipline locally; removes manual CLI secret creation and keeps parity with sno/prod.
     dependencies: [T6, T7, T8]
-    status: planned (local parity after VSO migration)
+    status: complete (make target + helper merged; local VSO/VCO parity achieved)
     acceptance_criteria:
       - `make dev-vault` deploys a dev Vault (ephemeral) or connects to a configured Vault, writes sample values to `gitops/data/...` paths.
       - scripts/bootstrap.sh detects/installs VSO + VCO in local and applies minimal `VaultConnection`/`VaultAuth` and VCO `KubernetesAuthEngineConfig/Role`.
@@ -125,7 +125,7 @@
     description: EventListener and Tekton SA must consume secrets only via VSO-managed Kubernetes Secrets; replace `make quay-secret` with Vault seeding + VSO reconciliation. Document resolver versions.
     why: Eliminates manual secret management in CI; aligns with enforced Vault/VSO policy.
     dependencies: [T6]
-    status: planned (post-VSO cutover)
+    status: in-progress (helpers deprecated manual secret flows; EventListener/SA wired to VSO-managed Secrets; values/docs cleanup pending)
     acceptance_criteria:
       - EventListener references a VSO-managed GitHub secret; pipeline SA mounts a VSO-managed Quay dockerconfig.
       - Provide `make dev-vault` seeding for required CI creds; remove direct `oc create secret` helper.
@@ -148,7 +148,7 @@
     description: Re-affirm pinned operator channels and require PR notes + maintainer approval before changing; add release notes links. Include VSO and VCO channels.
     why: Avoids accidental upgrades diverging from tested docs and runbooks.
     dependencies: [T0]
-    status: in-progress (matrix doc + README/AGENTS links merged; runbook links pending)
+    status: complete (channels pinned; matrix published; README/AGENTS/runbooks linked)
     acceptance_criteria:
       - bootstrap-operators values document channels with links to GitOps 1.18, Pipelines 1.20, VSO, and VCO release notes.
       - A committed operator version matrix lists the exact starting CSV / semantic version per operator and references the precise documentation set to follow during upgrades (e.g., GitOps 1.18.z install guide, VSO v1.0.1 docs).
@@ -160,7 +160,7 @@
     description: Expand `make validate` to always render/validate VSO and VCO resources (no flag) and sanity-check ApplicationSet per env. Update conftest policies to allowlist VSO/VCO CRDs while continuing to forbid Kubernetes Secret manifests in Git.
     why: Enforced VSO/VCO means validation and policy must cover them by default.
     dependencies: [T6]
-    status: in-progress (policy text updated; validation renders VSO/VCO)
+    status: complete (scripts/validate.sh renders vault-runtime/config + umbrella + AppSet per env; conftest forbids Secrets, allows VSO/VCO CRDs)
     acceptance_criteria:
       - `make validate` renders VSO/VCO resources with repo values and passes kubeconform (ignoring CRDs as needed).
       - Conftest/regos updated to allow CRD groups `secrets.hashicorp.com` and `redhatcop.redhat.io` and to keep rejecting `apiVersion: v1`, `kind: Secret` in repo manifests.
@@ -221,7 +221,7 @@
     description: Author and maintain a single source of truth for operator versions (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) including their CSV names, catalog channels, support statements, and authoritative documentation links.
     why: Ensures everyone follows the correct install/upgrade guidance and avoids mixing docs across incompatible operator versions.
     dependencies: [T6, T12, T15]
-    status: in-progress (matrix merged in PR #53; runbook links outstanding)
+    status: complete (matrix and cross-references merged)
     acceptance_criteria:
       - `docs/OPERATOR-VERSIONS.md` (or an agreed existing doc) lists: operator name, channel, startingCSV/version, Red Hat/HashiCorp documentation URL, and upgrade cadence expectations.
       - README, AGENTS.md, and runbooks link to the matrix when referencing operator setup steps.
