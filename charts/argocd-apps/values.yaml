@@ -24,8 +24,9 @@ envs:
       pause: false
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
-    # Leave empty to use cluster defaults/SCC.
-    tektonFsGroup: "1000660000"
+    # Leave empty to use cluster defaults/SCC. The bootstrap script auto-detects
+    # a valid group for the cluster and overrides this when installing.
+    tektonFsGroup: ""
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: http://vault-dev.vault-dev.svc:8200
     vaultRuntimeKubernetesMount: kubernetes
