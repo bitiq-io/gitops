@@ -43,7 +43,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
-- `charts/eso-vault-examples/` — ESO + Vault automation (legacy; renders ClusterSecretStore and ExternalSecrets). The umbrella gates this off when `vault.runtime.enabled=true` for an env to prevent dual writers. Migration to VSO/VCO is in progress; VSO/VCO are enabled for ENV=local by default in the umbrella values.
+- `charts/eso-vault-examples/` — ESO + Vault automation (legacy; renders ClusterSecretStore and ExternalSecrets). The umbrella gates this off when `vault.runtime.enabled=true` for an env to prevent dual writers. VSO/VCO are the default for ENV=local and ENV=sno; ESO remains a legacy fallback while decommissioning is tracked in T17.
 - `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
 - `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
@@ -97,7 +97,7 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 - Do not hardcode domains, tokens, or passwords in charts/values; use placeholders and document required env vars.
 - Avoid changing multiple envs in one PR unless necessary; call it out explicitly.
 - Coordinate operator channel changes with maintainers; include references (release notes/docs).
-- When introducing secrets management (SealedSecrets/ESO), add usage docs and examples.
+- When introducing additional secrets tooling, add usage docs and examples. Prefer VSO/VCO; ESO is deprecated and only retained as a legacy fallback.
 
 Notes for agents (local e2e):
 - Do not auto-create GitHub webhook secrets in charts without an explicit opt-in; use `triggers.createSecret=true` for that behavior.
