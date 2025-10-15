@@ -76,18 +76,19 @@ pipelines:
 
 triggers:
   create: true
-  # Control creation of the GitHub webhook Secret via chart (off by default to avoid stomping manual secrets)
+  # Control creation of the GitHub webhook Secret via chart (off by default).
+  # Under the Vault-first policy, this Secret is managed by VSO. Seed Vault at
+  # gitops/data/github/webhook (key: token), and let VSO reconcile the
+  # Kubernetes Secret in openshift-pipelines named below.
   createSecret: false
   eventListenerName: bitiq-listener
-  # Name of a Secret in openshift-pipelines with key `secretToken`.
-  # Create with: oc -n openshift-pipelines create secret generic github-webhook-secret \
-  #   --from-literal=secretToken=YOUR_RANDOM_SECRET
+  # Name of the Secret in openshift-pipelines with the webhook token.
   githubSecretName: github-webhook-secret
-  # Key name inside the Secret referenced by the GitHub interceptor.
+  # Key name inside the Secret referenced by the GitHub interceptor. The
   # VSO-managed default is "token"; Tekton samples often use "secretToken".
   # Set to match how your Secret stores the value.
   secretKey: token
-  # Only used if createSecret=true; required in that case
+  # Only used if createSecret=true; required in that case (not used with VSO)
   secretToken: ""
   # Expose an OpenShift Route for the EventListener
   route: true

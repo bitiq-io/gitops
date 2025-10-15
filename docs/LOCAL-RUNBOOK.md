@@ -169,7 +169,7 @@ oc -n openshift-pipelines create rolebinding argocd-app-admin \
 
 ## 6) (Optional) Rotate Image Updater token via Vault
 
-Image Updater reads its token from Vault through ESO. If you need to rotate the token, generate a new value in Argo CD, write it to `gitops/data/argocd/image-updater` (using `vault kv put ... token="<new-token>"`), and rerun `make dev-vault` (or apply the vault write in your automation). Do not recreate the Kubernetes Secret manually.
+Image Updater reads its token from Vault via the Vault Secrets Operator (VSO). If you need to rotate the token, generate a new value in Argo CD, write it to `gitops/data/argocd/image-updater` (using `vault kv put ... token="<new-token>"`), and rerun `make dev-vault` if using the local helper. Do not recreate the Kubernetes Secret manually.
 
 ## 7) Auto‑sync child apps
 
