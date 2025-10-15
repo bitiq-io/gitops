@@ -249,6 +249,33 @@ oc -n openshift-gitops annotate application/toy-service-<env> \
 
 Run `argocd app sync bitiq-umbrella-<env>` so Git reconverges with the desired state.
 
+### 6.3 Optional: Secret reload toggles
+
+If pods autoreload config from mounted Secrets, you may want to temporarily disable reloaders during sensitive rollbacks.
+
+- Disable the optional reload sidecar (toy-service or toy-web):
+
+  ```diff
+  # charts/toy-service/values-<env>.yaml
+  backend:
+    secretMount:
+      reloadSidecar:
+-       enabled: true
++       enabled: false
+
+  # charts/toy-web/values-<env>.yaml
+  frontend:
+    secretMount:
+      reloadSidecar:
+-       enabled: true
++       enabled: false
+  ```
+
+  Commit, push, and sync the umbrella app. Revert after stability is confirmed.
+
+- Vault operator restarts (VSO):
+  The repo uses VSO `VaultStaticSecret.rolloutRestartTargets` (toy-service) to trigger a rolling restart only when the Secret’s HMAC changes. This is usually safe to keep enabled during rollbacks. If you must disable it briefly for troubleshooting, set the `restartTargets.enabled` value to `false` in the `vault-runtime` chart values and sync; remember to restore it after the incident.
+
 ## 7. Post-rollback follow-up
 
 - Create an issue/ADR if the rollback surfaced a systemic problem (pipeline, testing gap, etc.).
