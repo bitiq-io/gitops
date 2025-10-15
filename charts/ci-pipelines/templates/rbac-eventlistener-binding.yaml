@@ -9,4 +9,5 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: tekton-triggers-eventlistener-clusterrole
+  # On OpenShift Pipelines (Triggers v0.33), the correct clusterrole is 'tekton-triggers-eventlistener-roles'
+  name: tekton-triggers-eventlistener-roles
