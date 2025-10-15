@@ -9,6 +9,12 @@ kind: KubernetesAuthEngineRole
 metadata:
   name: {{ $r.name }}
   namespace: openshift-gitops
+  annotations:
+    # VCO webhook forbids updating immutable spec.path. Instruct Argo CD to
+    # delete/recreate this resource instead of patching when spec.path changes.
+    # See: vkubernetesauthenginerole.kb.io (VCO v0.8.34+) ValidateUpdate denies
+    # "spec.path cannot be updated".
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
 spec:
   authentication:
     path: {{ $mp }}

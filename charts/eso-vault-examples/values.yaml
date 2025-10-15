@@ -15,7 +15,7 @@ secretStore:
       auth:
         method: kubernetes
         mount: kubernetes
-        role: gitops-prod
+        role: gitops-local
         serviceAccountRef:
           name: vault-auth
           namespace: openshift-gitops

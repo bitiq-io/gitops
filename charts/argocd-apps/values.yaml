@@ -29,7 +29,7 @@ envs:
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: http://vault-dev.vault-dev.svc:8200
     vaultRuntimeKubernetesMount: kubernetes
-    vaultRuntimeRoleName: gitops-prod
+    vaultRuntimeRoleName: gitops-local
     vaultConfigEnabled: true
     vaultConfigAddress: http://vault-dev.vault-dev.svc:8200
     vaultConfigKubernetesHost: https://kubernetes.default.svc

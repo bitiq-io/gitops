@@ -173,15 +173,15 @@ configure_kubernetes_auth() {
         token_reviewer_jwt=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" \
         kubernetes_host=\"${KUBE_HOST}\" \
         kubernetes_ca_cert=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt)\" >/dev/null
-      vault policy write gitops-prod - <<'HCL'
+      vault policy write gitops-local - <<'HCL'
       path \"gitops/data/*\" {
         capabilities = [\"create\", \"read\", \"update\", \"list\"]
       }
 HCL
-      vault write auth/kubernetes/role/gitops-prod \
+      vault write auth/kubernetes/role/gitops-local \
         bound_service_account_names=\"*\" \
         bound_service_account_namespaces=\"openshift-gitops,openshift-pipelines,bitiq-local\" \
-        policies=\"gitops-prod\" \
+        policies=\"gitops-local\" \
         ttl=\"1h\" >/dev/null
       # VCO control-plane auth: allow managing k8s auth roles
       vault policy write kube-auth - <<'HCL'
@@ -264,7 +264,7 @@ install_eso_chart() {
     --set secretStore.enabled=true \
     --set secretStore.name=vault-global \
     --set-string secretStore.provider.vault.server="http://${VAULT_RELEASE_NAME}.${DEV_NAMESPACE}.svc:8200" \
-    --set secretStore.provider.vault.auth.role=gitops-prod \
+    --set secretStore.provider.vault.auth.role=gitops-local \
     --set secretStore.provider.vault.auth.serviceAccountRef.name=vault-auth \
     --set secretStore.provider.vault.auth.serviceAccountRef.namespace=openshift-gitops \
     --set argocdToken.enabled=true \
@@ -283,7 +283,7 @@ install_vso_runtime_chart() {
     --set enabled=true \
     --set-string vault.address="${addr}" \
     --set vault.kubernetesMount=kubernetes \
-    --set vault.roleName=gitops-prod \
+    --set vault.roleName=gitops-local \
     --set-string namespaces.gitops=openshift-gitops \
     --set-string namespaces.pipelines=openshift-pipelines \
     --set-string namespaces.app=bitiq-local
