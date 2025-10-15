@@ -172,7 +172,7 @@
     description: Update README and runbooks with explicit links to GitOps 1.18 and Pipelines 1.20 install/config, include enforced VSO/VCO + Vault usage, and local Vault automation.
     why: Keeps docs version-correct and reduces onboarding friction under the new policy.
     dependencies: [T1, T2, T3, T10]
-    status: in-progress (README/AGENTS updated; runbooks pending)
+    status: complete (README/AGENTS and local/sno runbooks updated; VSO/VCO links and guidance aligned)
     acceptance_criteria:
       - README/runbooks reference correct doc versions; ROLLBACK includes multi-service + updater freeze guidance.
       - LOCAL/PROD runbooks document VSO/VCO as mandatory and describe `make dev-vault` flow; no fallback to Opaque secrets.
@@ -194,7 +194,7 @@
     description: Decide and implement a strategy for reacting to Kubernetes Secret updates produced by VSO (e.g., Stakater Reloader operator, or checksum annotations triggering rollouts). Apply minimally to toy apps and document guidance for production services.
     why: Secrets rotate without guaranteed pod reload; having a predictable pattern prevents stale credentials.
     dependencies: [T6, T7, T8]
-    status: in-progress (file mounts added; optional sidecar scaffold; targeted rollout restarts wired)
+    status: complete (optional reload sidecar scaffold present and documented; VSO rolloutRestartTargets wired for toy-service; rollback guidance added)
     acceptance_criteria:
       - Default: toys mount Secrets as files (no subPath). Optional configmap-reload sidecar scaffold present and documented; disabled by default.
       - Non-reloadable example: `VaultStaticSecret` for toy-service includes `rolloutRestartTargets` to trigger a rolling restart only on real Secret changes.
