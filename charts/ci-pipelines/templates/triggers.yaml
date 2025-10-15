@@ -3,6 +3,7 @@
 {{- $defaultSA := .Values.serviceAccountName | default "pipeline" -}}
 {{- $listenerSA := .Values.triggers.serviceAccountName -}}
 {{ if .Values.triggers.createSecret }}
+{{- $secretKey := $root.Values.triggers.secretKey | default "token" -}}
 ---
 apiVersion: v1
 kind: Secret
@@ -11,7 +12,7 @@ metadata:
   namespace: openshift-pipelines
 type: Opaque
 stringData:
-  secretToken: {{ required "Set triggers.secretToken when triggers.createSecret=true" .Values.triggers.secretToken | quote }}
+  {{ $secretKey }}: {{ required "Set triggers.secretToken when triggers.createSecret=true" .Values.triggers.secretToken | quote }}
 {{ end }}
 
 {{ range $idx, $pipeline := .Values.pipelines }}
