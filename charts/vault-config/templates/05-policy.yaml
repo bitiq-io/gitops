@@ -22,9 +22,13 @@ spec:
   type: acl
   # Grant apps access to KV v2 under the configured mount
   policy: |
+    # KV v2 data path permissions
     path "{{ $kv }}/data/*" {
+      capabilities = [{{- $first := true -}}{{- range $i, $c := $caps -}}{{if not $first}}, {{end}}"{{$c}}"{{- $first = false -}}{{- end }}]
+    }
+    # KV v2 metadata path typically requires list for discovery; include same caps or restrict to list
+    path "{{ $kv }}/metadata/*" {
       capabilities = [{{- $first := true -}}{{- range $i, $c := $caps -}}{{if not $first}}, {{end}}"{{$c}}"{{- $first = false -}}{{- end }}]
     }
 {{- end }}
 {{- end }}
-
