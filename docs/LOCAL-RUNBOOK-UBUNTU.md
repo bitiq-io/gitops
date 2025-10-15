@@ -20,7 +20,7 @@ Prerequisites:
 
 What it covers:
 - Runs `scripts/bootstrap.sh` (operators + ApplicationSet + umbrella app)
-- Ensures ESO is installed (via bootstrap) and prompts you to seed Vault via `make dev-vault`
+- Ensures Vault operators (VSO/VCO) are installed and prompts you to seed Vault via `make dev-vault`
 - Grants Argo CD controller admin in `bitiq-local` and `openshift-pipelines`
 - Prompts to add Argo CD repo credentials
 
@@ -53,12 +53,12 @@ Notes:
 - The script runs `bootstrap.sh` with `SKIP_APP_WAIT=true`, then configures RBAC/secrets and forces an Argo CD refresh before waiting for Healthy/Synced.
 - If you provide `GH_PAT`, it is accepted as an alias for `ARGOCD_REPO_PASSWORD`/`ARGOCD_REPOCREDS_PASSWORD`.
 - If a secret already exists, the helper leaves it as-is unless updated interactively (when `FAST_PATH` is not set).
-- If `AUTO_DEV_VAULT=true` (or `FAST_PATH=true` with any of `ARGOCD_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `QUAY_DOCKERCONFIGJSON`, or `QUAY_USERNAME`+`QUAY_PASSWORD` set), the helper runs `dev-vault` automatically to seed Vault so ESO reconciles the Secrets.
+- If `AUTO_DEV_VAULT=true` (or `FAST_PATH=true` with any of `ARGOCD_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `QUAY_DOCKERCONFIGJSON`, or `QUAY_USERNAME`+`QUAY_PASSWORD` set), the helper runs `dev-vault` automatically to seed Vault so the Vault Secrets Operator (VSO) reconciles the Secrets.
 
-Seeding ESO/Vault non-interactively (optional):
+Seed Vault non-interactively (optional):
 
 ```bash
-# Use the same env vars to seed real credentials into Vault so ESO reconciles
+# Use the same env vars to seed real credentials into Vault so VSO reconciles
 ARGOCD_TOKEN='<argocd-api-token>' \
 GITHUB_WEBHOOK_SECRET='<random-webhook-secret>' \
 QUAY_USERNAME='<quay-user>' QUAY_PASSWORD='<quay-token>' QUAY_EMAIL='<you@example.com>' \
