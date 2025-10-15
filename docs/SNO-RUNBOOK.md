@@ -133,32 +133,77 @@ Run these steps after the cluster is reachable.
    oc -n bitiq-sno get routes
    ```
 
-## 6. Configure secrets & credentials (ESO + Vault)
+## 6. Configure secrets & credentials (Vault operators)
 
-1. **Argo CD repository access (write-enabled)**
-   - Ensure the Argo CD instance can push to your Git repository (SSH key or HTTPS PAT with repo scope).
-   - Validate with `argocd repo list` or `git ls-remote` using the same credentials.
+The SNO environment now uses HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO) by default. Bootstrap renders `vault-config-sno` (control plane, VCO) and `vault-runtime-sno` (runtime, VSO) Applications. Confirm the following before seeding credentials:
 
-2. **Argo CD Image Updater token**
+1. **Review env parameters** (optional override via `charts/argocd-apps/values.yaml`):
+   ```yaml
+   - name: sno
+     vaultRuntimeEnabled: true
+     vaultRuntimeAddress: https://vault-sno.vault.svc:8200      # replace with your Vault service DNS
+     vaultRuntimeKubernetesMount: kubernetes
+     vaultRuntimeRoleName: gitops-sno
+     vaultConfigEnabled: true
+     vaultConfigAddress: https://vault-sno.vault.svc:8200       # same endpoint the VCO will manage
+     vaultConfigKubernetesHost: https://kubernetes.default.svc
+     vaultConfigMountPath: kubernetes
+     vaultConfigConnectionRole: kube-auth
+     vaultConfigRoleName: gitops-sno
+     vaultConfigPolicyName: gitops-sno
+   ```
+   Update the addresses/role names to match your Vault deployment. The umbrella chart injects these values into the VCO/VSO Helm releases.
+
+2. **Verify Applications**
+   ```bash
+   oc -n openshift-gitops get application vault-config-sno vault-runtime-sno
+   ```
+   Both Applications should reach `Synced/Healthy`. If Vault is not yet reachable, pause sync until connectivity is restored to avoid repeated failures.
+
+3. **Provision Vault configuration (VCO)**
+   - Ensure Vault exposes the Kubernetes auth mount referenced above (typically `auth/kubernetes`).
+   - After the `vault-config-sno` Application syncs, Vault will have:
+     - `AuthEngineMount` + `KubernetesAuthEngineConfig` for the mount/path.
+     - `Policy` granting read access to `gitops/data/*`.
+     - `KubernetesAuthEngineRole` (`gitops-sno` by default) bound to the `default` ServiceAccount in `openshift-gitops`, `openshift-pipelines`, and `bitiq-sno`.
+   - If you need to scope the policy, edit `charts/vault-config/values.yaml` or override via the Application parameters before syncing.
+
+4. **Seed Vault secrets** (no `oc create secret`)
    ```bash
    export ARGOCD_TOKEN=<argocd-api-token>
    vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
-   ```
 
-3. **Quay (or other registry) push secret**
-   ```bash
-   # dockerconfigjson with auth for quay.io
-   vault kv put gitops/data/registry/quay dockerconfigjson='{"auths":{"quay.io":{"auth":"<base64 user:token>"}}}'
-   ```
+   # dockerconfigjson for the Tekton pipeline ServiceAccount
+   vault kv put gitops/data/registry/quay \
+     dockerconfigjson='{"auths":{"quay.io":{"auth":"<base64 user:token>"}}}'
 
-4. **GitHub webhook secret (Tekton triggers)**
-   ```bash
+   # GitHub webhook shared secret used by Tekton triggers
    vault kv put gitops/data/github/webhook token='<random-string>'
-   ```
-   - Point your repository webhook at the EventListener Route: `https://el-bitiq-listener-openshift-pipelines.apps.<cluster-domain>/`
 
-5. **Optional: Image pull secrets**
-   - If your sample app images are private, configure `imageUpdater.pullSecret` via chart values or manually create the secret and update the Application parameters.
+   # Optional runtime configs for the sample apps
+   vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
+   vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-api.apps.<cluster-domain>'
+   ```
+
+5. **Wait for VSO to reconcile**
+   ```bash
+   oc -n openshift-gitops get vaultstaticsecrets.v1beta1.secrets.hashicorp.com
+   oc -n openshift-pipelines get secrets quay-auth github-webhook-secret
+   oc -n bitiq-sno get secrets toy-service-config toy-web-config
+   ```
+   The `vault-runtime-sno` Application renders `VaultStaticSecret` resources with `rolloutRestartTargets` for toy-service so deployments restart when Secret HMAC changes.
+
+6. **Tekton integration**
+   Once `quay-auth` exists, link it for image pulls/builds (idempotent):
+   ```bash
+   oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount
+   ```
+
+7. **Argo CD repo access**
+   - Ensure OpenShift GitOps has write credentials for this repo (PAT or SSH key).
+   - Validate with `argocd repo list` or a `git ls-remote` using the stored credentials. This is required for Image Updater write-back.
+
+> Need to use ESO temporarily? Disable `vaultRuntimeEnabled`/`vaultConfigEnabled` for the env in `charts/argocd-apps/values.yaml` and consult the legacy appendix in `docs/PROD-SECRETS.md`. Avoid running ESO and VSO simultaneously—the repository’s guardrail policy and Argo Application gating block dual writers.
 
 ## 7. Smoke tests & validation
 

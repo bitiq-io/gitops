@@ -74,7 +74,7 @@
    description: Standardize on HashiCorp Vault Secrets Operator (VSO) for runtime secret delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration across all envs. Remove ESO usage and avoid ad-hoc `oc create secret` flows entirely.
    why: Uses OpenShift-certified operators, unlocks dynamic secrets/rotation, reduces layers, and keeps Vault config declarative under Git.
    dependencies: [T0]
-   status: in-progress (operator Subscriptions + bootstrap waits merged; vault-runtime/config charts present; ENV=local enabled via umbrella; sno/prod enablement + docs pending)
+   status: complete (local + sno use VSO/VCO; docs/directives updated; guardrails prevent dual writers)
    acceptance_criteria:
       - scripts/bootstrap.sh installs pinned Subscriptions for VSO (`secrets.hashicorp.com`) and VCO (`redhatcop.redhat.io`), waits for CSV InstallSucceeded, and verifies CRDs present (e.g., `vaultconnections.secrets.hashicorp.com`, `kubernetesauthengineconfigs.redhatcop.redhat.io`).
       - New charts exist: `charts/vault-runtime/` (VSO: `VaultConnection`, `VaultAuth`, `VaultStaticSecret`/`VaultDynamicSecret`) and `charts/vault-config/` (VCO: mounts, auth backends/roles, policies) rendered by default for all envs. `charts/eso-vault-examples/` is deprecated.
