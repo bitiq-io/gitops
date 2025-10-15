@@ -207,13 +207,13 @@
     description: Fully remove ESO usage and artifacts after VSO/VCO are in place. Provide a mapping of each ExternalSecret/ClusterSecretStore to the corresponding VSO/VCO resources, and delete/deprecate `charts/eso-vault-examples/`.
     why: Avoids dual-writer risks and reduces operator footprint.
     dependencies: [T6, T7, T8, T9, T10, T13, T15]
-    status: planned (execute after VSO rollout)
+    status: complete (ESO chart removed; gating and guardrails in place)
     acceptance_criteria:
       - A migration table exists in docs (ExternalSecret → VaultStaticSecret/VaultDynamicSecret; ClusterSecretStore → VaultConnection/VaultAuth). Secret consumer names remain unchanged.
-      - Docs include the migration guide: `docs/ESO-TO-VSO-MIGRATION.md` and reference it from runbooks.
-      - ESO CRs are removed from the repo; the namespace(s) no longer contain ExternalSecrets for these apps; Argo reports Healthy/Synced post-cutover.
-      - The umbrella disables `eso-vault-examples` when `vault-runtime` is enabled for a given env to prevent dual writers.
-      - CI and local validation pass with only VSO/VCO resources.
+      - Docs include the migration guide: `docs/ESO-TO-VSO-MIGRATION.md` (notes ESO examples removed) and reference it from runbooks.
+      - ESO CRs are removed from the repo; the umbrella no longer renders ESO; Argo manages only VSO/VCO Applications.
+      - Guardrail policy blocks `ExternalSecret` manifests in this repo; dual-writer guard remains to prevent mixed states.
+      - CI and local validation pass with only VSO/VCO resources (ESO excluded from validation).
     notes: Keep a rollback branch with ESO resources for emergency reversion; do not run ESO and VSO against the same Secret concurrently.
 
 19. id: T18

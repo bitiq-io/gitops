@@ -13,7 +13,7 @@ DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
 ESO_NAMESPACE=${ESO_NAMESPACE:-external-secrets-operator}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
 HELM_RELEASE=${ESO_RELEASE_NAME:-eso-vault-examples}
-USE_VAULT_OPERATORS=${VAULT_OPERATORS:-false}
+USE_VAULT_OPERATORS=${VAULT_OPERATORS:-true}
 # Allow overriding the dev Vault image; default to upstream Docker Hub
 DEV_VAULT_IMAGE=${DEV_VAULT_IMAGE:-hashicorp/vault:1.15.6}
 
@@ -365,30 +365,8 @@ case "${ACTION}" in
       fi
       log "Dev Vault + VSO secrets ready."
     else
-      install_eso_chart
-      if oc -n "${ESO_NAMESPACE}" get subscription external-secrets-operator >/dev/null 2>&1; then
-        wait_for_csv "${ESO_NAMESPACE}" "external-secrets-operator"
-      else
-        log "Subscription external-secrets-operator not found in ${ESO_NAMESPACE}; skipping CSV wait (ensure bootstrap installed ESO)."
-      fi
-      ensure_crds externalsecrets.external-secrets.io
-      ensure_crds clustersecretstores.external-secrets.io
-      # Wait for ESO-managed Secrets to reconcile, then perform local conveniences
-      wait_for_secret openshift-gitops argocd-image-updater-secret 240 || true
-      wait_for_secret openshift-pipelines quay-auth 240 || true
-      wait_for_secret openshift-pipelines github-webhook-secret 240 || true
-      # Link quay-auth to Tekton SA (idempotent, local-only convenience)
-      if oc -n openshift-pipelines get sa pipeline >/dev/null 2>&1 && \
-         oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
-        oc -n openshift-pipelines secrets link pipeline quay-auth --for=pull,mount >/dev/null 2>&1 || true
-        log "Linked quay-auth to SA 'pipeline' in openshift-pipelines"
-      fi
-      # Restart Image Updater to pick up token changes
-      if oc -n openshift-gitops get deploy/argocd-image-updater >/dev/null 2>&1; then
-        oc -n openshift-gitops rollout restart deploy/argocd-image-updater >/dev/null 2>&1 || true
-        log "Restarted argocd-image-updater deployment to pick up token"
-      fi
-      log "Dev Vault + ESO secrets ready."
+      log "VAULT_OPERATORS=false requested, but ESO chart has been removed (T17). Set VAULT_OPERATORS=true to use VSO/VCO."
+      exit 1
     fi
     ;;
   down)
