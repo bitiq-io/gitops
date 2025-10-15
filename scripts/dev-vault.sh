@@ -14,6 +14,8 @@ ESO_NAMESPACE=${ESO_NAMESPACE:-external-secrets-operator}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
 HELM_RELEASE=${ESO_RELEASE_NAME:-eso-vault-examples}
 USE_VAULT_OPERATORS=${VAULT_OPERATORS:-false}
+# Allow overriding the dev Vault image; default to upstream Docker Hub
+DEV_VAULT_IMAGE=${DEV_VAULT_IMAGE:-hashicorp/vault:1.15.6}
 
 require oc
 require helm
@@ -35,6 +37,19 @@ metadata:
   name: {{VAULT_RELEASE_NAME}}
   namespace: {{DEV_NAMESPACE}}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{VAULT_RELEASE_NAME}}-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: {{VAULT_RELEASE_NAME}}
+    namespace: {{DEV_NAMESPACE}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,7 +68,7 @@ spec:
       serviceAccountName: {{VAULT_RELEASE_NAME}}
       containers:
         - name: vault
-          image: hashicorp/vault:1.15.6
+          image: {{VAULT_IMAGE}}
           args:
             - "server"
             - "-dev"
@@ -71,6 +86,15 @@ spec:
           env:
             - name: VAULT_DEV_LISTEN_ADDRESS
               value: 0.0.0.0:8200
+            # OpenShift Restricted SCC blocks setcap; skip it to avoid crashloops
+            - name: SKIP_SETCAP
+              value: "true"
+            # Ensure Vault doesn't attempt mlock; safe for dev mode
+            - name: VAULT_DISABLE_MLOCK
+              value: "true"
+            # Vault dev writes ~/.vault-token; ensure writable HOME
+            - name: HOME
+              value: /tmp
 ---
 apiVersion: v1
 kind: Service
@@ -89,10 +113,46 @@ YAML
 
 apply_manifests() {
   log "Deploying dev Vault in namespace ${DEV_NAMESPACE}"
+  # Import image into an ImageStream to avoid node-side registry mirror rewrites
+  local src_image tag image_for_deploy
+  src_image="${DEV_VAULT_IMAGE}"
+  tag="${src_image##*:}"
+  if [[ "${tag}" == "${src_image}" ]] || [[ "${src_image}" == *"@"* ]] || [[ "${src_image}" == *"@sha256:"* ]]; then
+    tag="latest"
+  fi
+  # Create imagestream and try to import the source image (best-effort)
+  oc -n "${DEV_NAMESPACE}" apply -f - >/dev/null 2>&1 || true <<EOF
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: ${VAULT_RELEASE_NAME}
+EOF
+  if oc -n "${DEV_NAMESPACE}" import-image "${VAULT_RELEASE_NAME}:${tag}" --from="${src_image}" --confirm >/dev/null 2>&1; then
+    image_for_deploy="image-registry.openshift-image-registry.svc:5000/${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
+    log "Imported ${src_image} into ImageStream ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
+  else
+    image_for_deploy="${src_image}"
+    log "WARNING: Failed to import ${src_image}. Falling back to using it directly."
+  fi
   render_manifests | sed \
     -e "s/{{DEV_NAMESPACE}}/${DEV_NAMESPACE}/g" \
     -e "s/{{VAULT_RELEASE_NAME}}/${VAULT_RELEASE_NAME}/g" \
+    -e "s#{{VAULT_IMAGE}}#${image_for_deploy}#g" \
     | oc apply -f -
+}
+
+ensure_kv_mount() {
+  # Ensure a KV v2 mount exists at path "gitops"
+  log "Ensuring KV v2 mount exists at path 'gitops'"
+  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
+    sh -c "
+      set -euo pipefail
+      export VAULT_ADDR=\"http://127.0.0.1:8200\"
+      export VAULT_TOKEN=\"root\"
+      if ! vault secrets list -format=json | grep -q '"gitops/"'; then
+        vault secrets enable -path=gitops -version=2 kv >/dev/null
+      fi
+    "
 }
 
 wait_for_deployment() {
@@ -114,13 +174,13 @@ configure_kubernetes_auth() {
         kubernetes_host=\"${KUBE_HOST}\" \
         kubernetes_ca_cert=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt)\" >/dev/null
       vault policy write gitops-prod - <<'HCL'
-path \"gitops/data/*\" {
-  capabilities = [\"create\", \"read\", \"update\", \"list\"]
-}
+      path \"gitops/data/*\" {
+        capabilities = [\"create\", \"read\", \"update\", \"list\"]
+      }
 HCL
       vault write auth/kubernetes/role/gitops-prod \
-        bound_service_account_names=\"vault-auth\" \
-        bound_service_account_namespaces=\"openshift-gitops\" \
+        bound_service_account_names=\"*\" \
+        bound_service_account_namespaces=\"openshift-gitops,openshift-pipelines,bitiq-local\" \
         policies=\"gitops-prod\" \
         ttl=\"1h\" >/dev/null
     "
@@ -157,11 +217,11 @@ seed_secrets() {
       set -euo pipefail
       export VAULT_ADDR=\"http://127.0.0.1:8200\"
       export VAULT_TOKEN=\"root\"
-      vault kv put gitops/data/argocd/image-updater token=\"${argocd_token}\" >/dev/null
-      vault kv put gitops/data/registry/quay dockerconfigjson=\"${docker_json_esc}\" >/dev/null
-      vault kv put gitops/data/github/webhook token=\"${webhook_secret}\" >/dev/null
-      vault kv put gitops/data/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\" >/dev/null
-      vault kv put gitops/data/services/toy-web/config api_base_url=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
+      vault kv put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\" >/dev/null
+      vault kv put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\" >/dev/null
+      vault kv put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\" >/dev/null
+      vault kv put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\" >/dev/null
+      vault kv put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
     "
 }
 
@@ -246,6 +306,7 @@ case "${ACTION}" in
   up)
     apply_manifests
     wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+    ensure_kv_mount
     configure_kubernetes_auth
     seed_secrets
     if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then

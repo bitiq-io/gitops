@@ -13,29 +13,29 @@ namespaces:
 secrets:
   argocdImageUpdater:
     enabled: true
-    namespace: "{{ .Values.namespaces.gitops }}"
+    namespace: ""
     destinationName: argocd-image-updater-secret
-    path: gitops/data/argocd/image-updater
+    path: argocd/image-updater
     type: Opaque
   quayAuth:
     enabled: true
-    namespace: "{{ .Values.namespaces.pipelines }}"
+    namespace: ""
     destinationName: quay-auth
-    path: gitops/data/registry/quay
+    path: registry/quay
     type: kubernetes.io/dockerconfigjson
     sourceKey: dockerconfigjson
   githubWebhook:
     enabled: true
-    namespace: "{{ .Values.namespaces.pipelines }}"
+    namespace: ""
     destinationName: github-webhook-secret
-    path: gitops/data/github/webhook
+    path: github/webhook
     type: Opaque
     sourceKey: token
   toyServiceConfig:
     enabled: true
-    namespace: "{{ .Values.namespaces.app }}"
+    namespace: ""
     destinationName: toy-service-config
-    path: gitops/data/services/toy-service/config
+    path: services/toy-service/config
     restartTargets:
       enabled: true
       items:
@@ -43,6 +43,6 @@ secrets:
           name: toy-service
   toyWebConfig:
     enabled: true
-    namespace: "{{ .Values.namespaces.app }}"
+    namespace: ""
     destinationName: toy-web-config
-    path: gitops/data/services/toy-web/config
+    path: services/toy-web/config

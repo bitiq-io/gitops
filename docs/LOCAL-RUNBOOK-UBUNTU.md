@@ -220,6 +220,7 @@ Environment overrides supported by `make dev-vault`:
 - `ARGOCD_TOKEN` → writes to `gitops/data/argocd/image-updater.token`
 - `GITHUB_WEBHOOK_SECRET` → writes to `gitops/data/github/webhook.token`
 - `QUAY_DOCKERCONFIGJSON` or `QUAY_USERNAME` + `QUAY_PASSWORD` [+ `QUAY_EMAIL`] → writes to `gitops/data/registry/quay.dockerconfigjson`
+- `DEV_VAULT_IMAGE` → override the dev Vault container image (default `hashicorp/vault:1.15.6`). The helper imports this into an ImageStream and uses the internal registry to avoid OpenShift registry mirror rewrites. If your cluster rewrites to a non-existent mirror, set this to a reachable image or pinned digest.
 
 If unset, the helper seeds safe demo placeholders to get Secrets created; rotate by setting the envs above and re-running `make dev-vault`.
 

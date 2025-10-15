@@ -69,8 +69,9 @@ spec:
 {{- $triggerAccumulator := dict "items" (list) }}
 {{- range $idx, $pipeline := .Values.pipelines }}
 {{- $events := $pipeline.eventTypes | default (list "push" "pull_request") -}}
+{{- $githubSecretKey := $root.Values.triggers.secretKey | default "token" -}}
 {{- $githubParams := list
-  (dict "name" "secretRef" "value" (dict "secretName" $root.Values.triggers.githubSecretName "secretKey" "secretToken"))
+  (dict "name" "secretRef" "value" (dict "secretName" $root.Values.triggers.githubSecretName "secretKey" $githubSecretKey))
   (dict "name" "eventTypes" "value" $events)
 }}
 {{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
