@@ -24,9 +24,9 @@ spec:
     - {{ $sa }}
 {{- end }}
   targetNamespaces:
+    targetNamespaces:
 {{- range $ns := $r.targetNamespaces }}
-    - {{ $ns }}
+      - {{ $ns }}
 {{- end }}
 {{- end }}
 {{- end }}
-
