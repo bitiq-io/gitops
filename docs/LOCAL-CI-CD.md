@@ -52,9 +52,9 @@ oc -n openshift-pipelines create rolebinding argocd-app-admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller || true
 ```
 
-3) Image Updater token (ESO)
+3) Image Updater token (VSO)
 
-Generate a token (via SSO or a local account) and write it to Vault so ESO reconciles the Kubernetes Secret:
+Generate a token (via SSO or a local account) and write it to Vault so the Vault Secrets Operator (VSO) reconciles the Kubernetes Secret:
 
 ```bash
 ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
@@ -63,13 +63,13 @@ export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
 vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
 ```
 
-4) Tekton prerequisites (namespace + webhook secret via ESO)
+4) Tekton prerequisites (namespace + webhook secret via VSO)
 
 ```bash
 # Creates ns bitiq-ci and grants image pusher to pipeline SA
 make tekton-setup
 
-# Seed webhook secret in Vault (ESO will reconcile)
+# Seed webhook secret in Vault (VSO will reconcile)
 vault kv put gitops/data/github/webhook token="$(openssl rand -base64 32)"
 ```
 
