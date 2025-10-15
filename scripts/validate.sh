@@ -131,11 +131,7 @@ for env in local sno prod; do
   policy_test "$out"
 done
 
-log "Render + validate: eso-vault-examples"
-out="$OUT_DIR/eso-vault-examples.yaml"
-render_chart "$ROOT_DIR/charts/eso-vault-examples" "$out"
-validate_file "$out"
-policy_test "$out"
+# ESO examples removed (T17). Validation intentionally excludes ESO to enforce VSO/VCO-only manifests.
 
 log "Render + validate: image-updater"
 out="$OUT_DIR/image-updater.yaml"

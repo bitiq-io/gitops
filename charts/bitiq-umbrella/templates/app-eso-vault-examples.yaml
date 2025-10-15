@@ -1,28 +1,3 @@
-{{- if not .Values.vault.runtime.enabled }}
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: eso-vault-examples-{{ .Values.env }}
-  namespace: {{ .Values.gitopsNamespace }}
-  labels:
-    bitiq.io/env: {{ .Values.env }}
-    app.kubernetes.io/part-of: bitiq-umbrella
-spec:
-  project: default
-  source:
-    repoURL: {{ .Values.repoUrl }}
-    targetRevision: {{ .Values.targetRevision }}
-    path: charts/eso-vault-examples
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: external-secrets-operator
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-{{- end }}
 {{- if .Values.vault.runtime.enabled }}
 ---
 apiVersion: argoproj.io/v1alpha1

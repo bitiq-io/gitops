@@ -268,9 +268,9 @@ Key values
 
 Local dev (ENV=local)
 
-- `make dev-vault` deploys a dev Vault and seeds demo secrets under `gitops/...`.
+- `make dev-vault` deploys a dev Vault and seeds demo secrets under `gitops/...` (VSO/VCO path by default).
 - The helper configures a permissive `kube-auth` policy so VCO can manage `/sys/policies/acl/*` locally and enables a kv‑v2 mount at `gitops/`.
-- Use `VAULT_OPERATORS=true make dev-vault` to deploy the VSO runtime chart against the dev Vault.
+- Set `VAULT_OPERATORS=false` only for legacy troubleshooting (ESO path removed in T17; not supported).
 
 Verification (handy commands)
 

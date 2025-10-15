@@ -1,6 +1,6 @@
 # ESO → VSO/VCO Migration Guide
 
-This guide maps existing ESO resources to their VSO/VCO equivalents and outlines the cutover flow per secret, per environment. Use this when migrating from External Secrets Operator (ESO) to HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO).
+This guide maps existing ESO resources to their VSO/VCO equivalents and outlines the cutover flow per secret, per environment. Use this when migrating from External Secrets Operator (ESO) to HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO). The repository has removed ESO example manifests (T17); use an older tag if you need to reference the legacy chart.
 
 ## Resource Mapping
 
@@ -46,7 +46,7 @@ This guide maps existing ESO resources to their VSO/VCO equivalents and outlines
    - Keep destination Secret names identical.
 
 4) Gate off ESO
-   - In the umbrella, set `vault.runtime.enabled=true` for the env to suppress `eso-vault-examples` and deploy `vault-runtime`/`vault-config` Applications.
+  - In the umbrella, set `vault.runtime.enabled=true` for the env to suppress ESO and deploy `vault-runtime`/`vault-config` Applications.
    - Verify VSO has reconciled destination Secrets; check pod env/volume mounts.
 
 5) Verify and clean up
@@ -55,8 +55,8 @@ This guide maps existing ESO resources to their VSO/VCO equivalents and outlines
 
 ## Local (ENV=local) quick path
 
-- Option A (umbrella): set `vault.runtime.enabled=true` and `vault.config.enabled=true` with local dev Vault address.
-- Option B (helper): run `VAULT_OPERATORS=true make dev-vault` to install VSO runtime chart pointed at the dev Vault.
+- Umbrella: set `vault.runtime.enabled=true` and `vault.config.enabled=true` with local dev Vault address.
+- Helper: run `make dev-vault` (defaults to VSO/VCO) to install VSO runtime chart pointed at the dev Vault.
 
 ## Notes
 

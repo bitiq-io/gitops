@@ -43,7 +43,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
-- `charts/eso-vault-examples/` — ESO + Vault automation (legacy; renders ClusterSecretStore and ExternalSecrets). The umbrella gates this off when `vault.runtime.enabled=true` for an env to prevent dual writers. VSO/VCO are the default for ENV=local and ENV=sno; ESO remains a legacy fallback while decommissioning is tracked in T17.
+- `charts/eso-vault-examples/` — REMOVED in T17. ESO is deprecated; use VSO (runtime) + VCO (control plane). For historical context, see docs/ESO-TO-VSO-MIGRATION.md.
 - `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
 - `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
