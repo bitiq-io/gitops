@@ -75,8 +75,15 @@ spec:
   (dict "name" "eventTypes" "value" $events)
 }}
 {{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
-{{- if $pipeline.repoFullName }}
-  {{- $celParams := list (dict "name" "filter" "value" (printf "body.repository.full_name == \"%s\"" $pipeline.repoFullName)) }}
+{{- $filter := "" -}}
+{{- if $pipeline.repoFullNames }}
+  {{- /* Match if full_name appears in any of the configured names */ -}}
+  {{- $filter = printf "body.repository.full_name in %s" ($pipeline.repoFullNames | toJson) -}}
+{{- else if $pipeline.repoFullName }}
+  {{- $filter = printf "body.repository.full_name == \"%s\"" $pipeline.repoFullName -}}
+{{- end }}
+{{- if $filter }}
+  {{- $celParams := list (dict "name" "filter" "value" $filter) }}
   {{- $interceptors = append $interceptors (dict "ref" (dict "name" "cel") "params" $celParams) }}
 {{- end }}
 {{- $triggerName := trimSuffix "-" (trunc 63 (printf "%s-github" $pipeline.name)) }}
