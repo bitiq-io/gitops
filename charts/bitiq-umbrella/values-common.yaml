@@ -61,7 +61,10 @@ ciPipelines:
       imageNamespace: paulcapestany
       imageName: toy-service
       tlsVerify: "true"
-      repoFullName: PaulCapestany/toy-service
+      # Accept either personal or org repo full name
+      repoFullNames:
+        - PaulCapestany/toy-service
+        - bitiq-io/toy-service
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |
@@ -76,7 +79,9 @@ ciPipelines:
       imageNamespace: paulcapestany
       imageName: toy-web
       tlsVerify: "true"
-      repoFullName: PaulCapestany/toy-web
+      repoFullNames:
+        - PaulCapestany/toy-web
+        - bitiq-io/toy-web
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/nodejs-20:1-1758500456
       testScript: |
