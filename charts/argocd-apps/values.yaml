@@ -71,3 +71,14 @@ envs:
     toyWebImageUpdater:
       pause: false
     tektonFsGroup: ""
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: https://vault-prod.vault.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-prod
+    vaultConfigEnabled: true
+    vaultConfigAddress: https://vault-prod.vault.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-prod
+    vaultConfigPolicyName: gitops-prod
