@@ -191,6 +191,13 @@ HCL
       path \"auth/kubernetes/config\" {
         capabilities = [\"read\", \"update\"]
       }
+      # Allow broad read/update under the kubernetes auth mount (dev only)
+      path \"auth/kubernetes/*\" {
+        capabilities = [\"create\", \"read\", \"update\", \"list\"]
+      }
+      # Token self-introspection (often used by operators)
+      path \"auth/token/lookup-self\" { capabilities = [\"read\"] }
+      path \"auth/token/lookup\" { capabilities = [\"read\"] }
       path \"auth/role/*\" {
         capabilities = [\"read\", \"list\"]
       }
