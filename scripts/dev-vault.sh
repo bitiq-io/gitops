@@ -124,7 +124,8 @@ apply_manifests() {
   # using the source image directly. This handles OpenShift registry mirror
   # rewrites (requires import) while avoiding indefinite hangs on egress‑
   # restricted clusters.
-  want_import=${DEV_VAULT_IMPORT:-true}
+  # Default to skipping ImageStream import to avoid hangs on egress-limited clusters
+  want_import=${DEV_VAULT_IMPORT:-false}
   import_timeout=${DEV_VAULT_IMPORT_TIMEOUT:-15}
   if command -v timeout >/dev/null 2>&1; then
     has_timeout="true"

@@ -239,8 +239,8 @@ suggest_dev_vault_if_missing() {
 
   local AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-}
   if [[ "${have_env_creds}" == "true" ]]; then
-    log "Detected env-provided credentials; (re)seeding Vault via dev-vault."
-    bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+    log "Detected env-provided credentials; (re)seeding Vault via dev-vault (skip ImageStream import)."
+    DEV_VAULT_IMPORT=false bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
     return 0
   fi
 
@@ -248,10 +248,10 @@ suggest_dev_vault_if_missing() {
     log "Detected ${missing} missing and ${placeholders} placeholder Vault-managed Secret(s)."
     if [[ "${AUTO_DEV_VAULT}" == "true" || "${FAST_PATH:-}" == "true" ]]; then
       log "Auto-seeding Vault via dev-vault (AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-false}, FAST_PATH=${FAST_PATH:-false})"
-      bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+      DEV_VAULT_IMPORT=false bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
     else
       if prompt_yes "Run dev-vault now to seed Vault and reconcile secrets?"; then
-        bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+        DEV_VAULT_IMPORT=false bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
       else
         log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
       fi
