@@ -307,6 +307,11 @@ install_vso_runtime_chart() {
   local runtime_release=${VSO_RUNTIME_RELEASE_NAME:-vault-runtime}
   local addr="http://${VAULT_RELEASE_NAME}.${DEV_NAMESPACE}.svc:8200"
   log "Installing VSO runtime chart pointing at ${addr}"
+  # If the Argo CD umbrella Application already manages VSO CRs, skip direct Helm install to avoid ownership conflicts.
+  if oc -n openshift-gitops get application vault-runtime-local >/dev/null 2>&1; then
+    log "Detected Argo Application vault-runtime-local — skipping direct Helm install and letting Argo reconcile VSO CRs."
+    return 0
+  fi
   helm upgrade --install "${runtime_release}" charts/vault-runtime \
     --namespace openshift-gitops \
     --set enabled=true \
