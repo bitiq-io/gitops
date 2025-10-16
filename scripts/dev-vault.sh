@@ -10,9 +10,7 @@ require() {
 
 ACTION=${1:-up}
 DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
-ESO_NAMESPACE=${ESO_NAMESPACE:-external-secrets-operator}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
-HELM_RELEASE=${ESO_RELEASE_NAME:-eso-vault-examples}
 USE_VAULT_OPERATORS=${VAULT_OPERATORS:-true}
 # Allow overriding the dev Vault image; default to upstream Docker Hub
 DEV_VAULT_IMAGE=${DEV_VAULT_IMAGE:-hashicorp/vault:1.15.6}
@@ -288,27 +286,7 @@ seed_secrets() {
     "
 }
 
-install_eso_chart() {
-  log "Ensuring vault-auth ServiceAccount exists in openshift-gitops"
-  oc -n openshift-gitops create sa vault-auth >/dev/null 2>&1 || true
-
-  log "Installing eso-vault-examples chart with dev Vault overrides"
-  helm upgrade --install "${HELM_RELEASE}" charts/eso-vault-examples \
-    --namespace "${ESO_NAMESPACE}" \
-    --create-namespace \
-    --set enabled=true \
-    --set secretStore.enabled=true \
-    --set secretStore.name=vault-global \
-    --set-string secretStore.provider.vault.server="http://${VAULT_RELEASE_NAME}.${DEV_NAMESPACE}.svc:8200" \
-    --set secretStore.provider.vault.auth.role=gitops-local \
-    --set secretStore.provider.vault.auth.serviceAccountRef.name=vault-auth \
-    --set secretStore.provider.vault.auth.serviceAccountRef.namespace=openshift-gitops \
-    --set argocdToken.enabled=true \
-    --set quayCredentials.enabled=true \
-    --set webhookSecret.enabled=true \
-    --set toyServiceConfig.enabled=true \
-    --set toyWebConfig.enabled=true
-}
+install_eso_chart() { :; }
 
 install_vso_runtime_chart() {
   local runtime_release=${VSO_RUNTIME_RELEASE_NAME:-vault-runtime}
@@ -409,8 +387,6 @@ case "${ACTION}" in
   down)
     log "Removing dev Vault resources"
     oc delete namespace "${DEV_NAMESPACE}" --ignore-not-found
-    log "Deleting eso-vault-examples release (if present)"
-    helm -n "${ESO_NAMESPACE}" uninstall "${HELM_RELEASE}" >/dev/null 2>&1 || true
     ;;
   *)
     fatal "Unknown action '${ACTION}'. Use up or down."

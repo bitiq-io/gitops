@@ -67,8 +67,8 @@ if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
   VAULT_RECONCILER_NAME="VSO"
   VAULT_RECONCILER_LONG="Vault operators (VSO/VCO)"
 else
-  VAULT_RECONCILER_NAME="ESO"
-  VAULT_RECONCILER_LONG="External Secrets Operator (ESO)"
+  VAULT_RECONCILER_NAME="unsupported"
+  VAULT_RECONCILER_LONG="External Secrets Operator is not supported (removed)"
 fi
 
 require oc
@@ -302,6 +302,11 @@ ensure_argocd_ui_rbac
 log "Ensuring application namespace access"
 oc new-project bitiq-local >/dev/null 2>&1 || true
 oc -n bitiq-local create rolebinding argocd-app-admin \
+  --clusterrole=admin \
+  --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller >/dev/null 2>&1 || true
+
+# Also grant Argo CD controller admin in pipelines namespace for VSO CRs/secrets
+oc -n openshift-pipelines create rolebinding argocd-app-admin \
   --clusterrole=admin \
   --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller >/dev/null 2>&1 || true
 

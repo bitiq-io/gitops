@@ -1,0 +1,36 @@
+---
+# Grant Argo CD application-controller admin in the application namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-app-admin
+  namespace: {{ .Values.appNamespace }}
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+    bitiq.io/env: {{ .Values.env }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.argocdControllerServiceAccount | default "openshift-gitops-argocd-application-controller" }}
+    namespace: {{ .Values.gitopsNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+# Grant Argo CD application-controller admin in the pipelines namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-app-admin
+  namespace: {{ .Values.pipelinesNamespace }}
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+    bitiq.io/env: {{ .Values.env }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.argocdControllerServiceAccount | default "openshift-gitops-argocd-application-controller" }}
+    namespace: {{ .Values.gitopsNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin

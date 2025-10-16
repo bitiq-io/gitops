@@ -89,14 +89,11 @@ GITOPS_SUBSCRIPTION=${GITOPS_SUBSCRIPTION:-openshift-gitops-operator}
 GITOPS_SUBSCRIPTION_NAMESPACE=${GITOPS_SUBSCRIPTION_NAMESPACE:-openshift-operators}
 PIPELINES_SUBSCRIPTION=${PIPELINES_SUBSCRIPTION:-openshift-pipelines-operator-rh}
 PIPELINES_SUBSCRIPTION_NAMESPACE=${PIPELINES_SUBSCRIPTION_NAMESPACE:-openshift-operators}
-# VSO/VCO (new)
+# VSO/VCO (only)
 VSO_SUBSCRIPTION=${VSO_SUBSCRIPTION:-vault-secrets-operator}
 VSO_SUBSCRIPTION_NAMESPACE=${VSO_SUBSCRIPTION_NAMESPACE:-hashicorp-vault-secrets-operator}
 VCO_SUBSCRIPTION=${VCO_SUBSCRIPTION:-vault-config-operator}
 VCO_SUBSCRIPTION_NAMESPACE=${VCO_SUBSCRIPTION_NAMESPACE:-vault-config-operator}
-# ESO (legacy; kept during migration)
-ESO_SUBSCRIPTION=${ESO_SUBSCRIPTION:-external-secrets-operator}
-ESO_SUBSCRIPTION_NAMESPACE=${ESO_SUBSCRIPTION_NAMESPACE:-external-secrets-operator}
 
 # Optional: auto-detect a suitable fsGroup for Tekton workspaces (PVCs)
 # On OpenShift, pods run with a random UID from a namespace range; ensuring the
@@ -176,19 +173,10 @@ helm_args_ops=(
   --wait
   --timeout 10m
 )
-if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
-  # Disable ESO Subscription rendering in the chart via enabled=false
-  helm_args_ops+=(--set operators.externalSecrets.enabled=false)
-fi
 helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}"
 
 wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION"
 wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
-if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
-  log "VAULT_OPERATORS=true: skipping wait for ESO Subscription"
-else
-  wait_for_subscription_csv "$ESO_SUBSCRIPTION_NAMESPACE" "$ESO_SUBSCRIPTION"
-fi
 wait_for_subscription_csv "$VSO_SUBSCRIPTION_NAMESPACE" "$VSO_SUBSCRIPTION"
 wait_for_subscription_csv "$VCO_SUBSCRIPTION_NAMESPACE" "$VCO_SUBSCRIPTION"
 # VSO core CRDs
@@ -200,22 +188,7 @@ wait_for_crd vaultdynamicsecrets.secrets.hashicorp.com
 wait_for_crd kubernetesauthengineconfigs.redhatcop.redhat.io
 wait_for_crd kubernetesauthengineroles.redhatcop.redhat.io
 wait_for_crd policies.redhatcop.redhat.io || true
-# ESO core CRDs (until decommissioned)
-if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
-  log "VAULT_OPERATORS=true: skipping ESO CRD waits"
-else
-  wait_for_crd externalsecrets.external-secrets.io
-  wait_for_crd secretstores.external-secrets.io
-  wait_for_crd clustersecretstores.external-secrets.io
-fi
-
-# Best-effort cleanup if ESO Subscription exists but we gated it off (avoid noisy resolution failures)
-if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
-  if oc -n "${ESO_SUBSCRIPTION_NAMESPACE}" get subscription "${ESO_SUBSCRIPTION}" >/dev/null 2>&1; then
-    log "VAULT_OPERATORS=true: removing existing ESO Subscription ${ESO_SUBSCRIPTION_NAMESPACE}/${ESO_SUBSCRIPTION}"
-    oc -n "${ESO_SUBSCRIPTION_NAMESPACE}" delete subscription "${ESO_SUBSCRIPTION}" --ignore-not-found || true
-  fi
-fi
+## ESO fully decommissioned; no waits or cleanup required.
 
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
 for i in {1..60}; do
@@ -371,6 +344,17 @@ if ! oc get ns "${app_ns}" >/dev/null 2>&1; then
 fi
 log "Labeling ${app_ns} with argocd.argoproj.io/managed-by=openshift-gitops"
 oc label ns "${app_ns}" argocd.argoproj.io/managed-by=openshift-gitops --overwrite >/dev/null 2>&1 || true
+
+# Pre-grant Argo CD application-controller admin in app & pipelines namespaces
+# This avoids a chicken-and-egg where Argo cannot create VSO CRs/RoleBindings itself.
+for ns in "${app_ns}" openshift-pipelines; do
+  if oc get ns "$ns" >/dev/null 2>&1; then
+    oc -n "$ns" create rolebinding argocd-app-admin \
+      --clusterrole=admin \
+      --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller \
+      >/dev/null 2>&1 || true
+  fi
+done
 
 # 4) Wait for umbrella Application to appear and become Healthy/Synced
 umbrella_app="bitiq-umbrella-${ENV}"

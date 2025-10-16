@@ -4,7 +4,7 @@
 
 ### ci/cd: End-to-end automation (ENV=local)
 - ci(argo): add repo credential with write access for this repo in Argo CD (HTTPS PAT or SSH deploy key)
-- ci(image-updater): create `argocd-image-updater-secret` with real ArgoCD API token (or document ESO path)
+- ci(image-updater): ensure `argocd-image-updater-secret` is reconciled via VSO from Vault (seed `gitops/data/argocd/image-updater`)
 - ci(image-updater): set update strategy/semver (optional) and validate write-back to Helm values
 - ci(tekton): set `charts/ci-pipelines/values.yaml` with real gitUrl and webhook secret; create `bitiq-ci` ns and grant image-pusher to pipeline SA
 - ci(tekton): verify EventListener Route + GitHub webhook trigger a PipelineRun

@@ -43,7 +43,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - `charts/bitiq-umbrella/` — Deploys sub-apps (image-updater, pipelines, sample app)
 - `charts/ci-pipelines/` — Tekton pipelines and triggers
 - `charts/image-updater/` — Argo CD Image Updater deployment
-- `charts/eso-vault-examples/` — REMOVED in T17. ESO is deprecated; use VSO (runtime) + VCO (control plane). For historical context, see docs/ESO-TO-VSO-MIGRATION.md.
+- ESO is fully removed. Use VSO (runtime) + VCO (control plane). For any historical context, see docs/ESO-TO-VSO-MIGRATION.md (kept for reference only).
 - `charts/toy-service/` — Backend sample service (Deployment + Service + Route)
 - `charts/toy-web/` — Frontend sample web app (Deployment + Service + Route)
 - `scripts/bootstrap.sh` — One-time/occasional bootstrapping for operators + initial apps
@@ -70,7 +70,7 @@ CI uses the same entrypoint: the GitHub workflow runs `make validate` to keep lo
 For Single-Node OpenShift parity work, follow `docs/SNO-RUNBOOK.md` and run `./scripts/sno-preflight.sh` before invoking `scripts/bootstrap.sh`.
 Note: SNO requires out‑of‑band ignition/discovery ISO and cannot be sanity‑checked locally like CRC. Prefer `ENV=local` for quick validation.
 
-For production secrets management, follow `docs/PROD-SECRETS.md`. ESO content is transitional; the umbrella deploys VSO/VCO per env when `vault.runtime.enabled=true` and suppresses the ESO examples to avoid dual writers. Bootstrap installs the VSO/VCO operators and waits for CRDs.
+For production secrets management, follow `docs/PROD-SECRETS.md`. The umbrella deploys VSO/VCO per env when `vault.runtime.enabled=true`. Bootstrap installs the VSO/VCO operators and waits for CRDs.
 
 If adding/altering Helm values:
 
@@ -97,7 +97,7 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 - Do not hardcode domains, tokens, or passwords in charts/values; use placeholders and document required env vars.
 - Avoid changing multiple envs in one PR unless necessary; call it out explicitly.
 - Coordinate operator channel changes with maintainers; include references (release notes/docs).
-- When introducing additional secrets tooling, add usage docs and examples. Prefer VSO/VCO; ESO is deprecated and only retained as a legacy fallback.
+- When introducing additional secrets tooling, add usage docs and examples. Prefer VSO/VCO; ESO is not supported.
 
 Notes for agents (local e2e):
 - Do not auto-create GitHub webhook secrets in charts without an explicit opt-in; use `triggers.createSecret=true` for that behavior.
