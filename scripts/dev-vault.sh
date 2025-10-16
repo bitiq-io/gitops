@@ -134,6 +134,12 @@ apply_manifests() {
     has_timeout="false"
   fi
 
+  # Ensure namespace exists before any namespaced operations
+  if ! oc get ns "${DEV_NAMESPACE}" >/dev/null 2>&1; then
+    log "Creating namespace ${DEV_NAMESPACE}"
+    oc create ns "${DEV_NAMESPACE}" >/dev/null 2>&1 || true
+  fi
+
   # Create imagestream (harmless if we later skip import and use src image directly)
   oc -n "${DEV_NAMESPACE}" apply -f - >/dev/null 2>&1 || true <<EOF
 apiVersion: image.openshift.io/v1
@@ -142,8 +148,9 @@ metadata:
   name: ${VAULT_RELEASE_NAME}
 EOF
   if [[ "${want_import}" == "true" ]]; then
+    log "Attempting ImageStream import of ${src_image} (timeout: ${import_timeout}s)"
     if [[ "${has_timeout}" == "true" ]]; then
-      if timeout "${import_timeout}s" oc -n "${DEV_NAMESPACE}" import-image "${VAULT_RELEASE_NAME}:${tag}" --from="${src_image}" --confirm >/dev/null 2>&1; then
+      if timeout -k 2 "${import_timeout}s" oc -n "${DEV_NAMESPACE}" import-image "${VAULT_RELEASE_NAME}:${tag}" --from="${src_image}" --confirm >/dev/null 2>&1; then
         image_for_deploy="image-registry.openshift-image-registry.svc:5000/${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
         log "Imported ${src_image} into ImageStream ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
       else
