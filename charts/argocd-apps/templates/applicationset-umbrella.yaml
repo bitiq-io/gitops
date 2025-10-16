@@ -70,6 +70,8 @@ spec:
               value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
+            - name: ciPipelines.eventListener.debugLogging
+              value: '{{ "{{ if eq .env \"local\" }}true{{ else }}false{{ end }}" }}'
             - name: vault.runtime.enabled
               value: '{{ "{{ .vaultRuntimeEnabled | default false }}" }}'
             - name: vault.runtime.address
