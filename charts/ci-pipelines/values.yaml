@@ -35,7 +35,6 @@ pipelines:
     # Accept pushes from either personal or org repo
     repoFullNames:
       - PaulCapestany/toy-service
-      - bitiq-io/toy-service
     # Optional override per pipeline; falls back to top-level defaults when empty
     serviceAccountName: ""
     fsGroup: ""
@@ -69,7 +68,6 @@ pipelines:
     tlsVerify: "true"
     repoFullNames:
       - PaulCapestany/toy-web
-      - bitiq-io/toy-web
     serviceAccountName: ""
     fsGroup: ""
     eventTypes: ["push"]

@@ -4,6 +4,20 @@ SHELL := /bin/bash
 
 CHARTS := charts/bootstrap-operators charts/argocd-apps charts/bitiq-umbrella charts/image-updater charts/ci-pipelines charts/toy-service charts/toy-web charts/vault-runtime charts/vault-config
 
+# Export common secret/env overrides so recipe shells inherit them.
+# This makes `make dev-vault GITHUB_WEBHOOK_SECRET=...` reliably pass through
+# to scripts, avoiding placeholder fallbacks.
+export GITHUB_WEBHOOK_SECRET
+export ARGOCD_TOKEN
+export QUAY_USERNAME
+export QUAY_PASSWORD
+export QUAY_EMAIL
+export QUAY_DOCKERCONFIGJSON
+export VAULT_OPERATORS
+export DEV_VAULT_IMAGE
+export DEV_VAULT_IMPORT
+export DEV_VAULT_IMPORT_TIMEOUT
+
 help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
@@ -51,6 +65,28 @@ dev-vault: ## Deploy a dev Vault, seed secrets, and reconcile via Vault operator
 
 dev-vault-down: ## Tear down the dev Vault helper deployment
 	@bash scripts/dev-vault.sh down
+
+audit-secrets: ## Audit VSO-managed Secrets for placeholder/demo values
+	@bash -eu -o pipefail -c '
+	  echo "[audit] Scanning VaultStaticSecrets and their destination Secrets…";
+	  oc get vaultstaticsecrets.secrets.hashicorp.com -A -o json | jq -r \
+	    '.items[] | [.metadata.namespace, .spec.destination.name, .spec.destination.type] | @tsv' \
+	  | while IFS=$'\t' read -r ns name type; do \
+	      echo "- $$ns/$$name ($$type)"; \
+	      if [ "$$type" = "kubernetes.io/dockerconfigjson" ]; then \
+	        auth=$$(oc -n "$$ns" get secret "$$name" -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -r '.auths["quay.io"].auth // empty'); \
+	        if [ "$$auth" = "ZGVtbzpkZW1v" ]; then echo "  quay auth=<placeholder: demo:demo>"; else echo "  quay auth=<present,len=$${#auth}>"; fi; \
+	      else \
+	        for k in $$(oc -n "$$ns" get secret "$$name" -o jsonpath='{.data}' 2>/dev/null | jq -r 'keys[]?'); do \
+	          v=$$(oc -n "$$ns" get secret "$$name" -o jsonpath="{.data.$$k}" 2>/dev/null | base64 -d || true); \
+	          case "$$v" in \
+	            local-*|*LOCAL_FAKE_SECRET*|*CHANGEME*) echo "  $$k=<placeholder: $$v>";; \
+	            *) echo "  $$k=<present,len=$${#v}>";; \
+	          esac; \
+	        done; \
+	      fi; \
+	    done || true;
+	'
 
 bump-image: ## create a new tag in Quay from SOURCE_TAG to NEW_TAG (uses skopeo|podman|docker)
 	@bash scripts/quay-bump-tag.sh
