@@ -71,7 +71,7 @@ spec:
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging
-              value: '{{ "{{ if eq .env \"local\" }}true{{ else }}false{{ end }}" }}'
+              value: '{{ "{{ false }}" }}'
             - name: vault.runtime.enabled
               value: '{{ "{{ .vaultRuntimeEnabled | default false }}" }}'
             - name: vault.runtime.address

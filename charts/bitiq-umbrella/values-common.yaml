@@ -55,8 +55,8 @@ ciPipelines:
     name: bitiq-listener
     githubSecretName: github-webhook-secret
     route: true
-    # Temporary: turn on debug logs for EventListener to diagnose triggers
-    debugLogging: true
+    # Debug logging for EventListener (disabled by default; Tekton webhook blocks some env overlays)
+    debugLogging: false
   pipelines:
     - name: bitiq-build-and-push
       gitUrl: https://github.com/PaulCapestany/toy-service.git
