@@ -111,6 +111,21 @@ spec:
   serviceAccountName: {{ $listenerSA }}
 {{- end }}
   triggers: {{ toYaml (index $triggerAccumulator "items") | nindent 4 }}
+{{- if .Values.triggers.debugLogging }}
+  # Temporary debug logging for troubleshooting. This injects a verbose zap
+  # logger config into the EventListener sink container via the supported
+  # resources.kubernetesResource Pod spec overlay (Triggers v0.33 on OCP 1.20).
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            containers:
+              - env:
+                  - name: K_LOGGING_CONFIG
+                    value: |
+                      {"zap-logger-config":"{\n  \"level\": \"debug\",\n  \"development\": true,\n  \"disableStacktrace\": false,\n  \"sampling\": {\n    \"initial\": 1,\n    \"thereafter\": 1\n  },\n  \"outputPaths\": [\"stdout\"],\n  \"errorOutputPaths\": [\"stderr\"],\n  \"encoding\": \"json\",\n  \"encoderConfig\": {\n    \"timeKey\": \"timestamp\",\n    \"levelKey\": \"severity\",\n    \"nameKey\": \"logger\",\n    \"callerKey\": \"caller\",\n    \"messageKey\": \"message\",\n    \"stacktraceKey\": \"stacktrace\",\n    \"lineEnding\": \"\",\n    \"levelEncoder\": \"\",\n    \"timeEncoder\": \"iso8601\",\n    \"durationEncoder\": \"\",\n    \"callerEncoder\": \"\"\n  }\n}\n"}
+{{- end }}
 
 {{ if .Values.triggers.route }}
 ---
