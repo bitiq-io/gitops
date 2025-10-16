@@ -113,26 +113,47 @@ YAML
 
 apply_manifests() {
   log "Deploying dev Vault in namespace ${DEV_NAMESPACE}"
-  # Import image into an ImageStream to avoid node-side registry mirror rewrites
-  local src_image tag image_for_deploy
+  # Import image into an ImageStream to avoid node-side registry mirror rewrites.
+  # This step can hang on airgapped/proxied networks; guard with a timeout and allow opt-out.
+  local src_image tag image_for_deploy want_import import_timeout has_timeout
   src_image="${DEV_VAULT_IMAGE}"
   tag="${src_image##*:}"
   if [[ "${tag}" == "${src_image}" ]] || [[ "${src_image}" == *"@"* ]] || [[ "${src_image}" == *"@sha256:"* ]]; then
     tag="latest"
   fi
-  # Create imagestream and try to import the source image (best-effort)
+
+  want_import=${DEV_VAULT_IMPORT:-true}
+  import_timeout=${DEV_VAULT_IMPORT_TIMEOUT:-15}
+  if command -v timeout >/dev/null 2>&1; then
+    has_timeout="true"
+  else
+    has_timeout="false"
+  fi
+
+  # Create imagestream (harmless if we later skip import and use src image directly)
   oc -n "${DEV_NAMESPACE}" apply -f - >/dev/null 2>&1 || true <<EOF
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
   name: ${VAULT_RELEASE_NAME}
 EOF
-  if oc -n "${DEV_NAMESPACE}" import-image "${VAULT_RELEASE_NAME}:${tag}" --from="${src_image}" --confirm >/dev/null 2>&1; then
-    image_for_deploy="image-registry.openshift-image-registry.svc:5000/${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
-    log "Imported ${src_image} into ImageStream ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
+  if [[ "${want_import}" == "true" ]]; then
+    if [[ "${has_timeout}" == "true" ]]; then
+      if timeout "${import_timeout}s" oc -n "${DEV_NAMESPACE}" import-image "${VAULT_RELEASE_NAME}:${tag}" --from="${src_image}" --confirm >/dev/null 2>&1; then
+        image_for_deploy="image-registry.openshift-image-registry.svc:5000/${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
+        log "Imported ${src_image} into ImageStream ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}:${tag}"
+      else
+        image_for_deploy="${src_image}"
+        log "WARNING: Image import timed out or failed (<=${import_timeout}s). Using source image directly: ${src_image}"
+      fi
+    else
+      # No timeout available (e.g., macOS without coreutils). Avoid potential hang by skipping import.
+      image_for_deploy="${src_image}"
+      log "INFO: 'timeout' not found; skipping ImageStream import and using source image: ${src_image}"
+    fi
   else
     image_for_deploy="${src_image}"
-    log "WARNING: Failed to import ${src_image}. Falling back to using it directly."
+    log "INFO: DEV_VAULT_IMPORT=false — skipping ImageStream import and using source image: ${src_image}"
   fi
   render_manifests | sed \
     -e "s/{{DEV_NAMESPACE}}/${DEV_NAMESPACE}/g" \

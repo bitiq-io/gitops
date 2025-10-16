@@ -91,6 +91,14 @@ make dev-vault-down
 
 Verify that secrets reconcile in `openshift-gitops`, `openshift-pipelines`, and `bitiq-local` using the commands in [PROD-SECRETS](PROD-SECRETS.md). The umbrella gates off ESO when VSO is enabled for local.
 
+Environment overrides for the dev Vault helper:
+
+- `DEV_VAULT_IMAGE` → override the vault image (default `hashicorp/vault:1.15.6`).
+- `DEV_VAULT_IMPORT=false` (default) → skip the OpenShift ImageStream import and use the source image directly (prevents stalls on egress‑restricted clusters). Set to `true` if you explicitly want to import into the internal registry first.
+- `DEV_VAULT_IMPORT_TIMEOUT=<seconds>` → cap the import attempt duration (default `15`); on timeout the helper falls back to the source image.
+
+Troubleshooting: If you see “Deploying dev Vault in namespace vault-dev” with no progress, your cluster likely can’t import from Docker Hub. Use one of the overrides above (skip import, change image, or extend timeout) and re‑run `make dev-vault`.
+
 ## 3) Limit AppSet to local (already done by bootstrap)
 
 Bootstrap passes `envFilter=local`. If you ever need to reapply the AppSet manually:

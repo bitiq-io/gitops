@@ -221,10 +221,20 @@ Environment overrides supported by `make dev-vault`:
 - `GITHUB_WEBHOOK_SECRET` → writes to `gitops/data/github/webhook.token`
 - `QUAY_DOCKERCONFIGJSON` or `QUAY_USERNAME` + `QUAY_PASSWORD` [+ `QUAY_EMAIL`] → writes to `gitops/data/registry/quay.dockerconfigjson`
 - `DEV_VAULT_IMAGE` → override the dev Vault container image (default `hashicorp/vault:1.15.6`). The helper imports this into an ImageStream and uses the internal registry to avoid OpenShift registry mirror rewrites. If your cluster rewrites to a non-existent mirror, set this to a reachable image or pinned digest.
+- `DEV_VAULT_IMPORT` → set to `false` (default) to skip the ImageStream import step and use `DEV_VAULT_IMAGE` directly. Useful on air‑gapped or proxied networks where `oc import-image` may hang. Set to `true` only if you want to import into the internal registry first.
+- `DEV_VAULT_IMPORT_TIMEOUT` → seconds to wait for the import (default `15`). If the import times out, the helper automatically falls back to using `DEV_VAULT_IMAGE` directly.
 
 If unset, the helper seeds safe demo placeholders to get Secrets created; rotate by setting the envs above and re-running `make dev-vault`.
 
 Verify the secrets appear in the expected namespaces (Argo CD, Tekton, bitiq-local) using the commands from [PROD-SECRETS](PROD-SECRETS.md). The umbrella gates off ESO when VSO is enabled for local.
+
+Troubleshooting (dev Vault helper)
+
+- Stuck at “Deploying dev Vault in namespace vault-dev”: your cluster may be unable to import the upstream image (Docker Hub/egress restrictions). Either:
+  - `DEV_VAULT_IMPORT=false make dev-vault` (skip import; the pod pulls the source image directly), or
+  - Set a reachable image: `DEV_VAULT_IMAGE=<your-registry>/hashicorp/vault:1.15.6 make dev-vault`, or
+  - Increase/adjust the timeout: `DEV_VAULT_IMPORT_TIMEOUT=30 make dev-vault`.
+  In all cases, the helper proceeds without blocking.
 
 ### Vault operators (VSO/VCO) quick reference
 
