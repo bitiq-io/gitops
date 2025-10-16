@@ -14,7 +14,7 @@ set -Eeuo pipefail
 #   ARGOCD_REPOCREDS_URL=https://github.com \
 #   ARGOCD_REPOCREDS_USERNAME=<github-username-or-git> \
 #   ARGOCD_REPOCREDS_PASSWORD=<github-pat-or-password> \
-#   # Optional: automatically seed Vault if ESO-managed Secrets are missing
+#   # Optional: automatically (re)seed Vault when placeholders or env creds are present
 #   AUTO_DEV_VAULT=true \
 #   ./scripts/local-e2e-setup.sh
 #
@@ -205,7 +205,9 @@ suggest_dev_vault_if_missing() {
   if [[ "$ENVIRONMENT" != "local" ]]; then
     return 0
   fi
-  local missing=0
+  # Detect missing or placeholder secrets (so we re-seed as needed)
+  local missing=0 placeholders=0
+  # 1) Missing
   for pair in \
     "openshift-gitops:argocd-image-updater-secret" \
     "openshift-pipelines:quay-auth" \
@@ -215,28 +217,47 @@ suggest_dev_vault_if_missing() {
       missing=$((missing+1))
     fi
   done
-  if (( missing > 0 )); then
-    log "Detected ${missing} missing Vault-managed Secret(s)."
-    # Auto-run path: explicit opt-in via AUTO_DEV_VAULT=true, or FAST_PATH with likely credentials provided
-    local AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-}
-    local have_env_creds="false"
-    if [[ -n "${ARGOCD_TOKEN:-}" || -n "${GITHUB_WEBHOOK_SECRET:-}" || -n "${QUAY_DOCKERCONFIGJSON:-}" || ( -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" ) ]]; then
-      have_env_creds="true"
-    fi
-    if [[ "${AUTO_DEV_VAULT}" == "true" || ( "${FAST_PATH:-}" == "true" && "${have_env_creds}" == "true" ) ]]; then
+  # 2) Placeholders (only check if present)
+  if oc -n openshift-pipelines get secret github-webhook-secret >/dev/null 2>&1; then
+    gh=$(oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || true)
+    if [[ "$gh" == local-webhook-secret ]]; then placeholders=$((placeholders+1)); fi
+  fi
+  if oc -n openshift-gitops get secret argocd-image-updater-secret >/dev/null 2>&1; then
+    aiu=$(oc -n openshift-gitops get secret argocd-image-updater-secret -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || true)
+    if [[ "$aiu" == local-argocd-token ]]; then placeholders=$((placeholders+1)); fi
+  fi
+  if oc -n openshift-pipelines get secret quay-auth >/dev/null 2>&1; then
+    qc=$(oc -n openshift-pipelines get secret quay-auth -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -r '.auths["quay.io"].auth // empty' || true)
+    if [[ "$qc" == ZGVtbzpkZW1v ]]; then placeholders=$((placeholders+1)); fi
+  fi
+
+  # If the caller provided env creds, honor them and (re)seed unconditionally.
+  local have_env_creds="false"
+  if [[ -n "${ARGOCD_TOKEN:-}" || -n "${GITHUB_WEBHOOK_SECRET:-}" || -n "${QUAY_DOCKERCONFIGJSON:-}" || ( -n "${QUAY_USERNAME:-}" && -n "${QUAY_PASSWORD:-}" ) ]]; then
+    have_env_creds="true"
+  fi
+
+  local AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-}
+  if [[ "${have_env_creds}" == "true" ]]; then
+    log "Detected env-provided credentials; (re)seeding Vault via dev-vault."
+    bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
+    return 0
+  fi
+
+  if (( missing > 0 || placeholders > 0 )); then
+    log "Detected ${missing} missing and ${placeholders} placeholder Vault-managed Secret(s)."
+    if [[ "${AUTO_DEV_VAULT}" == "true" || "${FAST_PATH:-}" == "true" ]]; then
       log "Auto-seeding Vault via dev-vault (AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-false}, FAST_PATH=${FAST_PATH:-false})"
       bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
-    elif [[ "${FAST_PATH:-}" == "true" ]]; then
-      log "FAST_PATH set but AUTO_DEV_VAULT not enabled; skipping auto seed. Set AUTO_DEV_VAULT=true to run dev-vault automatically."
     else
-      if prompt_yes "Run 'make dev-vault' now to seed Vault and reconcile secrets?"; then
+      if prompt_yes "Run dev-vault now to seed Vault and reconcile secrets?"; then
         bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
       else
         log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
       fi
     fi
   else
-    log "Vault-managed platform secrets present; skipping dev-vault prompt."
+    log "Vault-managed platform secrets present and non-placeholder; skipping dev-vault."
   fi
 }
 
