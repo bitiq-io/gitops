@@ -1,8 +1,6 @@
 {{- $ci := .Values.ciPipelines -}}
 {{- $trigger := dict "create" true "createSecret" false "secretToken" "" "eventListenerName" $ci.eventListener.name "githubSecretName" $ci.eventListener.githubSecretName "route" ($ci.eventListener.route | default false) -}}
-{{- if hasKey $ci.eventListener "debugLogging" }}
 {{- $_ := set $trigger "debugLogging" ($ci.eventListener.debugLogging | default false) -}}
-{{- end }}
 {{- if $ci.eventListener.serviceAccountName }}
 {{- $_ := set $trigger "serviceAccountName" $ci.eventListener.serviceAccountName -}}
 {{- end }}
