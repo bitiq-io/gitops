@@ -95,4 +95,4 @@ triggers:
   # Temporary: enable verbose zap logging on the EventListener sink to
   # troubleshoot trigger matching. This injects K_LOGGING_CONFIG via the
   # supported Pod overlay in Triggers v0.33 (OCP Pipelines 1.20).
-  debugLogging: true
+  debugLogging: false
