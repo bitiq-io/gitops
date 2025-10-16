@@ -2,6 +2,10 @@ env: local
 baseDomain: apps-crc.testing
 appNamespace: bitiq-local
 gitopsNamespace: openshift-gitops
+
+# Argo CD controller service account name (default instance)
+# If you customize the Argo CD instance name, update this accordingly.
+argocdControllerServiceAccount: openshift-gitops-argocd-application-controller
 pipelinesNamespace: openshift-pipelines
 
 # Repo & revision for all child Applications

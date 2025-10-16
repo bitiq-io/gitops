@@ -1,6 +1,6 @@
 # Production Secrets — Vault via VSO/VCO
 
-HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO) are now the authoritative path for managing platform credentials across environments. The umbrella chart renders the appropriate Argo CD Applications (`vault-config-<env>`, `vault-runtime-<env>`) when `vault.*` flags are enabled per environment in `charts/argocd-apps/values.yaml`. External Secrets Operator (ESO) remains available only as a legacy fallback (see the appendix).
+HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO) are the authoritative path for managing platform credentials across environments. The umbrella chart renders the appropriate Argo CD Applications (`vault-config-<env>`, `vault-runtime-<env>`) when `vault.*` flags are enabled per environment in `charts/argocd-apps/values.yaml`.
 
 ## 1. Prerequisites
 
@@ -27,7 +27,7 @@ HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO) are now t
     vaultConfigPolicyName: gitops-sno
   ```
 
-  Adjust the addresses, role, and policy names to match your Vault deployment. Leave `vaultRuntimeEnabled`/`vaultConfigEnabled` set to `false` for environments that still depend on ESO (e.g. production during phased migration).
+  Adjust the addresses, role, and policy names to match your Vault deployment.
 
 ## 2. Configure Vault operators per environment
 
@@ -122,12 +122,4 @@ For local development, `make dev-vault` provisions a dev-mode Vault, seeds demo 
 - Keep Vault audit logs enabled and scope policies per environment (e.g., `gitops-local`, `gitops-sno`).
 - When introducing new services, add the Vault path + `VaultStaticSecret` entry, seed Vault, and sync the umbrella chart.
 
-## Appendix A — Legacy ESO flow (deprecated)
-
-The repository retains `charts/eso-vault-examples/` for environments that still rely on External Secrets Operator. To continue using ESO temporarily:
-
-1. Set `vaultRuntimeEnabled=false` and `vaultConfigEnabled=false` for the environment in `charts/argocd-apps/values.yaml`.
-2. Sync the umbrella chart; Argo CD will render `eso-vault-examples-<env>` instead of the VSO/VCO Applications.
-3. Follow the migration guide (`docs/ESO-TO-VSO-MIGRATION.md`) to map each `ExternalSecret` to its VSO/VCO equivalent and plan the cutover.
-
-> Dual-writer protection: `policy/gitops/no_dual_secret_operators.rego` blocks manifests that render both ESO and VSO for the same environment. Flip the env flags in Git before switching operators.
+<!-- ESO legacy flow removed in T17; repository no longer supports ESO. -->
