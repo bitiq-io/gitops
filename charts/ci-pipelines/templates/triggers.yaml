@@ -28,7 +28,6 @@ metadata:
   namespace: openshift-pipelines
 spec:
   params:
-    - name: git-repo-url
     - name: git-revision
   resourcetemplates:
     - apiVersion: tekton.dev/v1
@@ -48,7 +47,7 @@ spec:
           name: {{ $pipeline.name }}
         params:
           - name: git-url
-            value: $(tt.params.git-repo-url)
+            value: {{ $pipeline.gitUrl | quote }}
           - name: git-revision
             value: $(tt.params.git-revision)
           - name: runTests
