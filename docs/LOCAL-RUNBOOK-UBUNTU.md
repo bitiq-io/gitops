@@ -221,7 +221,7 @@ Environment overrides supported by `make dev-vault`:
 - `GITHUB_WEBHOOK_SECRET` → writes to `gitops/data/github/webhook.token`
 - `QUAY_DOCKERCONFIGJSON` or `QUAY_USERNAME` + `QUAY_PASSWORD` [+ `QUAY_EMAIL`] → writes to `gitops/data/registry/quay.dockerconfigjson`
 - `DEV_VAULT_IMAGE` → override the dev Vault container image (default `hashicorp/vault:1.15.6`). The helper imports this into an ImageStream and uses the internal registry to avoid OpenShift registry mirror rewrites. If your cluster rewrites to a non-existent mirror, set this to a reachable image or pinned digest.
-- `DEV_VAULT_IMPORT` → set to `false` (default) to skip the ImageStream import step and use `DEV_VAULT_IMAGE` directly. Useful on air‑gapped or proxied networks where `oc import-image` may hang. Set to `true` only if you want to import into the internal registry first.
+- `DEV_VAULT_IMPORT` → default `true`. The helper attempts an ImageStream import first (with a short timeout) to work with OCP mirror rewrites; on timeout/failure it falls back to the source image. Set to `false` to skip import explicitly.
 - `DEV_VAULT_IMPORT_TIMEOUT` → seconds to wait for the import (default `15`). If the import times out, the helper automatically falls back to using `DEV_VAULT_IMAGE` directly.
 
 If unset, the helper seeds safe demo placeholders to get Secrets created; rotate by setting the envs above and re-running `make dev-vault`.

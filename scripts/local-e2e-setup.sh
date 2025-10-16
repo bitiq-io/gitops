@@ -225,12 +225,12 @@ suggest_dev_vault_if_missing() {
     fi
     if [[ "${AUTO_DEV_VAULT}" == "true" || ( "${FAST_PATH:-}" == "true" && "${have_env_creds}" == "true" ) ]]; then
       log "Auto-seeding Vault via dev-vault (AUTO_DEV_VAULT=${AUTO_DEV_VAULT:-false}, FAST_PATH=${FAST_PATH:-false})"
-      ( DEV_VAULT_IMPORT="${DEV_VAULT_IMPORT:-false}" bash "$REPO_ROOT/scripts/dev-vault.sh" up ) || err "dev-vault helper failed"
+      bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
     elif [[ "${FAST_PATH:-}" == "true" ]]; then
       log "FAST_PATH set but AUTO_DEV_VAULT not enabled; skipping auto seed. Set AUTO_DEV_VAULT=true to run dev-vault automatically."
     else
       if prompt_yes "Run 'make dev-vault' now to seed Vault and reconcile secrets?"; then
-        ( DEV_VAULT_IMPORT="${DEV_VAULT_IMPORT:-false}" bash "$REPO_ROOT/scripts/dev-vault.sh" up ) || err "dev-vault helper failed"
+        bash "$REPO_ROOT/scripts/dev-vault.sh" up || err "dev-vault helper failed"
       else
         log "Skipping dev-vault run; remember to seed Vault and rerun when ready."
       fi
