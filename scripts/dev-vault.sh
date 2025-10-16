@@ -357,8 +357,6 @@ case "${ACTION}" in
     seed_secrets
     if [[ "${USE_VAULT_OPERATORS}" == "true" ]]; then
       log "VAULT_OPERATORS=true: using VSO runtime instead of ESO"
-      # Best-effort uninstall legacy ESO chart to avoid dual-writer in local
-      helm -n "${ESO_NAMESPACE}" uninstall "${HELM_RELEASE}" >/dev/null 2>&1 || true
       # Ensure VSO CRDs
       ensure_crds vaultconnections.secrets.hashicorp.com
       ensure_crds vaultauths.secrets.hashicorp.com
