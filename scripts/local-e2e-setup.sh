@@ -266,7 +266,9 @@ ensure_argocd_ui_rbac() {
     sleep 2
   done
   if oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; then
-    oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{"spec":{"rbac":{ "policy":"g, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}' >/dev/null 2>&1 || true
+    # Grant Argo CD admin to cluster-admins group and kubeadmin user explicitly.
+    # Note: 'g,' maps a group claim; 'u,' maps a specific user principal.
+    oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{"spec":{"rbac":{"policy":"g, system:cluster-admins, role:admin\nu, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}' >/dev/null 2>&1 || true
     # Restart server to pick up RBAC changes managed by operator
     oc -n openshift-gitops rollout restart deploy/openshift-gitops-server >/dev/null 2>&1 || true
   else
