@@ -603,6 +603,49 @@ ensure_quay_link
 wait_app "toy-service-$ENVIRONMENT" 600 || true
 wait_app "toy-web-$ENVIRONMENT" 600 || true
 
+# Optional: ensure GitHub webhooks for the configured repos
+ensure_github_webhooks() {
+  if [[ -z "${ENSURE_GITHUB_WEBHOOKS:-}" || "${ENSURE_GITHUB_WEBHOOKS}" != "true" ]]; then
+    return 0
+  fi
+  if [[ -z "${GH_PAT:-}" ]]; then
+    log "[webhook] GH_PAT not set; skipping webhook ensure"
+    return 0
+  fi
+  local route secret url
+  route=$(oc -n openshift-pipelines get route bitiq-listener -o jsonpath='{.spec.host}' 2>/dev/null || true)
+  if [[ -z "$route" ]]; then
+    log "[webhook] EventListener Route not found; skipping webhook ensure"
+    return 0
+  fi
+  url="http://${route}"
+  secret=$(oc -n openshift-pipelines get secret github-webhook-secret -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || true)
+  if [[ -z "$secret" ]]; then
+    log "[webhook] github-webhook-secret missing; skipping webhook ensure"
+    return 0
+  fi
+  # Default repos; override via GITHUB_WEBHOOK_REPOS (space-separated owner/repo)
+  local repos
+  repos=(${GITHUB_WEBHOOK_REPOS:-"PaulCapestany/toy-service PaulCapestany/toy-web"})
+  for repo in "${repos[@]}"; do
+    log "[webhook] Ensuring webhook for $repo -> $url"
+    # Check existing
+    if curl -fsSL -H "Authorization: token $GH_PAT" "https://api.github.com/repos/$repo/hooks" | \
+       jq -e --arg url "$url" 'map(select(.config.url == $url)) | length > 0' >/dev/null 2>&1; then
+      log "[webhook] $repo already has webhook"
+    else
+      curl -fsSL -X POST -H "Authorization: token $GH_PAT" -H 'Accept: application/vnd.github+json' \
+        "https://api.github.com/repos/$repo/hooks" \
+        -d @- >/dev/null <<EOF
+{"name":"web","active":true,"events":["push"],"config":{"url":"${url}","content_type":"json","secret":"${secret}","insecure_ssl":"0"}}
+EOF
+      log "[webhook] Created webhook for $repo"
+    fi
+  done
+}
+
+ensure_github_webhooks
+
 cat <<'EONOTES'
 ---
 Manual follow-up:

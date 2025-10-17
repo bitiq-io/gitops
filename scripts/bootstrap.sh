@@ -426,3 +426,22 @@ fi
 
 log "Bootstrap complete. Open the ArgoCD UI route in 'openshift-gitops' and watch:"
 log "  ApplicationSet: bitiq-umbrella-by-env  →  Application: bitiq-umbrella-${ENV}"
+
+# Ensure Argo CD UI RBAC for kubeadmin and cluster-admins (idempotent)
+ensure_argocd_ui_rbac() {
+  # Only helpful for local/sno; harmless elsewhere.
+  for i in {1..60}; do
+    if oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+  done
+  if oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; then
+    log "Patching Argo CD RBAC to grant UI admin to kubeadmin + cluster-admin groups"
+    oc -n openshift-gitops patch argocd openshift-gitops --type merge -p '{"spec":{"rbac":{"policy":"g, system:cluster-admins, role:admin\ng, cluster-admins, role:admin\ng, kubeadmin, role:admin\np, role:admin, *, *, *, allow\n","scopes":"[groups, sub, preferred_username, email]"}}}' >/dev/null 2>&1 || true
+    # Restart server to pick up RBAC ConfigMap reconciliation
+    oc -n openshift-gitops rollout restart deploy/openshift-gitops-server >/dev/null 2>&1 || true
+  fi
+}
+
+ensure_argocd_ui_rbac
