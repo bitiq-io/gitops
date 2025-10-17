@@ -2,7 +2,7 @@ baseDomain: apps-crc.testing
 healthPath: "/healthz"
 image:
   repository: quay.io/paulcapestany/toy-service
-  tag: v0.3.28-commit.4589d52
+  tag: v0.3.30-commit.f435380
 backend:
   secretMount:
     reloadSidecar:
