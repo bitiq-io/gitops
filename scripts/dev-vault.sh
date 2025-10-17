@@ -120,12 +120,19 @@ apply_manifests() {
     tag="latest"
   fi
 
-  # Default: attempt ImageStream import with a short timeout, then fall back to
-  # using the source image directly. This handles OpenShift registry mirror
-  # rewrites (requires import) while avoiding indefinite hangs on egress‑
-  # restricted clusters.
-  # Default to skipping ImageStream import to avoid hangs on egress-limited clusters
-  want_import=${DEV_VAULT_IMPORT:-false}
+  # Try ImageStream import with a short timeout, then fall back to the source
+  # image. On OpenShift, this avoids registry mirror rewrites to
+  # registry.connect.redhat.com for images that don’t exist there.
+  # Auto-detect OpenShift to default want_import=true; allow override via DEV_VAULT_IMPORT.
+  if [[ -n "${DEV_VAULT_IMPORT:-}" ]]; then
+    want_import=${DEV_VAULT_IMPORT}
+  else
+    if oc get clusterversion >/dev/null 2>&1; then
+      want_import=true
+    else
+      want_import=false
+    fi
+  fi
   import_timeout=${DEV_VAULT_IMPORT_TIMEOUT:-15}
   if command -v timeout >/dev/null 2>&1; then
     has_timeout="true"
@@ -163,7 +170,7 @@ EOF
     fi
   else
     image_for_deploy="${src_image}"
-    log "INFO: DEV_VAULT_IMPORT=false — skipping ImageStream import and using source image: ${src_image}"
+    log "INFO: Skipping ImageStream import (DEV_VAULT_IMPORT=${DEV_VAULT_IMPORT:-auto}); using source image: ${src_image}"
   fi
   render_manifests | sed \
     -e "s/{{DEV_NAMESPACE}}/${DEV_NAMESPACE}/g" \
@@ -192,6 +199,26 @@ wait_for_deployment() {
   oc -n "${ns}" rollout status deploy/"${dep}" --timeout=180s
 }
 
+rescue_image_pull() {
+  # If the deployment failed due to image pull issues (mirror rewrites), import
+  # the image into an ImageStream and patch the deployment to use the internal
+  # registry reference, then return 0 to retry the rollout wait.
+  local ns="${DEV_NAMESPACE}" dep="${VAULT_RELEASE_NAME}" src_image="${DEV_VAULT_IMAGE}"
+  local tag="${src_image##*:}"
+  if [[ "${tag}" == "${src_image}" ]] || [[ "${src_image}" == *"@"* ]] || [[ "${src_image}" == *"@sha256:"* ]]; then
+    tag="latest"
+  fi
+  # Detect ImagePullBackOff on the pod
+  if oc -n "$ns" get pod -l app="$dep" -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason}' 2>/dev/null | grep -qE 'ErrImagePull|ImagePullBackOff'; then
+    log "Detected image pull error. Importing ${src_image} into ImageStream ${ns}/${dep}:${tag} and patching deployment…"
+    oc -n "$ns" import-image "${dep}:${tag}" --from="${src_image}" --confirm --reference-policy='local' >/dev/null 2>&1 || true
+    local internal="image-registry.openshift-image-registry.svc:5000/${ns}/${dep}:${tag}"
+    oc -n "$ns" set image deploy/"$dep" vault="${internal}"
+    return 0
+  fi
+  return 1
+}
+
 configure_kubernetes_auth() {
   log "Configuring Vault Kubernetes auth + policies"
   oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
@@ -214,31 +241,24 @@ HCL
         bound_service_account_namespaces=\"openshift-gitops,openshift-pipelines,bitiq-local\" \
         policies=\"gitops-local\" \
         ttl=\"1h\" >/dev/null
-      # VCO control-plane auth: allow managing k8s auth roles
+      # VCO control-plane auth: allow managing k8s auth roles and auth mounts
       vault policy write kube-auth - <<'HCL'
-      path \"auth/kubernetes/role/*\" {
-        capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"]
-      }
-      path \"auth/kubernetes/config\" {
-        capabilities = [\"read\", \"update\"]
-      }
-      # Allow broad read/update under the kubernetes auth mount (dev only)
-      path \"auth/kubernetes/*\" {
-        capabilities = [\"create\", \"read\", \"update\", \"list\"]
-      }
-      # Allow managing ACL policies so VCO can create/update /sys/policies/acl/<name>
-      path \"sys/policies/acl/*\" {
-        capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"]
-      }
-      # Token self-introspection (often used by operators)
+      # Manage k8s auth roles/config
+      path \"auth/kubernetes/role/*\" { capabilities = [\"create\",\"read\",\"update\",\"delete\",\"list\"] }
+      path \"auth/kubernetes/config\" { capabilities = [\"read\",\"update\"] }
+      # Broad read/update under the kubernetes auth mount (dev only)
+      path \"auth/kubernetes/*\" { capabilities = [\"create\",\"read\",\"update\",\"list\"] }
+      # Allow managing ACL policies
+      path \"sys/policies/acl/*\" { capabilities = [\"create\",\"read\",\"update\",\"delete\",\"list\"] }
+      # Token self-introspection
       path \"auth/token/lookup-self\" { capabilities = [\"read\"] }
       path \"auth/token/lookup\" { capabilities = [\"read\"] }
-      path \"auth/role/*\" {
-        capabilities = [\"read\", \"list\"]
-      }
+      path \"auth/role/*\" { capabilities = [\"read\",\"list\"] }
       path \"sys/mounts\" { capabilities = [\"read\"] }
-      path \"sys/auth\" { capabilities = [\"read\"] }
-      path \"sys/policies/acl\" { capabilities = [\"read\", \"list\"] }
+      # REQUIRED by VCO: enable/update auth engine mounts
+      path \"sys/auth\" { capabilities = [\"read\",\"update\"] }
+      path \"sys/auth/*\" { capabilities = [\"create\",\"read\",\"update\",\"delete\",\"list\"] }
+      path \"sys/policies/acl\" { capabilities = [\"read\",\"list\"] }
 HCL
       vault write auth/kubernetes/role/kube-auth \
         bound_service_account_names=\"default\" \
@@ -352,7 +372,13 @@ wait_for_secret() {
 case "${ACTION}" in
   up)
     apply_manifests
-    wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+    if ! wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"; then
+      if rescue_image_pull; then
+        wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+      else
+        fatal "Dev Vault failed to deploy; check events in namespace ${DEV_NAMESPACE}"
+      fi
+    fi
     ensure_kv_mount
     configure_kubernetes_auth
     seed_secrets
