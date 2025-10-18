@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: strfry
+spec:
+  serviceName: strfry
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: strfry
+  template:
+    metadata:
+      labels:
+        app: strfry
+    spec:
+      securityContext: {}
+      containers:
+        - name: strfry
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: relay
+              containerPort: {{ .Values.service.port }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/strfry
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: strfry-data
+

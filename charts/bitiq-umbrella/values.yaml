@@ -32,6 +32,12 @@ sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service
   toyWeb: quay.io/paulcapestany/toy-web
 
+# New services (env toggles used by templates)
+strfry:
+  enabled: false
+couchbase:
+  enabled: false
+
 ciPipelines:
   serviceAccountName: pipeline
   fsGroup: ""

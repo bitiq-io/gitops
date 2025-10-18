@@ -1,0 +1,40 @@
+apiVersion: couchbase.com/v2
+kind: CouchbaseCluster
+metadata:
+  name: couchbase-cluster
+spec:
+  image: registry.connect.redhat.com/couchbase/server:7.2.4
+  security:
+    adminSecret: {{ .Values.adminSecretName | quote }}
+  buckets: {}
+  servers:
+    - size: {{ .Values.servers.size }}
+      services:
+{{- range .Values.servers.services }}
+        - {{ . | quote }}
+{{- end }}
+      volumeMounts:
+        default:
+          size: 20Gi
+          {{- if .Values.servers.storageClassRWO }}
+          storageClassName: {{ .Values.servers.storageClassRWO | quote }}
+          {{- end }}
+      {{- if .Values.servers.storageClassRWX }}
+      volumeClaimTemplates:
+        - metadata:
+            name: cbfs
+          spec:
+            accessModes: [ "ReadWriteMany" ]
+            resources:
+              requests:
+                storage: 20Gi
+            storageClassName: {{ .Values.servers.storageClassRWX | quote }}
+      {{- end }}
+  bucketsQuota:
+    data: {{ .Values.quotas.data | quote }}
+    index: {{ .Values.quotas.index | quote }}
+    query: {{ .Values.quotas.query | quote }}
+    search: {{ .Values.quotas.search | quote }}
+    eventing: {{ .Values.quotas.eventing | quote }}
+    analytics: {{ .Values.quotas.analytics | quote }}
+

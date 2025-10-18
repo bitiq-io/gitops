@@ -1,0 +1,11 @@
+# Local (CRC) defaults: single-node, hostpath classes via cluster default
+servers:
+  size: 1
+  storageClassRWO: ""
+  storageClassRWX: ""
+quotas:
+  analytics: 0Mi
+route:
+  enabled: true
+  host: ""
+

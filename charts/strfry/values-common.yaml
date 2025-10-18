@@ -1,0 +1,36 @@
+baseDomain: ""
+
+replicaCount: 1
+hostPrefix: "relay"
+
+image:
+  repository: ghcr.io/paulcapestany/strfry
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 7777
+  type: ClusterIP
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: ""   # empty uses cluster default (hostpath on CRC)
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
