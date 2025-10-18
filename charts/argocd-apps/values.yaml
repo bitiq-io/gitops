@@ -25,17 +25,6 @@ envs:
     # Enable selected services for local env
     strfryEnabled: true
     couchbaseEnabled: true
-    certManagerEnabled: true
-    bootstrapOperatorsEnabled: true
-    # CAO defaults for local (verify against docs/OPERATOR-VERSIONS.md on your cluster)
-    caoEnabled: true
-    caoName: couchbase-operator-certified
-    caoSource: certified-operators
-    caoChannel: stable
-    caoSourceNamespace: openshift-marketplace
-    caoInstallNamespace: openshift-operators
-    caoApproval: Automatic
-    caoStartingCSV: ""
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
     # Leave empty to use cluster defaults/SCC. The bootstrap script auto-detects
@@ -64,9 +53,6 @@ envs:
       pause: false
     strfryEnabled: false
     couchbaseEnabled: false
-    certManagerEnabled: false
-    bootstrapOperatorsEnabled: false
-    caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: http://vault-sno.vault.sno.svc:8200
@@ -91,9 +77,6 @@ envs:
       pause: false
     strfryEnabled: false
     couchbaseEnabled: false
-    certManagerEnabled: false
-    bootstrapOperatorsEnabled: false
-    caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: https://vault-prod.vault.svc:8200

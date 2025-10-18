@@ -33,19 +33,6 @@ spec:
             vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
-            # App enablement flags and CAO params per env
-            strfryEnabled: {{ default false $e.strfryEnabled }}
-            couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
-            certManagerEnabled: {{ default false $e.certManagerEnabled }}
-            bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
-            caoEnabled: {{ default false $e.caoEnabled }}
-            caoName: {{ $e.caoName | quote }}
-            caoSource: {{ $e.caoSource | quote }}
-            caoChannel: {{ $e.caoChannel | quote }}
-            caoSourceNamespace: {{ $e.caoSourceNamespace | default "openshift-marketplace" | quote }}
-            caoInstallNamespace: {{ $e.caoInstallNamespace | default "openshift-operators" | quote }}
-            caoStartingCSV: {{ $e.caoStartingCSV | quote }}
-            caoApproval: {{ $e.caoApproval | default "Automatic" | quote }}
 {{- end }}
 {{- end }}
   template:
@@ -85,26 +72,6 @@ spec:
               value: '{{ "{{ .strfryEnabled | default false }}" }}'
             - name: couchbase.enabled
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
-            - name: certManager.enabled
-              value: '{{ "{{ .certManagerEnabled | default false }}" }}'
-            - name: bootstrapOperators.enabled
-              value: '{{ "{{ .bootstrapOperatorsEnabled | default false }}" }}'
-            - name: bootstrapOperators.caoEnabled
-              value: '{{ "{{ .caoEnabled | default false }}" }}'
-            - name: bootstrapOperators.caoChannel
-              value: '{{ "{{ .caoChannel }}" }}'
-            - name: bootstrapOperators.caoName
-              value: '{{ "{{ .caoName }}" }}'
-            - name: bootstrapOperators.caoSource
-              value: '{{ "{{ .caoSource }}" }}'
-            - name: bootstrapOperators.caoSourceNamespace
-              value: '{{ "{{ .caoSourceNamespace | default \"openshift-marketplace\" }}" }}'
-            - name: bootstrapOperators.caoInstallNamespace
-              value: '{{ "{{ .caoInstallNamespace | default \"openshift-operators\" }}" }}'
-            - name: bootstrapOperators.caoStartingCSV
-              value: '{{ "{{ .caoStartingCSV }}" }}'
-            - name: bootstrapOperators.caoApproval
-              value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging
