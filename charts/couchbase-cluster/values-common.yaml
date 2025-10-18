@@ -25,4 +25,3 @@ buckets:
 route:
   enabled: true
   host: ""   # optional admin host (e.g., cb.<baseDomain>)
-
