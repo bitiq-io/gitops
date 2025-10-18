@@ -306,9 +306,9 @@ seed_secrets() {
 
       ensure_put() {
         # ensure_put <path> key=value [key=value...]
-        # POSIX shell; avoid arrays. Use 'vault kv patch' to upsert individual keys.
-        path=\"$1\"; shift
-        mode=\"${overwrite_mode}\"
+        # Respects overwrite policy from DEV_VAULT_OVERWRITE propagated as OVERWRITE_MODE
+        local path=\"$1\"; shift
+        local mode=\"${overwrite_mode}\"
         # If mode=never and secret exists, do nothing
         if [ \"$mode\" = never ]; then
           if vault kv get \"$path\" >/dev/null 2>&1; then
@@ -316,24 +316,32 @@ seed_secrets() {
             return 0
           fi
         fi
-        wrote_any=0
+        # Build list of key=value to write based on mode
+        local kv to_write=()
         for kv in \"$@\"; do
-          k=\"\${kv%%=*}\"; v=\"\${kv#*=}\"
+          local k=\"\${kv%%=*}\"
+          local v=\"\${kv#*=}\"
           if [ \"$mode\" = always ]; then
-            vault kv patch \"$path\" \"$k=$v\" >/dev/null
-            wrote_any=1
-            echo \"[dev-vault] patched: $path:$k\"
-          else
+            to_write+=(\"$k=$v\")
+          elif [ \"$mode\" = missing ]; then
             if vault kv get -field=\"$k\" \"$path\" >/dev/null 2>&1; then
               echo \"[dev-vault] keep (key exists): $path:$k\"
             else
-              vault kv patch \"$path\" \"$k=$v\" >/dev/null
-              wrote_any=1
-              echo \"[dev-vault] patched (missing): $path:$k\"
+              to_write+=(\"$k=$v\")
+            fi
+          else
+            # Unknown mode; default to missing
+            if vault kv get -field=\"$k\" \"$path\" >/dev/null 2>&1; then
+              echo \"[dev-vault] keep (key exists): $path:$k\"
+            else
+              to_write+=(\"$k=$v\")
             fi
           fi
         done
-        if [ \"$wrote_any\" -eq 0 ]; then
+        if [ \"\${#to_write[@]}\" -gt 0 ]; then
+          vault kv put \"$path\" \"\${to_write[@]}\" >/dev/null
+          echo \"[dev-vault] wrote: $path (keys: \$(printf '%s ' \"\${to_write[@]}\" | sed 's/=.*//g'))\"
+        else
           echo \"[dev-vault] no-op: $path\"
         fi
       }
