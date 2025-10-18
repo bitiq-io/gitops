@@ -33,6 +33,19 @@ spec:
             vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
+            # App enablement flags and CAO params per env
+            strfryEnabled: {{ default false $e.strfryEnabled }}
+            couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
+            certManagerEnabled: {{ default false $e.certManagerEnabled }}
+            bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
+            caoEnabled: {{ default false $e.caoEnabled }}
+            caoName: {{ $e.caoName | quote }}
+            caoSource: {{ $e.caoSource | quote }}
+            caoChannel: {{ $e.caoChannel | quote }}
+            caoSourceNamespace: {{ $e.caoSourceNamespace | default "openshift-marketplace" | quote }}
+            caoInstallNamespace: {{ $e.caoInstallNamespace | default "openshift-operators" | quote }}
+            caoStartingCSV: {{ $e.caoStartingCSV | quote }}
+            caoApproval: {{ $e.caoApproval | default "Automatic" | quote }}
 {{- end }}
 {{- end }}
   template:
