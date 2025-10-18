@@ -56,6 +56,15 @@ M1. Bootstrap operators via GitOps (OLM)
 - Registry creds for partner images: Prefer updating the global pull secret. If SA patching is unavoidable, gate it behind a value and document.
 - Acceptance: Subscriptions reach pinned CSVs; CRDs exist; `make validate` passes.
 
+CAO quick smoke (post-sync)
+- Who: Codex agent
+- What: Verify CAO CSV and CRDs installed
+- Where: cluster (`openshift-operators`)
+- Why: Ensure Couchbase CRs will reconcile
+- Acceptance:
+  - `oc get csv -n openshift-operators --selector=operators.coreos.com/couchbase-operator-certified.openshift-operators | rg Succeeded`
+  - `oc api-resources | rg -i 'couchbase(cluster|bucket)'`
+
 M2. Secrets baseline in Vault
 - Status: In Progress (dev‑vault safe seeding implemented; VSO projections to be added per service)
 - Seed Vault dev paths (examples):
@@ -83,6 +92,16 @@ M4. Couchbase via CAO (single‑node on CRC)
 - Suggested local quotas (tune as needed):
   - data: 1500Mi, index: 512Mi, query: 256Mi, search: 512Mi, eventing: 256Mi; disable analytics if tight
 - Acceptance: Operator healthy; cluster forms; buckets created; apps can connect via service DNS.
+
+Couchbase quick smoke (post-sync)
+- Who: Codex agent
+- What: Verify cluster/buckets CRs exist and Ready
+- Where: app namespace (e.g., `bitiq-local`)
+- Why: Confirm Couchbase is operational
+- Acceptance:
+  - `oc get couchbasecluster -n <ns>` shows a Ready cluster
+  - `oc get couchbasebucket -n <ns>` lists expected buckets
+  - Optional admin Route responds (if enabled)
 
 M5. Ollama (no CPU mode)
 - Status: Pending
