@@ -1,4 +1,5 @@
 adminSecretName: couchbase-cluster-auth
+clusterName: couchbase-cluster
 
 servers:
   size: 1
