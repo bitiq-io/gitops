@@ -68,6 +68,10 @@ spec:
               value: '{{ "{{ .toyServiceUpdaterPause | default false }}" }}'
             - name: imageUpdater.toyWeb.pause
               value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
+            - name: strfry.enabled
+              value: '{{ "{{ .strfryEnabled | default false }}" }}'
+            - name: couchbase.enabled
+              value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging
