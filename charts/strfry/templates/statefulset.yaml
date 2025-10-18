@@ -25,16 +25,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/strfry
-            {{- if .Values.config.enabled }}
-            - name: config
-              mountPath: /etc/strfry
-            {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: strfry-data
-        {{- if .Values.config.enabled }}
-        - name: config
-          configMap:
-            name: strfry-config
-        {{- end }}
+

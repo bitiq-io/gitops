@@ -37,19 +37,6 @@ strfry:
   enabled: false
 couchbase:
   enabled: false
-certManager:
-  enabled: false
-
-bootstrapOperators:
-  enabled: false
-  caoEnabled: false
-  caoChannel: ""
-  caoName: ""
-  caoSource: ""
-  caoSourceNamespace: openshift-marketplace
-  caoInstallNamespace: openshift-operators
-  caoStartingCSV: ""
-  caoApproval: Automatic
 
 ciPipelines:
   serviceAccountName: pipeline
