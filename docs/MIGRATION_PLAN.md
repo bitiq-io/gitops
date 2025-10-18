@@ -36,8 +36,8 @@ Environment Model
 - Routes: use OpenShift Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
 Status Summary
-- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (HTTP‑01) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart.
-- In Progress: Operator bootstrap (CAO Subscription added, values wiring pending), Strfry chart hardening (ConfigMap, NetworkPolicy), Couchbase cluster wiring (VSO Secret reference, admin Route), cert-manager enablement/verification on local.
+- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (HTTP‑01) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added.
+- In Progress: Operator bootstrap (CAO values verification pending), Strfry chart hardening (NetworkPolicy default‑deny rollout), Couchbase cluster wiring (optional admin Route), cert-manager enablement/verification on local.
 - Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
@@ -76,13 +76,13 @@ M2. Secrets baseline in Vault
 - Acceptance: All charts reference k8s Secrets created by VSO; no literals in values/manifests; running `make dev-vault` does not overwrite existing Vault keys unless explicitly set with `DEV_VAULT_OVERWRITE=always`.
 
 M3. strfry chart
-- Status: In Progress (StatefulSet/Service/Route/PVC done; ConfigMap + NetworkPolicy pending)
+- Status: In Progress (StatefulSet/Service/Route/PVC done; ConfigMap added; NetworkPolicy scaffolded and disabled by default pending egress target finalization)
 - New `charts/strfry/` with: ConfigMap(s), PVC (parametrized), StatefulSet (probes, resources, `restricted-v2` securityContext), Service and Route.
 - Add default‑deny NetworkPolicy with explicit egress (DNS, DB, allowed APIs).
 - Acceptance: Route reachable; PVC binds (`storageClassName: ""` on local); helm‑unittest and `make validate` pass.
 
 M4. Couchbase via CAO (single‑node on CRC)
-- Status: In Progress (Cluster/Buckets chart scaffolded; CAO operator enablement + admin Route pending)
+- Status: In Progress (Cluster/Buckets chart scaffolded; VSO admin Secret wiring added; optional admin Route template added; CAO operator values verification pending)
 - Operator: CAO subscription enabled for local, pinned channel.
 - Cluster chart: `charts/couchbase-cluster/` with:
   - Secret from Vault for admin creds (VSO‑projected)

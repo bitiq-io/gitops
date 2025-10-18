@@ -46,3 +46,9 @@ secrets:
     namespace: ""
     destinationName: toy-web-config
     path: services/toy-web/config
+  couchbaseAdmin:
+    enabled: true
+    namespace: ""
+    destinationName: couchbase-cluster-auth
+    path: couchbase/admin
+    type: Opaque
