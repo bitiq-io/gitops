@@ -8,3 +8,6 @@ quotas:
 route:
   enabled: true
   host: ""
+  serviceName: couchbase-cluster-ui
+  targetPort: 8091
+  clusterIssuerName: letsencrypt-http01-local
