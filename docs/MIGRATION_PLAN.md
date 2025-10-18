@@ -1,7 +1,7 @@
 # Migration Plan: pac-infra → bitiq-io/gitops (Final)
 
 Owner: Paul / bitiq platform
-Last updated: 2025-10-17
+Last updated: 2025-10-17 (status updated)
 
 Goal
 - Migrate manual OpenShift/K8s manifests and setup steps into the Helm‑first GitOps repo `bitiq-io/gitops` managed by Argo CD, with environment overlays and Vault‑backed secrets.
@@ -27,12 +27,19 @@ Environment Model
 - Namespaces: per‑env (`bitiq-<env>`). Avoid `default`.
 - Routes: use OpenShift Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
+Status Summary
+- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (HTTP‑01) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart.
+- In Progress: Operator bootstrap (CAO Subscription added, values wiring pending), Strfry chart hardening (ConfigMap, NetworkPolicy), Couchbase cluster wiring (VSO Secret reference, admin Route), cert-manager enablement/verification on local.
+- Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
+
 Milestones (Updated for Local Defaults)
 
 M0. Inventory and verification
+- Status: Pending
 - Snapshot current pac-config usage (do not commit it). Produce `docs/bitiq-inventory.md` listing: strfry, Couchbase (cluster/buckets), Ollama, nostr_* services, nginx, cert-manager bits, GPU prerequisites.
 
 M1. Bootstrap operators via GitOps (OLM)
+- Status: In Progress (CAO Subscription template added; values and enablement pending)
 - Install via `charts/bootstrap-operators` (channels pinned):
   - OpenShift GitOps (if not already), Pipelines
   - Couchbase Autonomous Operator (enabled for local by default)
@@ -42,6 +49,7 @@ M1. Bootstrap operators via GitOps (OLM)
 - Acceptance: Subscriptions reach pinned CSVs; CRDs exist; `make validate` passes.
 
 M2. Secrets baseline in Vault
+- Status: In Progress (dev‑vault safe seeding implemented; VSO projections to be added per service)
 - Seed Vault dev paths (examples):
   - `gitops/data/registry/quay` → `dockerconfigjson`
   - `gitops/data/dns/route53` or your DNS provider → credentials
@@ -51,11 +59,13 @@ M2. Secrets baseline in Vault
 - Acceptance: All charts reference k8s Secrets created by VSO; no literals in values/manifests; running `make dev-vault` does not overwrite existing Vault keys unless explicitly set with `DEV_VAULT_OVERWRITE=always`.
 
 M3. strfry chart
+- Status: In Progress (StatefulSet/Service/Route/PVC done; ConfigMap + NetworkPolicy pending)
 - New `charts/strfry/` with: ConfigMap(s), PVC (parametrized), StatefulSet (probes, resources, `restricted-v2` securityContext), Service and Route.
 - Add default‑deny NetworkPolicy with explicit egress (DNS, DB, allowed APIs).
 - Acceptance: Route reachable; PVC binds (`storageClassName: ""` on local); helm‑unittest and `make validate` pass.
 
 M4. Couchbase via CAO (single‑node on CRC)
+- Status: In Progress (Cluster/Buckets chart scaffolded; CAO operator enablement + admin Route pending)
 - Operator: CAO subscription enabled for local, pinned channel.
 - Cluster chart: `charts/couchbase-cluster/` with:
   - Secret from Vault for admin creds (VSO‑projected)
@@ -67,17 +77,20 @@ M4. Couchbase via CAO (single‑node on CRC)
 - Acceptance: Operator healthy; cluster forms; buckets created; apps can connect via service DNS.
 
 M5. Ollama (no CPU mode)
+- Status: Pending
 - Modes allowed: `disabled | external | gpu` (omit CPU mode).
 - Local default: `external` — point to a GPU‑backed Ollama on the Ubuntu host or another machine via values/Secret (`OLLAMA_HOST`).
 - GPU path: For SNO/prod with supported NVIDIA GPUs, enable NFD + GPU Operator and deploy `charts/ollama/` (Deployment with GPU nodeSelector/tolerations, PVC, Service, optional Route).
 - Acceptance: For local external mode, health checks succeed against the external Ollama; for GPU clusters, `nvidia-smi` usable and pod Ready.
 
 M6. Remaining services (nostr_* + nginx)
+- Status: Pending
 - Create one chart per service; replace inline secrets with VSO‑projected Secrets; add default‑deny NetworkPolicies; image/tag parametrized.
 - Add Applications under umbrella with optional Image Updater annotations.
 - Acceptance: All reconcile in local; zero hardcoded secrets; `make validate` passes.
 
 M7. cert-manager and Routes (local enabled by default)
+- Status: In Progress (cert-manager-config chart added; local enablement via umbrella in place; live issuance verification pending)
 - Chart: `charts/cert-manager-config/` with ClusterIssuer and DNS creds (VSO‑projected) for prod; plus an HTTP‑01 issuer for local.
 - Local default: cert-manager enabled. Use HTTP‑01 with dynamic DNS:
   - Public FQDN → your WAN IP; NAT 80/443 → CRC host
@@ -87,6 +100,7 @@ M7. cert-manager and Routes (local enabled by default)
 - Acceptance: `oc get certificate` Ready; Routes terminate TLS with managed certs.
 
 M8. Cleanups and deprecation
+- Status: Pending
 - Remove manual pac-config usage and live‑apply docs; link to GitOps runbooks.
 - Keep `pac-config/` fully ignored in `.gitignore` to prevent accidental secret commits.
 
@@ -94,6 +108,7 @@ Detailed Tasks (Actionable)
 Task Format: each task specifies Who, What, Where, Why, Acceptance.
 
 1) Scaffolding
+- Status: In Progress (strfry, couchbase-cluster, cert-manager-config done; others pending)
 - Who: Codex agent (repo maintainer)
 - What: Create charts `strfry/`, `couchbase-cluster/`, `ollama/`, `nostr-query/`, `nostr-threads/`, `nostr-thread-copier/`, `nostouch/`, `nostr-site/`, `cert-manager-config/`, `gpu/` (gpu disabled by default for local). Add umbrella `app-*.yaml` per service; add per‑service `enabled` flags in `values-local.yaml`.
 - Where: `charts/*`, `charts/bitiq-umbrella/templates/app-*.yaml`
@@ -101,6 +116,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: `helm lint` and `make validate` pass with env filter `local`; Applications render for all new services.
 
 2) strfry
+- Status: In Progress (core resources done; ConfigMap + NetworkPolicy pending)
 - Who: Codex agent (repo maintainer)
 - What: Port config to ConfigMaps; add PVC; create StatefulSet with probes/securityContext (restricted‑v2), Service, Route; add default‑deny NetworkPolicy with explicit egress (DNS/DB).
 - Where: `charts/strfry/*`, `charts/bitiq-umbrella/templates/app-strfry.yaml`
@@ -108,6 +124,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: Route reachable over HTTPS in local; PVC binds with `storageClassName: ""`; validation passes.
 
 3) Couchbase (CAO + cluster)
+- Status: In Progress (chart scaffolded; operator enablement + VSO Secret wiring pending)
 - Who: Codex agent (repo maintainer) + Platform admin (cluster-scoped approvals if required)
 - What: Add CAO Subscription (pinned) and a `couchbase-cluster` chart: single‑node defaults on local, hostpath storage, reduced quotas; buckets parametrized; optional admin UI Route with cert-manager annotations.
 - Where: `charts/bootstrap-operators/*`, `charts/couchbase-cluster/*`, umbrella app for Couchbase
@@ -115,6 +132,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: Operator CSV Succeeded; cluster Ready with buckets; apps connect via service DNS; validation passes.
 
 4) Ollama
+- Status: Pending
 - Who: Codex agent (repo maintainer)
 - What: Add values `mode: external|gpu|disabled` (no CPU); local default `external` with `OLLAMA_HOST`; for GPU envs, add `charts/ollama/` Deployment with GPU scheduling, PVC, Service, optional Route.
 - Where: `charts/ollama/*`, umbrella app
@@ -122,6 +140,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: In local external mode, application health checks succeed against external Ollama; in GPU envs, `nvidia-smi` works and pod Ready.
 
 5) Services (nostr_*)
+- Status: Pending
 - Who: Codex agent (repo maintainer)
 - What: Create charts per service; switch to VSO‑projected Secrets; add default‑deny NetworkPolicies; optional Routes as needed; image/tag parametrized and optionally annotated for Image Updater.
 - Where: `charts/nostr-*/`, umbrella apps
@@ -129,6 +148,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: All workloads reconcile in local; zero hardcoded secrets; validation passes.
 
 6) cert-manager config
+- Status: In Progress (chart added; enabled for local; live issuance verification pending)
 - Who: Codex agent (repo maintainer) + Human for network/NAT
 - What: Add `cert-manager-config` chart with local HTTP‑01 issuer enabled by default; prod DNS‑01 issuer with Vault‑backed creds; document dynamic DNS, NAT 80/443→CRC host, and `crc tunnel` systemd service.
 - Where: `charts/cert-manager-config/*`, docs
@@ -136,6 +156,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: `oc get certificate` shows Ready for local hosts; Routes terminate TLS with valid certs.
 
 7) Docs/Runbooks
+- Status: Completed (BITIQLIVE-DEV and CERTS-LOCAL added)
 - Who: Codex agent (repo maintainer)
 - What: Add `docs/BITIQLIVE-DEV.md` covering dynamic DNS, NAT, and `crc tunnel` service; ensure rollback procedures refer to `docs/ROLLBACK.md`.
 - Where: `docs/*`
@@ -143,6 +164,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: Docs present and referenced; developers can follow steps to reproduce local HTTPS setup.
 
 8) Validation & Cutover
+- Status: Pending
 - Who: Codex agent (repo maintainer)
 - What: Deploy local; confirm pods, Routes (HTTPS), Secrets; back up PVCs; switch DNS to new Routes as needed; ensure CI gates pass.
 - Where: Cluster and repo CI
