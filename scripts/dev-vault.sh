@@ -270,6 +270,10 @@ HCL
 
 seed_secrets() {
   # Prefer user-provided env vars; fall back to demo placeholders
+  # Overwrite policy: DEV_VAULT_OVERWRITE=never|missing|always (default: missing)
+  local overwrite_mode
+  overwrite_mode="${DEV_VAULT_OVERWRITE:-missing}"
+
   local argocd_token webhook_secret docker_json
   argocd_token="${ARGOCD_TOKEN:-local-argocd-token}"
   webhook_secret="${GITHUB_WEBHOOK_SECRET:-local-webhook-secret}"
@@ -293,17 +297,60 @@ seed_secrets() {
   local docker_json_esc
   docker_json_esc=$(printf '%s' "$docker_json" | sed -e 's/[\\"]/\\&/g')
 
-  log "Seeding secrets into Vault KV path gitops/data/* (using provided env overrides when set)"
+  log "Seeding secrets into Vault KV (mode=${overwrite_mode}; env overrides respected)"
   oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
     sh -c "
       set -euo pipefail
       export VAULT_ADDR=\"http://127.0.0.1:8200\"
       export VAULT_TOKEN=\"root\"
-      vault kv put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\" >/dev/null
-      vault kv put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\" >/dev/null
-      vault kv put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\" >/dev/null
-      vault kv put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\" >/dev/null
-      vault kv put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\" >/dev/null
+
+      ensure_put() {
+        # ensure_put <path> key=value [key=value...]
+        # Respects overwrite policy from DEV_VAULT_OVERWRITE propagated as OVERWRITE_MODE
+        local path=\"$1\"; shift
+        local mode=\"${overwrite_mode}\"
+        # If mode=never and secret exists, do nothing
+        if [ \"$mode\" = never ]; then
+          if vault kv get \"$path\" >/dev/null 2>&1; then
+            echo \"[dev-vault] skip (exists, mode=never): $path\"
+            return 0
+          fi
+        fi
+        # Build list of key=value to write based on mode
+        local kv to_write=()
+        for kv in \"$@\"; do
+          local k=\"\${kv%%=*}\"
+          local v=\"\${kv#*=}\"
+          if [ \"$mode\" = always ]; then
+            to_write+=(\"$k=$v\")
+          elif [ \"$mode\" = missing ]; then
+            if vault kv get -field=\"$k\" \"$path\" >/dev/null 2>&1; then
+              echo \"[dev-vault] keep (key exists): $path:$k\"
+            else
+              to_write+=(\"$k=$v\")
+            fi
+          else
+            # Unknown mode; default to missing
+            if vault kv get -field=\"$k\" \"$path\" >/dev/null 2>&1; then
+              echo \"[dev-vault] keep (key exists): $path:$k\"
+            else
+              to_write+=(\"$k=$v\")
+            fi
+          fi
+        done
+        if [ \"\${#to_write[@]}\" -gt 0 ]; then
+          vault kv put \"$path\" \"\${to_write[@]}\" >/dev/null
+          echo \"[dev-vault] wrote: $path (keys: \$(printf '%s ' \"\${to_write[@]}\" | sed 's/=.*//g'))\"
+        else
+          echo \"[dev-vault] no-op: $path\"
+        fi
+      }
+
+      ensure_put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\"
+      ensure_put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\"
+      ensure_put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\"
+      ensure_put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\"
+      ensure_put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\"
     "
 }
 
