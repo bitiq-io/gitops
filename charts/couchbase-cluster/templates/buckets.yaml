@@ -1,0 +1,14 @@
+{{- $root := . -}}
+{{- range .Values.buckets }}
+apiVersion: couchbase.com/v2
+kind: CouchbaseBucket
+metadata:
+  name: {{ .name }}
+spec:
+  cluster: {{ $root.Values.clusterName | default "couchbase-cluster" | quote }}
+  memoryQuota: {{ .memory | quote }}
+  ioPriority: {{ default "low" .ioPriority | quote }}
+  replicas: 1
+  conflictResolution: seqno
+---
+{{- end }}

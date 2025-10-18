@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: strfry
+spec:
+  to:
+    kind: Service
+    name: strfry
+  port:
+    targetPort: relay
+  tls:
+    termination: edge
+  host: {{ include "strfry.routeHost" . | quote }}
+

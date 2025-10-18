@@ -1,0 +1,33 @@
+adminSecretName: couchbase-cluster-auth
+clusterName: couchbase-cluster
+
+servers:
+  size: 1
+  services: [data, index, query, search, eventing]
+  # Set storage classes per volume type when needed; leave empty to use default
+  storageClassRWO: ""   # e.g., ocs-storagecluster-ceph-rbd in prod
+  storageClassRWX: ""   # e.g., ocs-storagecluster-cephfs in prod
+
+quotas:
+  data: 1536Mi
+  index: 512Mi
+  query: 256Mi
+  search: 512Mi
+  eventing: 256Mi
+  analytics: 0Mi   # 0 disables analytics for tight footprints
+
+buckets:
+  - name: all-nostr-events
+    memory: 512Mi
+    ioPriority: high
+  - name: dev-threads
+    memory: 256Mi
+
+route:
+  enabled: true
+  host: ""   # optional admin host (e.g., cb.<baseDomain>)
+  serviceName: ""   # optional Service name to route to (only render Route if set)
+  targetPort: 8091
+  clusterIssuerName: ""
+
+baseDomain: ""

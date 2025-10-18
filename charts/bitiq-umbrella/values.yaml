@@ -32,6 +32,25 @@ sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service
   toyWeb: quay.io/paulcapestany/toy-web
 
+# New services (env toggles used by templates)
+strfry:
+  enabled: false
+couchbase:
+  enabled: false
+certManager:
+  enabled: false
+
+bootstrapOperators:
+  enabled: false
+  caoEnabled: false
+  caoChannel: ""
+  caoName: ""
+  caoSource: ""
+  caoSourceNamespace: openshift-marketplace
+  caoInstallNamespace: openshift-operators
+  caoStartingCSV: ""
+  caoApproval: Automatic
+
 ciPipelines:
   serviceAccountName: pipeline
   fsGroup: ""

@@ -1,0 +1,7 @@
+http01:
+  enabled: false
+  # Issuer name and contact
+  name: letsencrypt-http01-local
+  email: you@example.com
+  # Use Let's Encrypt staging by default to avoid rate limits
+  production: false

@@ -47,6 +47,27 @@ sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service
   toyWeb: quay.io/paulcapestany/toy-web
 
+# New services (env toggles)
+strfry:
+  enabled: false
+couchbase:
+  enabled: false
+
+certManager:
+  enabled: false
+
+bootstrapOperators:
+  enabled: false
+  # Couchbase Autonomous Operator overrides (passed into bootstrap-operators)
+  caoEnabled: false
+  caoChannel: ""
+  caoName: ""
+  caoSource: ""
+  caoSourceNamespace: openshift-marketplace
+  caoInstallNamespace: openshift-operators
+  caoStartingCSV: ""
+  caoApproval: Automatic
+
 ciPipelines:
   serviceAccountName: pipeline
   # Optional fsGroup override for Tekton TaskRuns; empty uses SCC defaults
