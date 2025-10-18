@@ -3,6 +3,14 @@
 Owner: Paul / bitiq platform
 Last updated: 2025-10-17 (status updated)
 
+Next Actions (quick scan)
+- Add bootstrap-operators to umbrella (Who: Codex). What: create `app-bootstrap-operators.yaml` to GitOps-manage OLM Subscriptions. Where: `charts/bitiq-umbrella/templates/`. Acceptance: Subscriptions render and reconcile via Argo.
+- Enable CAO for local (Who: Codex). What: set `operators.cao.enabled=true` with correct `name/channel/source`. Where: `charts/bootstrap-operators/values.yaml`. Acceptance: CAO CSV Succeeded in `openshift-operators`.
+- Strfry hardening (Who: Codex). What: add ConfigMap(s) and default-deny NetworkPolicy with explicit egress. Where: `charts/strfry/templates/`. Acceptance: Route OK; pods Ready; egress limited to DNS/DB.
+- Couchbase wiring (Who: Codex). What: VSO Secret ref for admin creds and optional admin UI Route w/ cert-manager annotations. Where: `charts/couchbase-cluster/`; `charts/vault-runtime` values. Acceptance: cluster Ready, buckets created, admin Route HTTPS.
+- Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
+- Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
+
 Goal
 - Migrate manual OpenShift/K8s manifests and setup steps into the Helm‑first GitOps repo `bitiq-io/gitops` managed by Argo CD, with environment overlays and Vault‑backed secrets.
 - Optimize for ENV=local on a remote Ubuntu home server with dynamic DNS, while keeping the structure easy to extend to ENV=prod.
