@@ -39,6 +39,18 @@ operators:
     approval: Automatic
     createNamespace: true
 
+  # Couchbase Autonomous Operator (disabled by default). Provide the correct
+  # catalog source and package name for your environment, then set enabled=true.
+  cao:
+    enabled: false
+    channel: ""               # e.g., stable
+    name: ""                  # e.g., couchbase-operator-certified
+    source: ""                # e.g., redhat-operators or certified-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
 argoInstance:
   create: false                 # If true, create a user-defined ArgoCD instance
   name: example

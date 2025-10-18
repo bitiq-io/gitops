@@ -53,6 +53,9 @@ strfry:
 couchbase:
   enabled: false
 
+certManager:
+  enabled: false
+
 ciPipelines:
   serviceAccountName: pipeline
   # Optional fsGroup override for Tekton TaskRuns; empty uses SCC defaults

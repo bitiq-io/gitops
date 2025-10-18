@@ -1,0 +1,6 @@
+http01:
+  enabled: true
+  name: letsencrypt-http01-local
+  email: you@example.com
+  production: false
+

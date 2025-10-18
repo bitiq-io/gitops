@@ -1,0 +1,17 @@
+{{- if .Values.http01.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.http01.name | quote }}
+spec:
+  acme:
+    email: {{ .Values.http01.email | quote }}
+    server: {{ ternary "https://acme-v02.api.letsencrypt.org/directory" "https://acme-staging-v02.api.letsencrypt.org/directory" .Values.http01.production | quote }}
+    privateKeySecretRef:
+      name: {{ printf "%s-key" .Values.http01.name | quote }}
+    solvers:
+      - http01:
+          ingress:
+            class: openshift-default
+{{- end }}
+
