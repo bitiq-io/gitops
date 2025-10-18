@@ -72,6 +72,12 @@ spec:
               value: '{{ "{{ .strfryEnabled | default false }}" }}'
             - name: couchbase.enabled
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
+            - name: certManager.enabled
+              value: '{{ "{{ .certManagerEnabled | default false }}" }}'
+            - name: strfry.enabled
+              value: '{{ "{{ .strfryEnabled | default false }}" }}'
+            - name: couchbase.enabled
+              value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging

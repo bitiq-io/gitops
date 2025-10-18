@@ -37,6 +37,8 @@ strfry:
   enabled: false
 couchbase:
   enabled: false
+certManager:
+  enabled: false
 
 ciPipelines:
   serviceAccountName: pipeline
