@@ -33,3 +33,22 @@ securityContext:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Optional configuration projected via ConfigMap and mounted at /etc/strfry
+config:
+  enabled: true
+  strfryConf: |
+    # Example strfry config (tune as needed)
+    [server]
+    listen = ":7777"
+  routerConf: |
+    # Example router config
+    [routes]
+    # add routing rules here
+
+networkPolicy:
+  enabled: false
+  # Additional CIDRs to allow egress to (besides DNS 53)
+  extraCIDRs: []
+  # Additional ports to allow for egress in {port,protocol} objects
+  extraPorts: []

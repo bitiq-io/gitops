@@ -25,3 +25,8 @@ buckets:
 route:
   enabled: true
   host: ""   # optional admin host (e.g., cb.<baseDomain>)
+  serviceName: ""   # optional Service name to route to (only render Route if set)
+  targetPort: 8091
+  clusterIssuerName: ""
+
+baseDomain: ""
