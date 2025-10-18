@@ -1,0 +1,49 @@
+{{- $bo := default (dict) .Values.bootstrapOperators }}
+{{- $boEnabled := false }}
+{{- if hasKey $bo "enabled" }}
+  {{- $boEnabled = eq (lower (printf "%v" (get $bo "enabled"))) "true" }}
+{{- end }}
+{{- if $boEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bootstrap-operators-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/bootstrap-operators
+    helm:
+      values: |
+        operators:
+          cao:
+            enabled: {{ .Values.bootstrapOperators.caoEnabled | default false }}
+            channel: {{ .Values.bootstrapOperators.caoChannel | quote }}
+            name: {{ .Values.bootstrapOperators.caoName | quote }}
+            source: {{ .Values.bootstrapOperators.caoSource | quote }}
+            sourceNamespace: {{ .Values.bootstrapOperators.caoSourceNamespace | default "openshift-marketplace" | quote }}
+            installNamespace: {{ .Values.bootstrapOperators.caoInstallNamespace | default "openshift-operators" | quote }}
+            startingCSV: {{ .Values.bootstrapOperators.caoStartingCSV | quote }}
+            approval: {{ .Values.bootstrapOperators.caoApproval | default "Automatic" | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
+

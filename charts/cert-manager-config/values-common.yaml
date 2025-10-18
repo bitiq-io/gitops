@@ -5,4 +5,3 @@ http01:
   email: you@example.com
   # Use Let's Encrypt staging by default to avoid rate limits
   production: false
-
