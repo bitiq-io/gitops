@@ -23,6 +23,9 @@ spec:
         - values-common.yaml
         - values-{{ .Values.env }}.yaml
       ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.appNamespace }}

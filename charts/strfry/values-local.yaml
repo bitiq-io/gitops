@@ -11,3 +11,6 @@ resources:
 persistence:
   size: 10Gi
   storageClassName: ""
+
+networkPolicy:
+  enabled: true
