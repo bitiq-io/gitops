@@ -36,6 +36,8 @@ envs:
     caoInstallNamespace: openshift-operators
     caoApproval: Automatic
     caoStartingCSV: ""
+    # Public apps
+    nostrSiteEnabled: true
     # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
     # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
     # Leave empty to use cluster defaults/SCC. The bootstrap script auto-detects
@@ -67,6 +69,7 @@ envs:
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
     caoEnabled: false
+    nostrSiteEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: http://vault-sno.vault.sno.svc:8200
@@ -94,6 +97,7 @@ envs:
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
     caoEnabled: false
+    nostrSiteEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
     vaultRuntimeAddress: https://vault-prod.vault.svc:8200

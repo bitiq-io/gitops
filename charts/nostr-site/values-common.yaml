@@ -16,4 +16,3 @@ route:
   host: ""
   # Optional cert-manager ClusterIssuer name for TLS
   clusterIssuerName: ""
-

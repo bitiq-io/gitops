@@ -33,6 +33,8 @@ spec:
             vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
+            # Per-app enablement flags
+            nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
             # App enablement flags and CAO params per env
             strfryEnabled: {{ default false $e.strfryEnabled }}
             couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
@@ -105,6 +107,8 @@ spec:
               value: '{{ "{{ .caoStartingCSV }}" }}'
             - name: bootstrapOperators.caoApproval
               value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
+            - name: nostrSite.enabled
+              value: '{{ "{{ .nostrSiteEnabled | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging
