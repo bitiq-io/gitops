@@ -15,6 +15,7 @@ spec:
     name: {{ .Values.route.serviceName }}
   port:
     targetPort: {{ .Values.route.targetPort }}
+  tls:
+    termination: edge
   host: {{ include "cb.routeHost" . | quote }}
 {{- end }}
-

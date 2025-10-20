@@ -37,7 +37,7 @@ Environment Model
 
 Status Summary
 - Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (HTTP‑01) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added.
-  - PR feedback: Addressed Codex comments — (1) pass env flags to ApplicationSet generator elements; (2) set CouchbaseBucket `spec.cluster` from values.
+  - PR feedback: Addressed Codex comments — (1) pass env flags to ApplicationSet generator elements; (2) set CouchbaseBucket `spec.cluster` from values; (3) add `spec.tls.termination: edge` to Routes (nostr-site and Couchbase admin) so cert-manager can inject certificates and HTTPS works.
 - In Progress: Operator bootstrap (CAO values verification pending), Strfry chart hardening (NetworkPolicy default‑deny rollout), Couchbase cluster wiring (optional admin Route), cert-manager enablement/verification on local.
 - Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 

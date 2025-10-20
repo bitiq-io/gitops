@@ -14,4 +14,6 @@ spec:
     name: nostr-site
   port:
     targetPort: http
+  tls:
+    termination: edge
   host: {{ .Values.route.host | quote }}

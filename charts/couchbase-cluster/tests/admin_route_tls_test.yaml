@@ -1,0 +1,17 @@
+suite: Couchbase admin Route TLS
+templates:
+  - templates/admin-route.yaml
+release:
+  name: couchbase-cluster
+  namespace: bitiq-local
+tests:
+  - it: sets TLS termination to edge when admin Route renders
+    set:
+      route:
+        enabled: true
+        serviceName: couchbase-cluster-ui
+        targetPort: 8091
+    asserts:
+      - equal:
+          path: spec.tls.termination
+          value: edge
