@@ -1,0 +1,4 @@
+baseDomain: apps-crc.testing
+route:
+  host: "k7501450.eero.online"
+  clusterIssuerName: letsencrypt-http01-local
