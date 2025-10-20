@@ -15,4 +15,3 @@ tests:
       - equal:
           path: spec.tls.termination
           value: edge
-
