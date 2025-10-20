@@ -40,6 +40,9 @@ couchbase:
 certManager:
   enabled: false
 
+nginxSites:
+  enabled: false
+
 bootstrapOperators:
   enabled: false
   caoEnabled: false

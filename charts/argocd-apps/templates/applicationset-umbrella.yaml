@@ -38,6 +38,7 @@ spec:
             strfryEnabled: {{ default false $e.strfryEnabled }}
             couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
             certManagerEnabled: {{ default false $e.certManagerEnabled }}
+            nginxSitesEnabled: {{ default false $e.nginxSitesEnabled }}
             bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
             caoEnabled: {{ default false $e.caoEnabled }}
             caoName: {{ $e.caoName | quote }}
@@ -88,6 +89,8 @@ spec:
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
             - name: certManager.enabled
               value: '{{ "{{ .certManagerEnabled | default false }}" }}'
+            - name: nginxSites.enabled
+              value: '{{ "{{ .nginxSitesEnabled | default false }}" }}'
             - name: bootstrapOperators.enabled
               value: '{{ "{{ .bootstrapOperatorsEnabled | default false }}" }}'
             - name: bootstrapOperators.caoEnabled

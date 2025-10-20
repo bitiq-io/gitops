@@ -1,4 +1,4 @@
 baseDomain: apps-crc.testing
 route:
-  host: "k7501450.eero.online"
+  host: "alpha.cyphai.com"
   clusterIssuerName: letsencrypt-http01-local
