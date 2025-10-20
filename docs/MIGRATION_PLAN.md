@@ -210,3 +210,15 @@ Appendix: Dynamic DNS + `crc tunnel` quick guide (Local)
 - NAT: port forward 80 and 443 from router → Ubuntu host.
 - `crc tunnel`: create a systemd service running `crc tunnel` to expose CRC router on 80/443; ensure it starts on boot and restarts on failure.
 - cert-manager: configure HTTP‑01 issuer; create Routes with hosts under your FQDN; cert-manager will solve and issue real certs.
+
+Recent Changes (2025‑10‑20)
+- Cert‑manager via GitOps bootstrap: added Subscription for the OpenShift cert‑manager operator (stable‑v1) and bootstrap waits for CSV/CRDs.
+- NGINX static sites under GitOps (bitiq‑local): Deployment/Service/PVC + Routes per domain + one‑shot seeding Job; apex→www redirect for cyphai.com; content served at `www.cyphai.com`.
+- Local FQDNs configured: nostr_site `alpha.cyphai.com`, strfry `relay.cyphai.com`, Couchbase admin `cb.cyphai.com` (internal app Routes remain on `apps-crc.testing`).
+- Vault seeding extended: dev‑vault seeds `gitops/couchbase/admin` from `COUCHBASE_ADMIN_USERNAME/COUCHBASE_ADMIN_PASSWORD`; VSO projects to `bitiq-local/couchbase-cluster-auth`.
+- Quick start (local):
+  1) `ENV=local BASE_DOMAIN=apps-crc.testing VAULT_OPERATORS=true ./scripts/bootstrap.sh`
+  2) `AUTO_DEV_VAULT=true ARGOCD_TOKEN='<token>' GITHUB_WEBHOOK_SECRET='<secret>' QUAY_USERNAME='<user>' QUAY_PASSWORD='<pass>' QUAY_EMAIL='<email>' COUCHBASE_ADMIN_USERNAME='Administrator' COUCHBASE_ADMIN_PASSWORD='<strong>' make dev-vault`
+  3) Ensure DNS CNAMEs exist for: `alpha.cyphai.com`, `relay.cyphai.com`, `cb.cyphai.com`, `www.cyphai.com` → your DDNS host (low TTL).
+  4) Refresh umbrella: `oc -n openshift-gitops annotate application bitiq-umbrella-local argocd.argoproj.io/refresh=hard --overwrite`.
+  5) Verify Routes + certs: `oc -n bitiq-local get routes` and curl external hosts.
