@@ -2,7 +2,7 @@ SHELL := /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL := help
 
-CHARTS := charts/bootstrap-operators charts/argocd-apps charts/bitiq-umbrella charts/image-updater charts/ci-pipelines charts/toy-service charts/toy-web charts/vault-runtime charts/vault-config
+CHARTS := charts/bootstrap-operators charts/argocd-apps charts/bitiq-umbrella charts/image-updater charts/ci-pipelines charts/toy-service charts/toy-web charts/vault-runtime charts/vault-config charts/nostr-site charts/couchbase-cluster
 
 # Export common secret/env overrides so recipe shells inherit them.
 # This makes `make dev-vault GITHUB_WEBHOOK_SECRET=...` reliably pass through
@@ -24,7 +24,7 @@ help: ## Show help
 lint: ## helm lint all charts
 	@for c in $(CHARTS); do \
 	  echo "==> helm lint $$c"; \
-	  if [ "$$c" = "charts/toy-service" ] || [ "$$c" = "charts/toy-web" ]; then \
+	  if [ "$$c" = "charts/toy-service" ] || [ "$$c" = "charts/toy-web" ] || [ "$$c" = "charts/nostr-site" ] || [ "$$c" = "charts/couchbase-cluster" ]; then \
 	    helm lint $$c -f $$c/values-common.yaml -f $$c/values-local.yaml || exit 1; \
 	  else \
 	    helm lint $$c || exit 1; \
