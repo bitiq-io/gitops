@@ -7,7 +7,7 @@ quotas:
   analytics: 0Mi
 route:
   enabled: true
-  host: ""
+  host: "cb.cyphai.com"
   serviceName: couchbase-cluster-ui
   targetPort: 8091
   clusterIssuerName: letsencrypt-http01-local

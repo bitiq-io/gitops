@@ -1,0 +1,31 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nginx-noelcapestany
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01-local
+    haproxy.router.openshift.io/redirect-to-https: "true"
+spec:
+  to:
+    kind: Service
+    name: nginx-service
+  tls:
+    termination: edge
+  host: noelcapestany.com
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nginx-noelcapestany-www
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01-local
+    haproxy.router.openshift.io/redirect-to-https: "true"
+spec:
+  to:
+    kind: Service
+    name: nginx-service
+  tls:
+    termination: edge
+  host: www.noelcapestany.com

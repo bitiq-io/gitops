@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-static-sites
+  namespace: bitiq-local
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE="/mnt"
+              mkdir -p "$BASE"
+              seed() {
+                dir="$1"
+                title="$2"
+                mkdir -p "$BASE/$dir"
+                cat >"$BASE/$dir/index.html" <<EOF
+              <!doctype html>
+              <html lang="en">
+                <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <title>$title</title>
+                  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;margin:3rem;color:#111}code{background:#f3f3f3;padding:.2rem .4rem;border-radius:.25rem}</style>
+                </head>
+                <body>
+                  <h1>$title</h1>
+                  <p>Static site placeholder is live.</p>
+                  <p>Served by NGINX in OpenShift (<code>bitiq-local</code>).</p>
+                </body>
+              </html>
+              EOF
+              }
+              # Sites served from these directories (apex redirects handled by NGINX where configured)
+              seed "cyphai.com"              "www.cyphai.com"
+              seed "didgo.com"               "didgo.com"
+              seed "paulcapestany.com"       "paulcapestany.com"
+              seed "bitiq.io"                "bitiq.io"
+              seed "noelcapestany.com"       "noelcapestany.com"
+              seed "beatricecapestany.com"   "beatricecapestany.com"
+              seed "ipiqi.com"               "ipiqi.com"
+              seed "neuance.net"             "neuance.net"
+          volumeMounts:
+            - name: static-files
+              mountPath: /mnt
+      volumes:
+        - name: static-files
+          persistentVolumeClaim:
+            claimName: static-sites-pvc

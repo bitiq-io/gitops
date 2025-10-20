@@ -14,3 +14,7 @@ persistence:
 
 networkPolicy:
   enabled: true
+
+# Explicit FQDN for the OpenShift Route
+route:
+  host: "relay.cyphai.com"

@@ -1,0 +1,15 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ .Values.operators.certManager.name }}
+  namespace: {{ .Values.operators.certManager.installNamespace }}
+spec:
+  channel: {{ .Values.operators.certManager.channel }}
+  name: {{ .Values.operators.certManager.name }}
+  source: {{ .Values.operators.certManager.source }}
+  sourceNamespace: {{ .Values.operators.certManager.sourceNamespace }}
+  installPlanApproval: {{ .Values.operators.certManager.approval }}
+  {{- if .Values.operators.certManager.startingCSV }}
+  startingCSV: {{ .Values.operators.certManager.startingCSV | quote }}
+  {{- end }}
+

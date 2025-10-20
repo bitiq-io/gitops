@@ -59,6 +59,9 @@ certManager:
 nostrSite:
   enabled: false
 
+nginxSites:
+  enabled: false
+
 bootstrapOperators:
   enabled: false
   # Couchbase Autonomous Operator overrides (passed into bootstrap-operators)
