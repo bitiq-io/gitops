@@ -94,6 +94,9 @@ VSO_SUBSCRIPTION=${VSO_SUBSCRIPTION:-vault-secrets-operator}
 VSO_SUBSCRIPTION_NAMESPACE=${VSO_SUBSCRIPTION_NAMESPACE:-hashicorp-vault-secrets-operator}
 VCO_SUBSCRIPTION=${VCO_SUBSCRIPTION:-vault-config-operator}
 VCO_SUBSCRIPTION_NAMESPACE=${VCO_SUBSCRIPTION_NAMESPACE:-vault-config-operator}
+# Cert Manager (OpenShift operator)
+CERTMANAGER_SUBSCRIPTION=${CERTMANAGER_SUBSCRIPTION:-openshift-cert-manager-operator}
+CERTMANAGER_SUBSCRIPTION_NAMESPACE=${CERTMANAGER_SUBSCRIPTION_NAMESPACE:-openshift-operators}
 
 # Optional: auto-detect a suitable fsGroup for Tekton workspaces (PVCs)
 # On OpenShift, pods run with a random UID from a namespace range; ensuring the
@@ -179,6 +182,7 @@ wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION
 wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
 wait_for_subscription_csv "$VSO_SUBSCRIPTION_NAMESPACE" "$VSO_SUBSCRIPTION"
 wait_for_subscription_csv "$VCO_SUBSCRIPTION_NAMESPACE" "$VCO_SUBSCRIPTION"
+wait_for_subscription_csv "$CERTMANAGER_SUBSCRIPTION_NAMESPACE" "$CERTMANAGER_SUBSCRIPTION"
 # VSO core CRDs
 wait_for_crd vaultconnections.secrets.hashicorp.com
 wait_for_crd vaultauths.secrets.hashicorp.com
@@ -188,6 +192,9 @@ wait_for_crd vaultdynamicsecrets.secrets.hashicorp.com
 wait_for_crd kubernetesauthengineconfigs.redhatcop.redhat.io
 wait_for_crd kubernetesauthengineroles.redhatcop.redhat.io
 wait_for_crd policies.redhatcop.redhat.io || true
+## cert-manager CRDs (best-effort)
+wait_for_crd clusterissuers.cert-manager.io || true
+wait_for_crd certificates.cert-manager.io || true
 ## ESO fully decommissioned; no waits or cleanup required.
 
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
