@@ -297,6 +297,13 @@ seed_secrets() {
   local docker_json_esc
   docker_json_esc=$(printf '%s' "$docker_json" | sed -e 's/[\\"]/\\&/g')
 
+  # Couchbase admin creds (seed for local); allow env override
+  local cb_user cb_pass cb_user_esc cb_pass_esc
+  cb_user="${COUCHBASE_ADMIN_USERNAME:-admin}"
+  cb_pass="${COUCHBASE_ADMIN_PASSWORD:-changeme}"
+  cb_user_esc=$(printf '%s' "$cb_user" | sed -e 's/[\\"]/\\&/g')
+  cb_pass_esc=$(printf '%s' "$cb_pass" | sed -e 's/[\\"]/\\&/g')
+
   log "Seeding secrets into Vault KV (mode=${overwrite_mode}; env overrides respected)"
   oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
     sh -c "
@@ -351,6 +358,7 @@ seed_secrets() {
       ensure_put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\"
       ensure_put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\"
       ensure_put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\"
+      ensure_put gitops/couchbase/admin username=\"${cb_user_esc}\" password=\"${cb_pass_esc}\"
       ensure_put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\"
       ensure_put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\"
     "
