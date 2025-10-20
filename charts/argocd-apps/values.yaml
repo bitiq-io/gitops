@@ -52,6 +52,7 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-local
     vaultConfigPolicyName: gitops-local
+    nostrSiteEnabled: true
   - name: sno
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno
@@ -79,6 +80,7 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-sno
     vaultConfigPolicyName: gitops-sno
+    nostrSiteEnabled: false
   - name: prod
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
@@ -106,3 +108,4 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-prod
     vaultConfigPolicyName: gitops-prod
+    nostrSiteEnabled: false
