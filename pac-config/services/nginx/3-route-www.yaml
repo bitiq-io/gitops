@@ -13,4 +13,3 @@ spec:
   tls:
     termination: edge
   host: www.cyphai.com
-

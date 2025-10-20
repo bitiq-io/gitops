@@ -14,20 +14,20 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:latest
-        ports:
-        - containerPort: 80
-        volumeMounts:
-        - name: static-files
-          mountPath: /usr/share/nginx/html
-        - name: nginx-config
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: static-files
+              mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
       volumes:
-      - name: static-files
-        persistentVolumeClaim:
-          claimName: static-sites-pvc
-      - name: nginx-config
-        configMap:
-          name: nginx-config
+        - name: static-files
+          persistentVolumeClaim:
+            claimName: static-sites-pvc
+        - name: nginx-config
+          configMap:
+            name: nginx-config

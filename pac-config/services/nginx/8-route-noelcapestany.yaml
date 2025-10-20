@@ -29,4 +29,3 @@ spec:
   tls:
     termination: edge
   host: www.noelcapestany.com
-

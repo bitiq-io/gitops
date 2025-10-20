@@ -57,4 +57,3 @@ spec:
         - name: static-files
           persistentVolumeClaim:
             claimName: static-sites-pvc
-

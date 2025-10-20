@@ -77,7 +77,7 @@ data:
         location / {
           return 301 https://bitiq.io$request_uri;
         }
-      }      
+      }
       server {
         listen 80;
         server_name noelcapestany.com;
