@@ -306,7 +306,7 @@ seed_secrets() {
 
       ensure_put() {
         # ensure_put <path> key=value [key=value...]
-        # POSIX shell; avoid arrays. Use 'vault kv patch' to upsert individual keys.
+        # POSIX shell; avoid arrays. Create the secret on first run with 'kv put', then patch keys.
         path=\"$1\"; shift
         mode=\"${overwrite_mode}\"
         # If mode=never and secret exists, do nothing
@@ -315,6 +315,16 @@ seed_secrets() {
             echo \"[dev-vault] skip (exists, mode=never): $path\"
             return 0
           fi
+        fi
+        # If secret doesn't exist, initialize it with all provided keys in a single put
+        if ! vault kv get \"$path\" >/dev/null 2>&1; then
+          if [ \"$mode\" = never ]; then
+            echo \"[dev-vault] skip (missing path, mode=never): $path\"
+            return 0
+          fi
+          vault kv put \"$path\" "$@" >/dev/null
+          echo \"[dev-vault] created: $path (keys: $@)\"
+          return 0
         fi
         wrote_any=0
         for kv in \"$@\"; do
