@@ -14,6 +14,7 @@ data:
       server {
         listen 8080;
         server_name www.cyphai.com;
+
         location / {
           root /usr/share/nginx/html/cyphai.com;
           index index.html index.htm;
@@ -22,13 +23,16 @@ data:
       server {
         listen 8080;
         server_name cyphai.com;
+
         location / {
           return 301 https://www.cyphai.com$request_uri;
         }
       }
+
       server {
         listen 8080;
         server_name didgo.com;
+
         location / {
           root /usr/share/nginx/html/didgo.com;
           index index.html index.htm;
@@ -37,6 +41,7 @@ data:
       server {
         listen 8080;
         server_name www.didgo.com;
+
         location / {
           return 301 https://didgo.com$request_uri;
         }
@@ -44,6 +49,7 @@ data:
       server {
         listen 8080;
         server_name paulcapestany.com;
+
         location / {
           root /usr/share/nginx/html/paulcapestany.com;
           index index.html index.htm;
@@ -52,6 +58,7 @@ data:
       server {
         listen 8080;
         server_name www.paulcapestany.com;
+
         location / {
           return 301 https://paulcapestany.com$request_uri;
         }
@@ -59,6 +66,7 @@ data:
       server {
         listen 8080;
         server_name bitiq.io;
+
         location / {
           root /usr/share/nginx/html/bitiq.io;
           index index.html index.htm;
@@ -67,6 +75,7 @@ data:
       server {
         listen 8080;
         server_name www.bitiq.io;
+
         location / {
           return 301 https://bitiq.io$request_uri;
         }
