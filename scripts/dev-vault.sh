@@ -13,7 +13,7 @@ DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
 USE_VAULT_OPERATORS=${VAULT_OPERATORS:-true}
 # Allow overriding the dev Vault image; default to upstream Docker Hub
-DEV_VAULT_IMAGE=${DEV_VAULT_IMAGE:-hashicorp/vault:1.15.6}
+DEV_VAULT_IMAGE=${DEV_VAULT_IMAGE:-docker.io/hashicorp/vault:1.15.6}
 
 require oc
 require helm
@@ -127,13 +127,9 @@ apply_manifests() {
   if [[ -n "${DEV_VAULT_IMPORT:-}" ]]; then
     want_import=${DEV_VAULT_IMPORT}
   else
-    if oc get clusterversion >/dev/null 2>&1; then
-      want_import=true
-    else
-      want_import=false
-    fi
+    want_import=false
   fi
-  import_timeout=${DEV_VAULT_IMPORT_TIMEOUT:-15}
+  import_timeout=${DEV_VAULT_IMPORT_TIMEOUT:-5}
   if command -v timeout >/dev/null 2>&1; then
     has_timeout="true"
   else
@@ -312,6 +308,10 @@ seed_secrets() {
       ensure_put() {
         # ensure_put <path> key=value [key=value...]
         # POSIX shell; avoid arrays. Create the secret on first run with 'kv put', then patch keys.
+        if [ \"$#\" -lt 1 ]; then
+          echo \"[dev-vault] ensure_put: missing path argument\"
+          return 1
+        fi
         path=\"$1\"; shift
         mode=\"${overwrite_mode}\"
         # If mode=never and secret exists, do nothing

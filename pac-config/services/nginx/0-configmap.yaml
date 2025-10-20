@@ -5,81 +5,74 @@ metadata:
   namespace: bitiq-local
 data:
   nginx.conf: |
+    pid /tmp/nginx.pid;
     events {
       worker_connections 1024;
     }
 
     http {
       server {
-        listen 80;
+        listen 8080;
         server_name www.cyphai.com;
-
         location / {
           root /usr/share/nginx/html/cyphai.com;
           index index.html index.htm;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name cyphai.com;
-
         location / {
           return 301 https://www.cyphai.com$request_uri;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name didgo.com;
-
         location / {
           root /usr/share/nginx/html/didgo.com;
           index index.html index.htm;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.didgo.com;
-
         location / {
           return 301 https://didgo.com$request_uri;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name paulcapestany.com;
-
         location / {
           root /usr/share/nginx/html/paulcapestany.com;
           index index.html index.htm;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.paulcapestany.com;
-
         location / {
           return 301 https://paulcapestany.com$request_uri;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name bitiq.io;
-
         location / {
           root /usr/share/nginx/html/bitiq.io;
           index index.html index.htm;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.bitiq.io;
-
         location / {
           return 301 https://bitiq.io$request_uri;
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name noelcapestany.com;
 
         location / {
@@ -88,7 +81,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.noelcapestany.com;
 
         location / {
@@ -96,7 +89,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name beatricecapestany.com;
 
         location / {
@@ -105,7 +98,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.beatricecapestany.com;
 
         location / {
@@ -113,7 +106,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name ipiqi.com;
 
         location / {
@@ -122,7 +115,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.ipiqi.com;
 
         location / {
@@ -130,7 +123,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name neuance.net;
 
         location / {
@@ -139,7 +132,7 @@ data:
         }
       }
       server {
-        listen 80;
+        listen 8080;
         server_name www.neuance.net;
 
         location / {
