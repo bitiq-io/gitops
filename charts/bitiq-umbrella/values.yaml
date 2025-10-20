@@ -39,6 +39,8 @@ couchbase:
   enabled: false
 certManager:
   enabled: false
+nostrSite:
+  enabled: false
 
 bootstrapOperators:
   enabled: false

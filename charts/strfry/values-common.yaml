@@ -12,6 +12,10 @@ service:
   port: 7777
   type: ClusterIP
 
+route:
+  # Optional explicit host for the Route (overrides baseDomain/hostPrefix composition)
+  host: ""
+
 resources:
   limits:
     cpu: 300m

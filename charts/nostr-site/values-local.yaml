@@ -1,0 +1,7 @@
+# Keep most apps internal to CRC; publish nostr-site explicitly by setting route.host below.
+baseDomain: apps-crc.testing
+
+route:
+  host: ""  # e.g., k7501450.eero.online
+  clusterIssuerName: letsencrypt-http01-local
+

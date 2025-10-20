@@ -14,3 +14,6 @@ persistence:
 
 networkPolicy:
   enabled: true
+
+route:
+  host: ""  # set to a public FQDN to expose only strfry externally
