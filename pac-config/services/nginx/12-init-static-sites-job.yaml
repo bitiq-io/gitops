@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: init-static-sites
+  name: init-static-sites-v2
   namespace: bitiq-local
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -20,11 +20,20 @@ spec:
               set -eu
               BASE="/mnt"
               mkdir -p "$BASE"
+              # If curated landing pages are provided via ConfigMaps, copy them in.
+              if [ -f /seed/cyphai/index.html ]; then
+                mkdir -p "$BASE/cyphai.com" && cp -f /seed/cyphai/index.html "$BASE/cyphai.com/index.html"
+              fi
+              if [ -f /seed/neuance/index.html ]; then
+                mkdir -p "$BASE/neuance.net" && cp -f /seed/neuance/index.html "$BASE/neuance.net/index.html"
+              fi
               seed() {
                 dir="$1"
                 title="$2"
                 mkdir -p "$BASE/$dir"
-                cat >"$BASE/$dir/index.html" <<EOF
+                # Only write placeholder if curated file was not provided
+                if [ ! -f "$BASE/$dir/index.html" ]; then
+                  cat >"$BASE/$dir/index.html" <<EOF
               <!doctype html>
               <html lang="en">
                 <head>
@@ -40,6 +49,7 @@ spec:
                 </body>
               </html>
               EOF
+                fi
               }
               # Sites served from these directories (apex redirects handled by NGINX where configured)
               seed "cyphai.com"              "www.cyphai.com"
@@ -53,7 +63,23 @@ spec:
           volumeMounts:
             - name: static-files
               mountPath: /mnt
+            - name: site-cyphai
+              mountPath: /seed/cyphai
+            - name: site-neuance
+              mountPath: /seed/neuance
       volumes:
         - name: static-files
           persistentVolumeClaim:
             claimName: static-sites-pvc
+        - name: site-cyphai
+          configMap:
+            name: site-cyphai
+            items:
+              - key: index.html
+                path: index.html
+        - name: site-neuance
+          configMap:
+            name: site-neuance
+            items:
+              - key: index.html
+                path: index.html
