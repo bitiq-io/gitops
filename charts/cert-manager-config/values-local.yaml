@@ -21,3 +21,7 @@ dns01:
       name: route53-credentials
       accessKeyIDKey: access-key-id
       secretAccessKeyKey: secret-access-key
+operatorOverrides:
+  enabled: true
+  dns01:
+    recursiveNameservers: "1.1.1.1:53,8.8.8.8:53"
