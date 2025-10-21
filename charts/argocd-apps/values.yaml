@@ -27,7 +27,6 @@ envs:
     couchbaseEnabled: true
     certManagerEnabled: true
     # Route53 DNS-01 via VSO on local
-    certManagerCloudflareTokenEnabled: false
     certManagerRoute53CredentialsEnabled: true
     certManagerRoute53CredentialsPath: cert-manager/route53
     certManagerRoute53SecretName: route53-credentials

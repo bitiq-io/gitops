@@ -24,5 +24,5 @@ Usage
    - `/usr/share/nginx/html/didgo.com/index.html`
 
 TLS
-- Preferred: HTTP-01 on local — annotate Routes with `cert-manager.io/cluster-issuer: letsencrypt-http01-local` and ensure cert-manager is installed plus public TCP/80 reachability (router → host → crc tunnel).
-- Alternative when TCP/80 is blocked: DNS-01 (Cloudflare example). Annotate Routes with `cert-manager.io/cluster-issuer: letsencrypt-dns01-cloudflare-local` and provide a Cloudflare API token Secret (ideally via VSO).
+- Preferred: HTTP-01 on local — annotate Ingress with `cert-manager.io/cluster-issuer: letsencrypt-http01-local` and ensure cert-manager is installed plus public TCP/80 reachability (router → host NAT).
+- Alternative when TCP/80 is blocked: DNS-01 with Route 53. Annotate Ingress with `cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local` and provide AWS Route 53 credentials via Vault (VSO) that create `Secret cert-manager/route53-credentials`.

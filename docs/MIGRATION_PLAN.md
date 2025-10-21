@@ -124,7 +124,7 @@ M7. cert-manager and Routes (local enabled by default)
   - Public FQDN → your WAN IP; NAT 80/443 → CRC host
   - Run `crc tunnel` as a systemd service to expose router 80/443 to the host
   - cert-manager issues real certs for Route hosts under your FQDN
-- DNS‑01 alternative: Use provider API creds if available (e.g., Route53/Cloudflare) to avoid port 80 ingress.
+- DNS‑01 alternative: Use your DNS provider API creds (e.g., Route 53) to avoid port 80 ingress.
 - Acceptance: `oc get certificate` Ready; Routes terminate TLS with managed certs.
 
 M8. Cleanups and deprecation
