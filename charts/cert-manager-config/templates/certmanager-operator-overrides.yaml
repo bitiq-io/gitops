@@ -8,7 +8,9 @@ spec:
   unsupportedConfigOverrides:
     controller:
       args:
-        - --dns01-recursive-nameservers={{ $op.dns01.recursiveNameservers | default "1.1.1.1:53,8.8.8.8:53" | quote }}
         - --dns01-recursive-nameservers-only
+{{- $list := $op.dns01.recursiveNameservers | default (list "1.1.1.1:53" "8.8.8.8:53") }}
+{{- range $ns := $list }}
+        - --dns01-recursive-nameservers={{ $ns | quote }}
 {{- end }}
-
+{{- end }}
