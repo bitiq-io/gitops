@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ipiqi
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
+spec:
+  tls:
+    - hosts:
+        - ipiqi.com
+        - www.ipiqi.com
+      secretName: nginx-ipiqi-tls
+  rules:
+    - host: ipiqi.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+    - host: www.ipiqi.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+

@@ -152,5 +152,15 @@ Troubleshooting
 - OpenShift Route integration missing: fall back to the Certificate CR path with an Ingress, or add chart logic to populate Route `spec.tls` using the issued Secret.
 
 References
+ 
+Local dev seeding with make dev-vault
+- You can provide Route 53 credentials via environment variables so the helper seeds Vault for you:
+  - export AWS_ACCESS_KEY_ID=AKIA...
+  - export AWS_SECRET_ACCESS_KEY=...
+  - Optional route53-specific vars (take precedence):
+    - export AWS_ROUTE53_ACCESS_KEY_ID=...
+    - export AWS_ROUTE53_SECRET_ACCESS_KEY=...
+- Then run: make dev-vault
+- The helper writes to `gitops/cert-manager/route53` with keys `access-key-id` and `secret-access-key` if the env vars are present; otherwise it skips with a note. No secrets are committed to Git.
 - docs/BITIQLIVE-DEV.md (crc tunnel systemd unit and local runbook)
 - docs/MIGRATION_PLAN.md (local HTTPS requirements and acceptance)
