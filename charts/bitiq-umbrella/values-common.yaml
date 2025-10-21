@@ -55,6 +55,15 @@ couchbase:
 
 certManager:
   enabled: false
+  # Optional: enable syncing a Cloudflare API token from Vault via VSO to support DNS-01 issuers
+  cloudflareApiTokenEnabled: false
+  cloudflareApiTokenPath: cert-manager/cloudflare
+  cloudflareSecretName: cloudflare-api-token
+  cloudflareSecretNamespace: cert-manager
+  route53CredentialsEnabled: false
+  route53CredentialsPath: cert-manager/route53
+  route53SecretName: route53-credentials
+  route53SecretNamespace: cert-manager
 
 nostrSite:
   enabled: false

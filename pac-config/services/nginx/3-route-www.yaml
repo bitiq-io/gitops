@@ -4,7 +4,9 @@ metadata:
   name: nginx-www
   namespace: bitiq-local
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-http01-local
+    # Use DNS-01 ClusterIssuer (Route53 in local) when HTTP-01 is not reachable externally
+    # Switch back to HTTP-01 (letsencrypt-http01-local) if TCP/80 is publicly accessible
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
     haproxy.router.openshift.io/redirect-to-https: "true"
 spec:
   to:

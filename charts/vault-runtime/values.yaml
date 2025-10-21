@@ -52,3 +52,23 @@ secrets:
     destinationName: couchbase-cluster-auth
     path: couchbase/admin
     type: Opaque
+
+  # Optional: Cloudflare API token for cert-manager DNS-01 issuer
+  # Creates a Secret in the cert-manager namespace from Vault via VSO.
+  cloudflareApiToken:
+    enabled: false
+    # Vault KV v2 path holding key "api-token"
+    path: cert-manager/cloudflare
+    # K8s Secret name/namespace consumed by ClusterIssuer
+    destinationName: cloudflare-api-token
+    namespace: cert-manager
+    type: Opaque
+
+  # Optional: AWS credentials for Route53 DNS-01
+  route53Credentials:
+    enabled: false
+    # Vault KV v2 path with keys "access-key-id" and "secret-access-key"
+    path: cert-manager/route53
+    destinationName: route53-credentials
+    namespace: cert-manager
+    type: Opaque
