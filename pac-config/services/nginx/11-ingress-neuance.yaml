@@ -32,4 +32,3 @@ spec:
                 name: nginx-service
                 port:
                   number: 8080
-
