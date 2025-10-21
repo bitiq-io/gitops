@@ -26,11 +26,6 @@ spec:
           pipelines: {{ .Values.pipelinesNamespace }}
           app: {{ .Values.appNamespace }}
         secrets:
-          cloudflareApiToken:
-            enabled: {{ default false .Values.certManager.cloudflareApiTokenEnabled }}
-            path: {{ .Values.certManager.cloudflareApiTokenPath | default "cert-manager/cloudflare" | quote }}
-            destinationName: {{ .Values.certManager.cloudflareSecretName | default "cloudflare-api-token" | quote }}
-            namespace: {{ .Values.certManager.cloudflareSecretNamespace | default "cert-manager" | quote }}
           route53Credentials:
             enabled: {{ default false .Values.certManager.route53CredentialsEnabled }}
             path: {{ .Values.certManager.route53CredentialsPath | default "cert-manager/route53" | quote }}

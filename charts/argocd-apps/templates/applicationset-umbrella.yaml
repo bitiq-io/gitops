@@ -89,14 +89,6 @@ spec:
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
             - name: certManager.enabled
               value: '{{ "{{ .certManagerEnabled | default false }}" }}'
-            - name: certManager.cloudflareApiTokenEnabled
-              value: '{{ "{{ .certManagerCloudflareTokenEnabled | default false }}" }}'
-            - name: certManager.cloudflareApiTokenPath
-              value: '{{ "{{ .certManagerCloudflareTokenPath | default \"gitops/data/cert-manager/cloudflare\" }}" }}'
-            - name: certManager.cloudflareSecretName
-              value: '{{ "{{ .certManagerCloudflareSecretName | default \"cloudflare-api-token\" }}" }}'
-            - name: certManager.cloudflareSecretNamespace
-              value: '{{ "{{ .certManagerCloudflareSecretNamespace | default \"cert-manager\" }}" }}'
             - name: certManager.route53CredentialsEnabled
               value: '{{ "{{ .certManagerRoute53CredentialsEnabled | default false }}" }}'
             - name: certManager.route53CredentialsPath

@@ -4,10 +4,6 @@ http01:
   email: capestany@gmail.com
   production: false
 
-# Optional: DNS-01 (Cloudflare) for environments where inbound TCP/80 is blocked.
-# Requires a Kubernetes Secret with a Cloudflare API token. Do NOT commit secrets.
-# Recommended: manage the Secret via Vault Secrets Operator (VSO) in the
-# cert-manager namespace with data key "api-token".
 dns01:
   route53:
     enabled: true
@@ -15,7 +11,28 @@ dns01:
     email: capestany@gmail.com
     production: true
     region: us-east-1
+    zones:
+      - zone: cyphai.com
+        hostedZoneID: Z02889471UKP31JE18HPE
+      - zone: didgo.com
+        hostedZoneID: ZPOF2JE05NGE4
+      - zone: paulcapestany.com
+        hostedZoneID: Z03183593TRC0TQ7HVQYU
+      - zone: bitiq.io
+        hostedZoneID: ZPCVSGRXCIK5E
+      - zone: noelcapestany.com
+        hostedZoneID: Z056483715JLINW841SV7
+      - zone: beatricecapestany.com
+        hostedZoneID: Z079077016RPVX58KHIKL
+      - zone: ipiqi.com
+        hostedZoneID: Z3PIMZQLSMODH8
+      - zone: neuance.net
+        hostedZoneID: Z0726808X55WJNUN7BTX
     credentialsSecretRef:
       name: route53-credentials
       accessKeyIDKey: access-key-id
       secretAccessKeyKey: secret-access-key
+operatorOverrides:
+  enabled: true
+  dns01:
+    recursiveNameservers: "1.1.1.1:53,8.8.8.8:53"

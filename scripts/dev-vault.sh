@@ -359,6 +359,15 @@ seed_secrets() {
       ensure_put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\"
       ensure_put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\"
       ensure_put gitops/couchbase/admin username=\"${cb_username}\" password=\"${cb_password}\"
+      # Optional: Route53 credentials for cert-manager DNS-01 solver (do not hardcode; use env vars)
+      r53_ak=\"${AWS_ROUTE53_ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:-}}\"
+      r53_sk=\"${AWS_ROUTE53_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-}}\"
+      if [ -n \"$r53_ak\" ] && [ -n \"$r53_sk\" ]; then
+        ensure_put gitops/cert-manager/route53 access-key-id=\"$r53_ak\" secret-access-key=\"$r53_sk\"
+        echo \"[dev-vault] seeded: gitops/cert-manager/route53 (keys: access-key-id, secret-access-key)\"
+      else
+        echo \"[dev-vault] skip Route53 creds (set AWS_ROUTE53_ACCESS_KEY_ID/AWS_ROUTE53_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)\"
+      fi
     "
 }
 
