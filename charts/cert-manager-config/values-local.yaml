@@ -15,8 +15,23 @@ dns01:
     email: capestany@gmail.com
     production: true
     region: us-east-1
-    # Explicit hosted zone ID for cyphai.com to avoid in-cluster DNS discovery issues
-    hostedZoneID: Z02889471UKP31JE18HPE
+    zones:
+      - zone: cyphai.com
+        hostedZoneID: Z02889471UKP31JE18HPE
+      - zone: didgo.com
+        hostedZoneID: ZPOF2JE05NGE4
+      - zone: paulcapestany.com
+        hostedZoneID: Z03183593TRC0TQ7HVQYU
+      - zone: bitiq.io
+        hostedZoneID: ZPCVSGRXCIK5E
+      - zone: noelcapestany.com
+        hostedZoneID: Z056483715JLINW841SV7
+      - zone: beatricecapestany.com
+        hostedZoneID: Z079077016RPVX58KHIKL
+      - zone: ipiqi.com
+        hostedZoneID: Z3PIMZQLSMODH8
+      - zone: neuance.net
+        hostedZoneID: Z0726808X55WJNUN7BTX
     credentialsSecretRef:
       name: route53-credentials
       accessKeyIDKey: access-key-id

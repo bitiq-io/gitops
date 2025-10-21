@@ -12,6 +12,23 @@ spec:
     privateKeySecretRef:
       name: {{ printf "%s-key" ($r53.name | default "letsencrypt-dns01-route53-local") | quote }}
     solvers:
+{{- if $r53.zones }}
+{{- range $z := $r53.zones }}
+      - selector:
+          dnsZones:
+            - {{ $z.zone | quote }}
+        dns01:
+          route53:
+            region: {{ $r53.region | default "us-east-1" | quote }}
+            hostedZoneID: {{ $z.hostedZoneID | quote }}
+            accessKeyIDSecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.accessKeyIDKey | default "access-key-id" | quote }}
+            secretAccessKeySecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.secretAccessKeyKey | default "secret-access-key" | quote }}
+{{- end }}
+{{- else }}
       - dns01:
           route53:
             region: {{ $r53.region | default "us-east-1" | quote }}
@@ -25,4 +42,4 @@ spec:
               name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
               key: {{ $r53.credentialsSecretRef.secretAccessKeyKey | default "secret-access-key" | quote }}
 {{- end }}
-
+{{- end }}

@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-bitiq
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
+spec:
+  tls:
+    - hosts:
+        - bitiq.io
+        - www.bitiq.io
+      secretName: nginx-bitiq-tls
+  rules:
+    - host: bitiq.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+    - host: www.bitiq.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+
