@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cyphai — Search you can trust.</title>
+  <meta name="description" content="Find real voices—fast. Cyphai indexes public, signature‑verified conversations and uses AI to lift the signal above the noise." />
+  <meta property="og:title" content="Cyphai — Search you can trust." />
+  <meta property="og:description" content="Find real voices—fast. Cyphai indexes public, signature‑verified conversations and uses AI to lift the signal above the noise." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#14B8A6" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-bg: #FAFBFC;
+      --color-text: #0F172A;
+      --color-text-muted: #475569;
+      --color-text-light: #64748B;
+      --color-accent: #14B8A6;
+      --color-accent-dark: #0D9488;
+      --color-accent-darker: #0F766E;
+      --color-white: #FFFFFF;
+      --color-border: rgba(15, 23, 42, 0.08);
+      --color-border-hover: rgba(20, 184, 166, 0.5);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(to bottom right, #FAFBFC, #F0F9FF, #F0FDFA);
+      color: var(--color-text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Animated Background */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+    }
+
+    .orb-1 {
+      top: -160px;
+      left: -160px;
+      width: 1000px;
+      height: 1000px;
+      background: radial-gradient(circle, rgba(20,184,166,0.4) 0%, transparent 70%);
+      animation: float1 20s ease-in-out infinite;
+      opacity: 0.3;
+    }
+
+    .orb-2 {
+      top: 33%;
+      right: 0;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%);
+      animation: float2 15s ease-in-out infinite;
+      opacity: 0.25;
+    }
+
+    .orb-3 {
+      bottom: 0;
+      left: 33%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(59,130,246,0.35) 0%, transparent 70%);
+      animation: float3 18s ease-in-out infinite;
+      opacity: 0.2;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(100px, -50px) scale(1.1); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-80px, 60px) scale(1.15); }
+    }
+
+    @keyframes float3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(50px, -40px) scale(1.2); }
+    }
+
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes gradientPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .animate-fade-in-left {
+      animation: fadeInLeft 0.6s ease-out forwards;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1152px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    header.scrolled {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid var(--color-border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      color: var(--color-text);
+      text-decoration: none;
+      transition: transform 0.2s ease;
+    }
+
+    .brand:hover {
+      transform: scale(1.02);
+    }
+
+    .brand-dot {
+      position: relative;
+      width: 12px;
+      height: 12px;
+    }
+
+    .brand-dot-inner {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(to bottom right, var(--color-accent), var(--color-accent-dark));
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+    }
+
+    .brand-dot-ping {
+      position: absolute;
+      inset: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+      opacity: 0.6;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      color: var(--color-text-muted);
+      background: transparent;
+    }
+
+    .btn-ghost:hover {
+      color: var(--color-accent);
+      background: rgba(20, 184, 166, 0.1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--color-accent), var(--color-accent-dark));
+      color: white;
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(to right, var(--color-accent-dark), var(--color-accent-darker));
+      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
+      transform: scale(1.05);
+    }
+
+    .btn-outline {
+      border: 1px solid rgba(20, 184, 166, 0.4);
+      color: var(--color-text);
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .btn-outline:hover {
+      background: linear-gradient(to right, rgba(20, 184, 166, 0.1), rgba(6, 182, 212, 0.1));
+      border-color: var(--color-accent);
+    }
+
+    .btn-lg {
+      padding: 12px 24px;
+      font-size: 16px;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 48px;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.2s forwards;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      border: 1px solid rgba(20, 184, 166, 0.4);
+      background: linear-gradient(to right, rgba(20, 184, 166, 0.15), rgba(6, 182, 212, 0.15));
+      backdrop-filter: blur(4px);
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .pill:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(20, 184, 166, 0.2);
+    }
+
+    .pill svg {
+      width: 16px;
+      height: 16px;
+      color: var(--color-accent);
+    }
+
+    .pill span {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    h1 {
+      font-size: clamp(40px, 8vw, 72px);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    .gradient-text {
+      background: linear-gradient(to right, #14B8A6, #06B6D4, #8B5CF6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientPulse 3s ease-in-out infinite;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(18px, 3vw, 20px);
+      color: var(--color-text-muted);
+      max-width: 800px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Section */
+    section {
+      padding: 64px 0;
+      position: relative;
+    }
+
+    h2 {
+      font-size: clamp(32px, 5vw, 40px);
+      font-weight: 700;
+      margin-bottom: 32px;
+      color: var(--color-text);
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--color-text);
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom right, transparent, transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: var(--color-border-hover);
+      box-shadow: 0 20px 40px rgba(20, 184, 166, 0.2);
+    }
+
+    .card:hover::before {
+      opacity: 0.05;
+    }
+
+    .icon-container {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover .icon-container {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .icon-container svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+
+    .gradient-teal {
+      background: linear-gradient(to bottom right, #14B8A6, #0D9488);
+    }
+
+    .gradient-blue {
+      background: linear-gradient(to bottom right, #06B6D4, #0284C7);
+    }
+
+    .gradient-purple {
+      background: linear-gradient(to bottom right, #8B5CF6, #7C3AED);
+    }
+
+    .gradient-amber {
+      background: linear-gradient(to bottom right, #F59E0B, #D97706);
+    }
+
+    .gradient-pink {
+      background: linear-gradient(to bottom right, #EC4899, #DB2777);
+    }
+
+    .card p {
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* How it works */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 20px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--color-border);
+      transition: all 0.3s ease;
+      opacity: 0;
+    }
+
+    .step-item:hover {
+      transform: translateX(8px);
+      border-color: var(--color-border-hover);
+      box-shadow: 0 8px 16px rgba(20, 184, 166, 0.1);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .step-item:hover .step-number {
+      box-shadow: 0 8px 20px rgba(20, 184, 166, 0.4);
+    }
+
+    .step-content h3 {
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    /* Collapsible */
+    .collapsible-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .collapsible-content.open {
+      max-height: 1000px;
+    }
+
+    .tech-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    @media (min-width: 768px) {
+      .tech-content {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .tech-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tech-list li {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+    }
+
+    .tech-list li::before {
+      content: '—';
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .tech-badge {
+      display: inline-block;
+      border: 1px solid rgba(20, 184, 166, 0.4);
+      background: linear-gradient(to right, rgba(20, 184, 166, 0.1), rgba(6, 182, 212, 0.1));
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 14px;
+      color: var(--color-text);
+      margin-bottom: 16px;
+    }
+
+    .doc-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .doc-links li {
+      margin-bottom: 8px;
+    }
+
+    .doc-links a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--color-accent);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .doc-links a:hover {
+      color: var(--color-accent-dark);
+    }
+
+    .doc-links svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* CTA Section */
+    .cta-card {
+      background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.8), rgba(20, 184, 166, 0.05), rgba(6, 182, 212, 0.05));
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      border-radius: 16px;
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .cta-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom right, rgba(20, 184, 166, 0.1), rgba(6, 182, 212, 0.05), rgba(139, 92, 246, 0.1));
+    }
+
+    .cta-card > * {
+      position: relative;
+    }
+
+    .cta-card h2 {
+      margin-bottom: 16px;
+    }
+
+    .cta-card p {
+      color: var(--color-text-muted);
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 48px 0;
+    }
+
+    .footer-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(20, 184, 166, 0.3), transparent);
+      margin-bottom: 24px;
+    }
+
+    footer p {
+      color: var(--color-text-light);
+      font-size: 14px;
+    }
+
+    footer a {
+      color: var(--color-accent);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--color-accent-dark);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      nav .btn-ghost {
+        display: none;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-card {
+        padding: 32px 24px;
+      }
+    }
+
+    /* Scroll animations */
+    .fade-in-view {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in-view.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Icon SVG styles */
+    svg {
+      display: inline-block;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header id="header">
+    <div class="container header-container">
+      <a href="#" class="brand">
+        <div class="brand-dot">
+          <div class="brand-dot-inner"></div>
+          <div class="brand-dot-ping"></div>
+        </div>
+        <span>Cyphai</span>
+      </a>
+      <nav>
+        <button class="btn btn-ghost" onclick="scrollToSection('how')">How it works</button>
+        <button class="btn btn-ghost" onclick="scrollToSection('developers')">For developers</button>
+        <button class="btn btn-primary" onclick="location.href='mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist'">
+          Join waitlist
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+          </svg>
+          <span>Trusted signal from public conversation</span>
+        </div>
+
+        <h1>
+          Search you can <span class="gradient-text">trust</span>.
+        </h1>
+
+        <p class="hero-subtitle">
+          Find real voices—fast. Cyphai indexes public, <strong>signature‑verified</strong> conversations and uses AI to lift the <strong>signal</strong> above the noise.
+        </p>
+
+        <div class="cta-buttons">
+          <button class="btn btn-primary btn-lg" onclick="location.href='mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist'">
+            <svg style="width: 16px; height: 16px; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            Join the waitlist
+          </button>
+          <button class="btn btn-outline btn-lg" onclick="scrollToSection('how')">
+            See how it works
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Cyphai -->
+    <section>
+      <div class="container">
+        <h2 class="fade-in-view">Why Cyphai</h2>
+        <div class="grid">
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+              </svg>
+            </div>
+            <h3>Authenticated voices</h3>
+            <p>Every post we index is digitally signed, so you know it came from a real public key—not a bot farm.</p>
+          </div>
+
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+                <path d="M8.5 8.5v.01"/>
+                <path d="M16 15.5v.01"/>
+                <path d="M12 12v.01"/>
+                <path d="M11 17v.01"/>
+                <path d="M7 14v.01"/>
+              </svg>
+            </div>
+            <h3>Trust you control</h3>
+            <p>Tune your trust graph to highlight voices you value. Results explain why they rank.</p>
+          </div>
+
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+              </svg>
+            </div>
+            <h3>Transparent & open‑source</h3>
+            <p>No hidden feeds or black boxes. Our ranking logic is auditable, our code is open.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What you can do -->
+    <section>
+      <div class="container">
+        <h2 class="fade-in-view">What you can do</h2>
+        <div class="grid">
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+              </svg>
+            </div>
+            <h3>Cut through spam & astroturf</h3>
+            <p>See fresh, relevant discussion without the sludge.</p>
+          </div>
+
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+              </svg>
+            </div>
+            <h3>Find topical expertise</h3>
+            <p>Identify credible contributors by topic and history.</p>
+          </div>
+
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-pink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+                <path d="M8.5 8.5v.01"/>
+                <path d="M16 15.5v.01"/>
+                <path d="M12 12v.01"/>
+                <path d="M11 17v.01"/>
+                <path d="M7 14v.01"/>
+              </svg>
+            </div>
+            <h3>Explore the conversation graph</h3>
+            <p>Visualize connections and communities around a topic.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how">
+      <div class="container">
+        <h2 class="fade-in-view">How it works</h2>
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-number gradient-teal">1</div>
+            <div class="step-content">
+              <h3>Verify</h3>
+              <p>We ingest publicly available, signature‑verified posts.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number gradient-blue">2</div>
+            <div class="step-content">
+              <h3>Understand</h3>
+              <p>AI embeddings and reasoning grasp meaning beyond keywords.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number gradient-purple">3</div>
+            <div class="step-content">
+              <h3>Rank & explain</h3>
+              <p>Your trust graph and relevance scores surface better results, with clear "Why this result" explanations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- For developers -->
+    <section id="developers">
+      <div class="container">
+        <h2 class="fade-in-view">For developers & reviewers</h2>
+        
+        <button class="btn btn-outline collapsible-trigger" onclick="toggleCollapsible()">
+          <span>Open the technical notes</span>
+          <svg id="chevron" style="width: 16px; height: 16px; transition: transform 0.3s ease;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+
+        <div id="collapsible-content" class="collapsible-content">
+          <div class="card">
+            <div class="tech-content">
+              <div>
+                <ul class="tech-list">
+                  <li><strong>Vector search</strong> with <strong>Couchbase 7.6</strong> FTS vector indexes (RAG‑ready).</li>
+                  <li><strong>Trust/relevance scoring on GPUs</strong> using <strong>RAPIDS cuGraph</strong> / <strong>nx‑cuGraph</strong> (PageRank, Louvain, betweenness, etc.).</li>
+                  <li><strong>Model serving</strong> via <strong>NVIDIA Triton Inference Server</strong> (PyTorch/ONNX/TensorRT backends).</li>
+                  <li><strong>Open weights</strong> LLMs (summaries, tagging, expertise inference) with optional <strong>TensorRT‑LLM</strong> optimizations.</li>
+                  <li><strong>Deployed on OpenShift</strong> with GitOps & Pipelines (cloud‑agnostic).</li>
+                </ul>
+                <p style="margin-top: 16px; color: var(--color-text-muted);">
+                  <strong style="color: var(--color-text);">Status</strong>: Alpha.
+                  <strong style="color: var(--color-text);">Target latency</strong>: sub‑1s P50 for common queries.
+                  <strong style="color: var(--color-text);">Security</strong>: public data only.
+                </p>
+              </div>
+              <div>
+                <div class="tech-badge">Docs</div>
+                <ul class="doc-links">
+                  <li>
+                    <a href="https://docs.couchbase.com/server/current/vector-search/vector-search.html" target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6"/>
+                        <path d="M10 14 21 3"/>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      </svg>
+                      Couchbase Vector Search
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://docs.rapids.ai/api/cugraph/stable/nx_cugraph/" target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6"/>
+                        <path d="M10 14 21 3"/>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      </svg>
+                      RAPIDS nx‑cuGraph
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html" target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6"/>
+                        <path d="M10 14 21 3"/>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      </svg>
+                      NVIDIA Triton Inference Server
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://docs.nvidia.com/tensorrt-llm/index.html" target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6"/>
+                        <path d="M10 14 21 3"/>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      </svg>
+                      TensorRT‑LLM
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team -->
+    <section>
+      <div class="container">
+        <h2 class="fade-in-view">Team</h2>
+        <div class="grid grid-2">
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>Paul Capestany</h3>
+            <p>Founder & Full‑Stack Engineer (ex‑SRE; systems + data)</p>
+          </div>
+
+          <div class="card fade-in-view">
+            <div class="icon-container gradient-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>Traun Leyden</h3>
+            <p>Senior Software & Deep Learning Engineer</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section>
+      <div class="container">
+        <div class="cta-card fade-in-view">
+          <h2>Stay in the loop</h2>
+          <p>Alpha is private while we stabilize ranking and explainability. Want early access?</p>
+          <div class="cta-buttons">
+            <button class="btn btn-primary btn-lg" onclick="location.href='mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist'">
+              <svg style="width: 16px; height: 16px; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              Join the waitlist
+            </button>
+            <button class="btn btn-outline btn-lg" onclick="location.href='mailto:contact@cyphai.com?subject=Press%20%2F%20Review%20access'">
+              Press & reviewers
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-divider"></div>
+      <p>
+        © <span id="year"></span> Cyphai • Public data only • Open‑source components •
+        <a href="mailto:contact@cyphai.com">contact@cyphai.com</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Set current year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Sticky header effect
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+
+    // Smooth scroll function
+    function scrollToSection(id) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Collapsible toggle
+    function toggleCollapsible() {
+      const content = document.getElementById('collapsible-content');
+      const chevron = document.getElementById('chevron');
+      
+      if (content.classList.contains('open')) {
+        content.classList.remove('open');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        content.classList.add('open');
+        chevron.style.transform = 'rotate(180deg)';
+      }
+    }
+
+    // Intersection Observer for fade-in animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in-view').forEach(el => observer.observe(el));
+
+    // Animate step items on scroll
+    const stepItems = document.querySelectorAll('.step-item');
+    const stepObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.style.animation = `fadeInLeft 0.6s ease-out forwards`;
+          }, index * 100);
+        }
+      });
+    }, observerOptions);
+
+    stepItems.forEach(item => stepObserver.observe(item));
+  </script>
+</body>
+</html>
