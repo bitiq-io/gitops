@@ -4,10 +4,6 @@ http01:
   email: capestany@gmail.com
   production: false
 
-# Optional: DNS-01 (Cloudflare) for environments where inbound TCP/80 is blocked.
-# Requires a Kubernetes Secret with a Cloudflare API token. Do NOT commit secrets.
-# Recommended: manage the Secret via Vault Secrets Operator (VSO) in the
-# cert-manager namespace with data key "api-token".
 dns01:
   route53:
     enabled: true
