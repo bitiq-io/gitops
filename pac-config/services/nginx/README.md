@@ -24,5 +24,5 @@ Usage
    - `/usr/share/nginx/html/didgo.com/index.html`
 
 TLS
-- Routes include `cert-manager.io/cluster-issuer: letsencrypt-http01-local`. Ensure cert-manager is installed and port 80 is reachable for HTTP-01.
-
+- Preferred: HTTP-01 on local — annotate Routes with `cert-manager.io/cluster-issuer: letsencrypt-http01-local` and ensure cert-manager is installed plus public TCP/80 reachability (router → host → crc tunnel).
+- Alternative when TCP/80 is blocked: DNS-01 (Cloudflare example). Annotate Routes with `cert-manager.io/cluster-issuer: letsencrypt-dns01-cloudflare-local` and provide a Cloudflare API token Secret (ideally via VSO).

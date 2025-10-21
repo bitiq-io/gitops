@@ -1,0 +1,21 @@
+{{- $cf := .Values.dns01.cloudflare | default (dict) }}
+{{- $enabled := (and (hasKey .Values "dns01") (hasKey .Values.dns01 "cloudflare") (eq (lower (printf "%v" $cf.enabled)) "true")) }}
+{{- if $enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ $cf.name | default "letsencrypt-dns01-cloudflare-local" | quote }}
+spec:
+  acme:
+    email: {{ $cf.email | default "you@example.com" | quote }}
+    server: {{ ternary "https://acme-v02.api.letsencrypt.org/directory" "https://acme-staging-v02.api.letsencrypt.org/directory" $cf.production | quote }}
+    privateKeySecretRef:
+      name: {{ printf "%s-key" ($cf.name | default "letsencrypt-dns01-cloudflare-local") | quote }}
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ $cf.apiTokenSecretRef.name | default "cloudflare-api-token" | quote }}
+              key: {{ $cf.apiTokenSecretRef.key | default "api-token" | quote }}
+{{- end }}
+

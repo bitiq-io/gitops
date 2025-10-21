@@ -4,7 +4,7 @@ metadata:
   name: nginx-neuance
   namespace: bitiq-local
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-http01-local
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
     haproxy.router.openshift.io/redirect-to-https: "true"
 spec:
   to:
@@ -20,7 +20,7 @@ metadata:
   name: nginx-neuance-www
   namespace: bitiq-local
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-http01-local
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
     haproxy.router.openshift.io/redirect-to-https: "true"
 spec:
   to:

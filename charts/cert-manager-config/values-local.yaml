@@ -1,5 +1,21 @@
 http01:
   enabled: true
   name: letsencrypt-http01-local
-  email: you@example.com
+  email: capestany@gmail.com
   production: false
+
+# Optional: DNS-01 (Cloudflare) for environments where inbound TCP/80 is blocked.
+# Requires a Kubernetes Secret with a Cloudflare API token. Do NOT commit secrets.
+# Recommended: manage the Secret via Vault Secrets Operator (VSO) in the
+# cert-manager namespace with data key "api-token".
+dns01:
+  route53:
+    enabled: true
+    name: letsencrypt-dns01-route53-local
+    email: capestany@gmail.com
+    production: true
+    region: us-east-1
+    credentialsSecretRef:
+      name: route53-credentials
+      accessKeyIDKey: access-key-id
+      secretAccessKeyKey: secret-access-key

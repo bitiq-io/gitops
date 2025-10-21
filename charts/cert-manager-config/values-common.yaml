@@ -5,3 +5,17 @@ http01:
   email: you@example.com
   # Use Let's Encrypt staging by default to avoid rate limits
   production: false
+
+dns01:
+  route53:
+    enabled: false
+    name: letsencrypt-dns01-route53-local
+    email: you@example.com
+    production: false
+    region: us-east-1
+    # Optional fixed hosted zone ID; leave empty to auto-discover by domain
+    hostedZoneID: ""
+    credentialsSecretRef:
+      name: route53-credentials
+      accessKeyIDKey: access-key-id
+      secretAccessKeyKey: secret-access-key

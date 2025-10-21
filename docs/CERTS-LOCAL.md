@@ -69,6 +69,54 @@ metadata:
 - Ensure the Route `spec.host` is a DNS name under your DDNS FQDN (e.g., `relay.home.example.net`).
 - cert-manager will perform the HTTP-01 challenge via a temporary Ingress served by the OpenShift router. With `crc tunnel` and NAT in place, ACME should succeed.
 
+DNS-01 alternative (when TCP/80 is blocked)
+- Some ISPs (or router configs) block inbound TCP/80, which prevents ACME HTTP-01. In that case, prefer DNS-01 with your DNS provider.
+- Example ClusterIssuer for Route 53 (credentials in a Secret; manage via VSO in production):
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-dns01-route53-local
+spec:
+  acme:
+    email: you@example.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-dns01-route53-local-key
+    solvers:
+      - dns01:
+          route53:
+            region: us-east-1
+            accessKeyIDSecretRef:
+              name: route53-credentials
+              key: access-key-id
+            secretAccessKeySecretRef:
+              name: route53-credentials
+              key: secret-access-key
+```
+
+- Update Route annotations to use this ClusterIssuer:
+
+```yaml
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
+```
+
+- Ensure the referenced Secret exists in the same namespace as cert-manager’s controllers (typically `cert-manager`). Do not commit credentials; source them from Vault via VSO.
+  - For Route 53, store AWS credentials in Vault at `gitops/cert-manager/route53` with keys `access-key-id` and `secret-access-key`. Example:
+    - `vault kv put gitops/cert-manager/route53 access-key-id=AKIA... secret-access-key=...`
+  - For HTTP API, use `gitops/data/cert-manager/route53`.
+  - Minimum IAM policy for cert-manager Route 53 solver (IAM → Users → Add user (e.g., certmgr-dns01)):
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {"Effect": "Allow", "Action": ["route53:ChangeResourceRecordSets"], "Resource": "arn:aws:route53:::hostedzone/*"},
+        {"Effect": "Allow", "Action": ["route53:ListHostedZonesByName","route53:GetChange"], "Resource": "*"}
+      ]
+    }
+
 Certificate CR alternative (when Route annotation integration is not available)
 - Create a Certificate referencing your hostname and desired target secret. Example:
 
@@ -99,6 +147,7 @@ Verification
 
 Troubleshooting
 - Pending challenges: ensure DNS resolves publicly to your WAN IP, NAT 80/443 to host, `crc tunnel` active.
+- If HTTP-01 is pending/failed and port 80 scans show filtered/closed from Internet vantage, switch to DNS-01.
 - ACME rate limits: use the staging issuer first; switch to prod after success.
 - OpenShift Route integration missing: fall back to the Certificate CR path with an Ingress, or add chart logic to populate Route `spec.tls` using the issued Secret.
 
