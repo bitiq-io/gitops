@@ -34,4 +34,12 @@ route:
   targetPort: 8091
   clusterIssuerName: ""
 
+ingress:
+  enabled: false
+  host: ""
+  className: ""
+  tlsSecretName: ""
+  clusterIssuerName: ""
+  targetPort: 8091
+
 baseDomain: ""

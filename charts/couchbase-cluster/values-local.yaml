@@ -19,6 +19,13 @@ route:
   targetPort: 8091
   clusterIssuerName: letsencrypt-http01-local
 
+ingress:
+  enabled: true
+  host: cb.cyphai.com
+  tlsSecretName: cb-cyphai-com-tls
+  clusterIssuerName: letsencrypt-dns01-route53-cyphai
+  targetPort: 8091
+
 # Buckets aligned to prior manifests but sized for local CRC
 buckets:
   - name: all-nostr-events
