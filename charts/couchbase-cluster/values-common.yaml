@@ -1,6 +1,11 @@
 adminSecretName: couchbase-cluster-auth
 clusterName: couchbase-cluster
 
+image: registry.connect.redhat.com/couchbase/server:7.2.4
+
+storage:
+  defaultSize: 20Gi
+
 servers:
   size: 1
   services: [data, index, query, search, eventing]
@@ -8,13 +13,12 @@ servers:
   storageClassRWO: ""   # e.g., ocs-storagecluster-ceph-rbd in prod
   storageClassRWX: ""   # e.g., ocs-storagecluster-cephfs in prod
 
-quotas:
-  data: 1536Mi
-  index: 512Mi
+clusterQuotas:
+  data: 512Mi
+  index: 256Mi
   query: 256Mi
-  search: 512Mi
+  search: 256Mi
   eventing: 256Mi
-  analytics: 0Mi   # 0 disables analytics for tight footprints
 
 buckets:
   - name: all-nostr-events

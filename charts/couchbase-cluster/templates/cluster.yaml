@@ -3,38 +3,34 @@ kind: CouchbaseCluster
 metadata:
   name: couchbase-cluster
 spec:
-  image: registry.connect.redhat.com/couchbase/server:7.2.4
+  image: {{ .Values.image | default "registry.connect.redhat.com/couchbase/server:7.2.4" | quote }}
   security:
     adminSecret: {{ .Values.adminSecretName | quote }}
   buckets: {}
+  # Define a default volume claim template named "default" and mount it
+  volumeClaimTemplates:
+    - metadata:
+        name: default
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.defaultSize | default "20Gi" | quote }}
+        {{- if .Values.servers.storageClassRWO }}
+        storageClassName: {{ .Values.servers.storageClassRWO | quote }}
+        {{- end }}
   servers:
-    - size: {{ .Values.servers.size }}
+    - name: all-services
+      size: {{ .Values.servers.size }}
       services:
 {{- range .Values.servers.services }}
         - {{ . | quote }}
 {{- end }}
       volumeMounts:
-        default:
-          size: 20Gi
-          {{- if .Values.servers.storageClassRWO }}
-          storageClassName: {{ .Values.servers.storageClassRWO | quote }}
-          {{- end }}
-      {{- if .Values.servers.storageClassRWX }}
-      volumeClaimTemplates:
-        - metadata:
-            name: cbfs
-          spec:
-            accessModes: [ "ReadWriteMany" ]
-            resources:
-              requests:
-                storage: 20Gi
-            storageClassName: {{ .Values.servers.storageClassRWX | quote }}
-      {{- end }}
-  bucketsQuota:
-    data: {{ .Values.quotas.data | quote }}
-    index: {{ .Values.quotas.index | quote }}
-    query: {{ .Values.quotas.query | quote }}
-    search: {{ .Values.quotas.search | quote }}
-    eventing: {{ .Values.quotas.eventing | quote }}
-    analytics: {{ .Values.quotas.analytics | quote }}
-
+        default: default
+  cluster:
+    dataServiceMemoryQuota: {{ .Values.clusterQuotas.data | default "512Mi" | quote }}
+    indexServiceMemoryQuota: {{ .Values.clusterQuotas.index | default "256Mi" | quote }}
+    queryServiceMemoryQuota: {{ .Values.clusterQuotas.query | default "256Mi" | quote }}
+    searchServiceMemoryQuota: {{ .Values.clusterQuotas.search | default "256Mi" | quote }}
+    eventingServiceMemoryQuota: {{ .Values.clusterQuotas.eventing | default "256Mi" | quote }}

@@ -19,6 +19,7 @@ spec:
     chart: couchbase-operator
     targetRevision: 2.81.1
     helm:
+      releaseName: cb-operator
       values: |
         install:
           couchbaseOperator: true
@@ -48,4 +49,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
 {{- end }}
-
