@@ -38,6 +38,16 @@ jobs:
           python3 -m pip install --user yamllint
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Install bats (bash tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
       - name: Show tool versions
         run: |
           helm version
@@ -45,6 +55,8 @@ jobs:
           kubeconform -v
           conftest --version
           yamllint --version
+          shellcheck --version
+          bats --version
 
       - name: Helm unit tests
         run: make hu
@@ -54,6 +66,12 @@ jobs:
 
       - name: Full validation
         run: make validate
+
+      - name: Script sanity (DDNS)
+        run: make ddns-sanity
+
+      - name: Script tests (bats)
+        run: bats -r tests
 
       - name: Verify release metadata
         run: make verify-release
