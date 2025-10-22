@@ -25,6 +25,7 @@ envs:
     # Enable selected services for local env
     strfryEnabled: true
     couchbaseEnabled: true
+    couchbaseOperatorEnabled: true
     certManagerEnabled: true
     # Route53 DNS-01 via VSO on local
     certManagerRoute53CredentialsEnabled: true
@@ -71,6 +72,7 @@ envs:
       pause: false
     strfryEnabled: false
     couchbaseEnabled: false
+    couchbaseOperatorEnabled: false
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
     caoEnabled: false
@@ -99,6 +101,7 @@ envs:
       pause: false
     strfryEnabled: false
     couchbaseEnabled: false
+    couchbaseOperatorEnabled: false
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
     caoEnabled: false

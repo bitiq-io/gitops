@@ -24,9 +24,24 @@ USAGE
 log() { printf '[route53-ddns] %s\n' "$*"; }
 err() { printf '[route53-ddns] ERROR: %s\n' "$*" >&2; }
 
+# Debug tracing (enable with ROUTE53_DDNS_DEBUG=true|1|yes|on)
+enable_debug() {
+  if [[ "${ROUTE53_DDNS_DEBUG:-}" =~ ^(1|true|yes|on)$ ]]; then
+    PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+    set -x
+    log "debug on; PATH=${PATH} AWS_PROFILE=${AWS_PROFILE:-<unset>} ZONES_FILE=${ROUTE53_DDNS_ZONES_FILE:-<unset>}"
+    if command -v aws >/dev/null 2>&1; then aws --version || true; fi
+    if command -v curl >/dev/null 2>&1; then curl --version | head -n1 || true; fi
+  fi
+}
+
+# Print failing command and line on error when debug is enabled
+trap 'rc=$?; if [[ "${ROUTE53_DDNS_DEBUG:-}" =~ ^(1|true|yes|on)$ ]]; then err "ERR at ${BASH_SOURCE[0]##*/}:${LINENO}: ${BASH_COMMAND} (rc=${rc})"; fi; exit $rc' ERR
+
 DRY_RUN=false
 ZONES_FILE="${ROUTE53_DDNS_ZONES_FILE:-}"
 WAN_IP_OVERRIDE="${ROUTE53_DDNS_WAN_IP:-}"
+enable_debug
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -n|--dry-run) DRY_RUN=true; shift ;;
@@ -77,7 +92,7 @@ load_zones_file() {
   [[ -f "$file" ]] || { err "Zones file not found: $file"; exit 1; }
   local line key val count=0
   # shellcheck disable=SC2162
-  while IFS= read -r line || [[ -n "$line" ]]; do
+  while IFS= read -r line; do
     # strip leading/trailing whitespace
     line="${line%%[$'\r\n']*}"
     [[ -z "$line" ]] && continue
@@ -92,8 +107,8 @@ load_zones_file() {
     elif [[ "$line" =~ ^[[:space:]]*([^[:space:]]+)[[:space:]]+([^[:space:]]+) ]]; then
       key="${BASH_REMATCH[1]}"; val="${BASH_REMATCH[2]}"
     else
-      err "Unrecognized zones line: '$line'"
-      exit 1
+      log "skip unrecognized zones line: $line"
+      continue
     fi
     ZONES["$key"]="$val"
     ((count++))
@@ -102,6 +117,7 @@ load_zones_file() {
     err "Zones file empty: $file"
     exit 1
   fi
+  log "loaded $count zone mappings from $file"
 }
 
 # Determine zone mappings source

@@ -100,3 +100,8 @@ Testing and TTL notes
 - Force a change (use with care):
   - `/usr/local/bin/route53-apex-ddns.sh --wan-ip 203.0.113.10`
   - Verify with `dig +short @1.1.1.1 <domain> A`; then allow the next timer run (or run manually) without `--wan-ip` to restore to your real WAN IP.
+
+Debugging
+- Enable verbose logs by setting `ROUTE53_DDNS_DEBUG=1` (already set in the example systemd service). In debug mode the script prints shell tracing, tool versions, and logs errors with the failing command and line number.
+- One-liner to emulate the unit environment and run a dry-run with tracing:
+  - `sudo env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin AWS_PROFILE=route53-ddns ROUTE53_DDNS_ZONES_FILE=/etc/route53-apex-ddns.zones ROUTE53_DDNS_DEBUG=1 bash -lc 'bash -x /usr/local/bin/route53-apex-ddns.sh --dry-run'`

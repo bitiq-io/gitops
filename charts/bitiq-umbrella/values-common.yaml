@@ -53,6 +53,9 @@ strfry:
 couchbase:
   enabled: false
 
+couchbaseOperator:
+  enabled: false
+
 certManager:
   enabled: false
   route53CredentialsEnabled: false

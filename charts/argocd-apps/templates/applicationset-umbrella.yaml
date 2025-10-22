@@ -37,6 +37,7 @@ spec:
             # App enablement flags and CAO params per env
             strfryEnabled: {{ default false $e.strfryEnabled }}
             couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
+            couchbaseOperatorEnabled: {{ default false $e.couchbaseOperatorEnabled }}
             certManagerEnabled: {{ default false $e.certManagerEnabled }}
             nginxSitesEnabled: {{ default false $e.nginxSitesEnabled }}
             bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
@@ -87,6 +88,8 @@ spec:
               value: '{{ "{{ .strfryEnabled | default false }}" }}'
             - name: couchbase.enabled
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
+            - name: couchbaseOperator.enabled
+              value: '{{ "{{ .couchbaseOperatorEnabled | default false }}" }}'
             - name: certManager.enabled
               value: '{{ "{{ .certManagerEnabled | default false }}" }}'
             - name: certManager.route53CredentialsEnabled

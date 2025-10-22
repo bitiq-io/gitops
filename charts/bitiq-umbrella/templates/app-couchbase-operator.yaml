@@ -1,0 +1,51 @@
+{{- $op := default (dict) .Values.couchbaseOperator }}
+{{- $opEnabled := false }}
+{{- if hasKey $op "enabled" }}
+  {{- $opEnabled = eq (lower (printf "%v" (get $op "enabled"))) "true" }}
+{{- end }}
+{{- if $opEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: couchbase-operator-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: https://couchbase-partners.github.io/helm-charts
+    chart: couchbase-operator
+    targetRevision: 2.81.1
+    helm:
+      values: |
+        install:
+          couchbaseOperator: true
+          admissionController: true
+          couchbaseCluster: false
+          syncGateway: false
+        # Install operator scoped to the application namespace so it can
+        # reconcile the CouchbaseCluster in {{ .Values.appNamespace }}
+        couchbaseOperator:
+          scope: Role
+        admissionController:
+          # Admission validates CRs cluster-wide by default
+          scope: ClusterRole
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
+
