@@ -63,3 +63,12 @@ Authoritative conventions for repository naming, versioning, and environment ove
 5. Confirm the restored image tags follow the deterministic grammar.
 
 Keep this file updated whenever conventions evolve.
+## Shell Scripts (Bash)
+
+- Use strict mode: add `set -Eeuo pipefail` and an `ERR` trap for context on failures.
+- Prefer assignments for arithmetic under strict mode: `count=$((count+1))` instead of `((count++))`.
+  - Rationale: `((count++))` returns 1 when the result is 0, which trips `set -e` unexpectedly.
+- Guard external dependencies:
+  - Only require tools (`aws`, `curl`, etc.) when needed (e.g., skip `aws` in dry-run CI paths).
+  - Provide environment flags to disable network-dependent steps for CI (e.g., `ROUTE53_DDNS_SKIP_LOOKUP=1`).
+- Make CI-friendly: add an offline sanity target that runs without AWS creds or network.

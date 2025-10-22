@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: route53-apex-ddns.sh [--dry-run] [--zones-file PATH] [--wan-ip IPv4]
+Usage: route53-apex-ddns.sh [--dry-run] [--zones-file PATH] [--wan-ip IPv4] [--skip-current-lookup]
 
 Updates Route 53 apex A records to the current WAN IPv4.
 Domains and hosted zone IDs are defined in the ZONES map below.
@@ -18,6 +18,8 @@ Options:
                     paulcapestany.com,Z789...
   --wan-ip, -w IPv4
                   Override detected WAN IPv4 (testing/CI). Env: ROUTE53_DDNS_WAN_IP
+  --skip-current-lookup
+                  Do not read current A records from Route 53 or DNS (CI/offline). Env: ROUTE53_DDNS_SKIP_LOOKUP
 USAGE
 }
 
@@ -41,12 +43,14 @@ trap 'rc=$?; if [[ "${ROUTE53_DDNS_DEBUG:-}" =~ ^(1|true|yes|on)$ ]]; then err "
 DRY_RUN=false
 ZONES_FILE="${ROUTE53_DDNS_ZONES_FILE:-}"
 WAN_IP_OVERRIDE="${ROUTE53_DDNS_WAN_IP:-}"
+SKIP_LOOKUP=false
 enable_debug
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -n|--dry-run) DRY_RUN=true; shift ;;
     -f|--zones-file) ZONES_FILE=${2:-}; shift 2 ;;
     -w|--wan-ip) WAN_IP_OVERRIDE=${2:-}; shift 2 ;;
+    --skip-current-lookup) SKIP_LOOKUP=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown argument: $1"; usage; exit 2 ;;
   esac
@@ -54,7 +58,10 @@ done
 
 need() { command -v "$1" >/dev/null 2>&1 || { err "Missing required tool: $1"; exit 1; }; }
 need curl
-need aws
+# Only require AWS CLI when we intend to write (non-dry-run). Reads have fallbacks.
+if [[ "$DRY_RUN" != true ]]; then
+  need aws
+fi
 
 # Discover WAN IPv4 (fallback chain)
 discover_ip() {
@@ -139,25 +146,30 @@ TTL=60
 changes_made=0
 for domain in "${!ZONES[@]}"; do
   hz="${ZONES[$domain]}"
-  # Try to read current A from Route 53 (may fail if IAM lacks ListResourceRecordSets)
-  current=$(aws route53 list-resource-record-sets --hosted-zone-id "$hz" \
-        --query "ResourceRecordSets[?Type=='A' && Name=='${domain}.'].ResourceRecords[0].Value" \
-        --output text 2>/dev/null || true)
-  # Fallback to public DNS if read is unavailable/denied
-  if [[ -z "$current" || "$current" == "None" ]]; then
-    # DNS-over-HTTPS (Cloudflare)
-    current=$(curl -fsS -H 'accept: application/dns-json' \
-      "https://cloudflare-dns.com/dns-query?name=${domain}&type=A" \
-      | grep -oE '"data":"([0-9]{1,3}\.){3}[0-9]{1,3}"' \
-      | head -n1 | sed -E 's/.*"data":"([0-9\.]+)".*/\1/' || true)
-    # Fallback to dig if available
-    if [[ -z "$current" ]] && command -v dig >/dev/null 2>&1; then
-      current=$(dig +time=3 +tries=1 +short @1.1.1.1 "$domain" A | head -n1 || true)
+  current=""
+  if [[ "$SKIP_LOOKUP" != true && ! "${ROUTE53_DDNS_SKIP_LOOKUP:-}" =~ ^(1|true|yes|on)$ ]]; then
+    # Try to read current A from Route 53 (may fail if IAM lacks ListResourceRecordSets)
+    current=$(aws route53 list-resource-record-sets --hosted-zone-id "$hz" \
+          --query "ResourceRecordSets[?Type=='A' && Name=='${domain}.'].ResourceRecords[0].Value" \
+          --output text 2>/dev/null || true)
+    # Fallback to public DNS if read is unavailable/denied
+    if [[ -z "$current" || "$current" == "None" ]]; then
+      # DNS-over-HTTPS (Cloudflare)
+      current=$(curl -fsS -H 'accept: application/dns-json' \
+        "https://cloudflare-dns.com/dns-query?name=${domain}&type=A" \
+        | grep -oE '"data":"([0-9]{1,3}\.){3}[0-9]{1,3}"' \
+        | head -n1 | sed -E 's/.*"data":"([0-9\.]+)".*/\1/' || true)
+      # Fallback to dig if available
+      if [[ -z "$current" ]] && command -v dig >/dev/null 2>&1; then
+        current=$(dig +time=3 +tries=1 +short @1.1.1.1 "$domain" A | head -n1 || true)
+      fi
+      # Fallback to system resolver
+      if [[ -z "$current" ]]; then
+        current=$(getent hosts "$domain" 2>/dev/null | awk '{print $1; exit}' || true)
+      fi
     fi
-    # Fallback to system resolver
-    if [[ -z "$current" ]]; then
-      current=$(getent hosts "$domain" 2>/dev/null | awk '{print $1; exit}' || true)
-    fi
+  else
+    log "skip current lookup for $domain (CI/offline)"
   fi
   if [[ "$current" == "$WAN_IP" ]]; then
     log "$domain already $WAN_IP"

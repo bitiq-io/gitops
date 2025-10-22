@@ -156,4 +156,20 @@ for env in local sno prod; do
   fi
 done
 
+# Optional: shellcheck for bash scripts
+if command -v shellcheck >/dev/null 2>&1; then
+  log "shellcheck (scripts/*.sh)"
+  shellcheck -x "$ROOT_DIR"/scripts/*.sh || true
+else
+  log "shellcheck not found; skipping"
+fi
+
+# DDNS sanity (offline, no AWS/network reads required)
+log "DDNS updater sanity (dry-run, skip lookup)"
+ROUTE53_DDNS_DEBUG=1 \
+ROUTE53_DDNS_WAN_IP=203.0.113.10 \
+ROUTE53_DDNS_ZONES_FILE="$ROOT_DIR/docs/examples/route53-apex-ddns.zones" \
+ROUTE53_DDNS_SKIP_LOOKUP=1 \
+bash -lc "$ROOT_DIR/scripts/route53-apex-ddns.sh --dry-run"
+
 log "Validation completed."
