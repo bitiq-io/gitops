@@ -54,7 +54,7 @@ ddns-sanity: ## run DDNS updater sanity (offline, no AWS/network reads)
 	 ROUTE53_DDNS_WAN_IP=203.0.113.10 \
 	 ROUTE53_DDNS_ZONES_FILE=docs/examples/route53-apex-ddns.zones \
 	 ROUTE53_DDNS_SKIP_LOOKUP=1 \
-	 bash -lc 'scripts/route53-apex-ddns.sh --dry-run'
+	 bash -lc 'bash scripts/route53-apex-ddns.sh --dry-run'
 
 compute-appversion: ## compute composite appVersion from values-$(ENV).yaml and update umbrella Chart (ENV=local|sno|prod)
 	@ENV=${ENV:-local} bash scripts/compute-appversion.sh $$ENV

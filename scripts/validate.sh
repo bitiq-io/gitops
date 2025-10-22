@@ -170,6 +170,6 @@ ROUTE53_DDNS_DEBUG=1 \
 ROUTE53_DDNS_WAN_IP=203.0.113.10 \
 ROUTE53_DDNS_ZONES_FILE="$ROOT_DIR/docs/examples/route53-apex-ddns.zones" \
 ROUTE53_DDNS_SKIP_LOOKUP=1 \
-bash -lc "$ROOT_DIR/scripts/route53-apex-ddns.sh --dry-run"
+bash -lc "bash '$ROOT_DIR/scripts/route53-apex-ddns.sh' --dry-run"
 
 log "Validation completed."
