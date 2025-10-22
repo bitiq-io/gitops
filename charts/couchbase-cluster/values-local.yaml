@@ -30,7 +30,7 @@ ingress:
 buckets:
   - name: all-nostr-events
     memory: 512Mi
-    storageBackend: magma
+    storageBackend: couchstore
     evictionPolicy: fullEviction
     ioPriority: high
   - name: dev-eventing-threads
