@@ -1,0 +1,43 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argocd-couchbase-ns-access
+  namespace: {{ .Values.appNamespace }}
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+rules:
+  - apiGroups: ["couchbase.com"]
+    resources:
+      - couchbaseclusters
+      - couchbasebuckets
+      - couchbaseephemeralbuckets
+      - couchbasememcachedbuckets
+      - couchbasereplications
+      - couchbaseusers
+      - couchbasegroups
+      - couchbaserolebindings
+      - couchbasebackuprestores
+      - couchbasebackups
+      - couchbasecollections
+      - couchbasecollectiongroups
+      - couchbasescopes
+      - couchbasescopegroups
+      - couchbaseautoscalers
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-couchbase-ns-access
+  namespace: {{ .Values.appNamespace }}
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.argocdControllerServiceAccount | default "openshift-gitops-argocd-application-controller" }}
+    namespace: {{ .Values.gitopsNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argocd-couchbase-ns-access
+
