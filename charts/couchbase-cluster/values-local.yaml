@@ -13,7 +13,7 @@ clusterQuotas:
   eventing: 256Mi
   # analytics disabled by not enabling the service
 route:
-  enabled: true
+  enabled: false
   host: "cb.cyphai.com"
   serviceName: couchbase-cluster
   targetPort: 8091
