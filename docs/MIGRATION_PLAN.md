@@ -1,7 +1,7 @@
 # Migration Plan: pac-infra → bitiq-io/gitops (Final)
 
 Owner: Paul / bitiq platform
-Last updated: 2025-10-17 (status updated)
+Last updated: 2025-10-22 (status updated)
 
 Next Actions (quick scan)
 - Add bootstrap-operators to umbrella (Who: Codex). What: create `app-bootstrap-operators.yaml` to GitOps-manage OLM Subscriptions. Where: `charts/bitiq-umbrella/templates/`. Acceptance: Subscriptions render and reconcile via Argo.
@@ -17,7 +17,7 @@ Goal
 
 Executive Summary (Local Decisions)
 - Couchbase on CRC: Run CAO/Couchbase as a single‑node cluster inside CRC by default. No ODF on local; use the default hostpath storage class (by leaving `storageClassName: ""`).
-- Certificates on local: Prefer cert-manager DNS‑01 with Route 53 for all public hosts, defined via Kubernetes Ingress. HTTP‑01 remains optional if TCP/80 is publicly reachable, but DNS‑01 avoids port 80 entirely and is the default for local.
+- Certificates on local: Prefer cert-manager DNS‑01 with Route 53 for all public hosts, defined via Kubernetes Ingress. Use a single ClusterIssuer with per‑zone solvers (zone selectors) to avoid hosted zone mismatches. HTTP‑01 remains optional if TCP/80 is publicly reachable, but DNS‑01 avoids port 80 entirely and is the default for local.
 - Ollama modes: No CPU mode. For ENV=local, default to `ollama.mode: external` (point at a GPU‑backed Ollama running on the Ubuntu host or another machine). Later, for SNO/prod with supported GPUs, enable GPU Operator and `ollama.mode: gpu`.
 - Storage: Do not install or rely on ODF in ENV=local. Charts must support `storageClassName: ""` and minimal resource footprints.
 - Security: Align with `restricted-v2` SCC defaults (runAsNonRoot, drop capabilities), readOnlyRootFilesystem where possible, and default‑deny NetworkPolicies with explicit egress.
@@ -36,7 +36,7 @@ Environment Model
 - Public endpoints: use Kubernetes Ingress for internet hosts. The OpenShift router serves these and creates internal Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
 Status Summary
-- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone selectors; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed.
+- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed; apex DDNS script and docs added.
 - In Progress: Operator bootstrap (CAO values verification pending), Strfry chart hardening (NetworkPolicy default‑deny rollout), Couchbase cluster wiring (optional admin ingress), cert-manager issuance verification across all public hosts.
 - Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 
@@ -175,7 +175,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: All workloads reconcile in local; zero hardcoded secrets; validation passes.
 
 6) cert-manager config
-- Status: In Progress (chart added; enabled for local; Route 53 DNS‑01 wired)
+- Status: In Progress (chart added; enabled for local; Route 53 DNS‑01 wired with single issuer + per‑zone solvers)
 - Who: Codex agent (repo maintainer) + Human for network/NAT
 - What: Add `cert-manager-config` chart with Route 53 DNS‑01 issuer enabled by default for local; Vault‑backed AWS credentials via VSO; codify operator recursive DNS overrides; document dynamic DNS and NAT details.
 - Where: `charts/cert-manager-config/*`, docs
@@ -210,11 +210,12 @@ Appendix: Dynamic DNS + NAT quick guide (Local)
 - Router exposure: either user‑space forwarding (as documented) or equivalent rules to allow the OpenShift router to serve your Ingress hosts.
 - cert-manager: default to DNS‑01 (Route 53). Annotate Ingress with the ClusterIssuer; cert-manager will solve and issue real certs.
 
-Recent Changes (2025‑10‑21)
+Recent Changes (2025‑10‑22)
 - Cert‑manager via GitOps bootstrap: added Subscription for the OpenShift cert‑manager operator (stable‑v1) and bootstrap waits for CSV/CRDs.
 - NGINX static sites under GitOps (bitiq‑local): Deployment/Service/PVC + Ingress per domain + one‑shot seeding Job; apex→www redirect handled by nginx; content served at public hosts (e.g., `www.cyphai.com`).
 - Local FQDNs configured: nostr_site `alpha.cyphai.com`, strfry `relay.cyphai.com`, Couchbase admin `cb.cyphai.com` (internal app Routes remain on `apps-crc.testing`).
 - Vault seeding extended: dev‑vault seeds `gitops/couchbase/admin` from `COUCHBASE_ADMIN_USERNAME/COUCHBASE_ADMIN_PASSWORD`; VSO projects to `bitiq-local/couchbase-cluster-auth`.
+- DDNS updater refined: added zones file support (`/etc/route53-apex-ddns.zones`), dry‑run and WAN IP override flags, and read‑path fallback to public DNS when IAM omits `ListResourceRecordSets`. Systemd unit examples provided under `docs/examples/systemd/`.
 - Quick start (local):
   1) `ENV=local BASE_DOMAIN=apps-crc.testing VAULT_OPERATORS=true ./scripts/bootstrap.sh`
   2) `AUTO_DEV_VAULT=true ARGOCD_TOKEN='<token>' GITHUB_WEBHOOK_SECRET='<secret>' QUAY_USERNAME='<user>' QUAY_PASSWORD='<pass>' QUAY_EMAIL='<email>' COUCHBASE_ADMIN_USERNAME='Administrator' COUCHBASE_ADMIN_PASSWORD='<strong>' make dev-vault`

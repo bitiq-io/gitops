@@ -117,6 +117,10 @@ metadata:
       ]
     }
 
+Single issuer, per-zone solvers (recommended when you own multiple zones)
+- Instead of creating multiple Issuers, use a single ClusterIssuer with per-zone solver entries that select by `dnsZones` and set `hostedZoneID` appropriately. This prevents hosted zone mismatches during TXT challenges and keeps Ingress annotations simple (one issuer name across all hosts).
+- See charts/cert-manager-config/templates/clusterissuer-dns01-route53.yaml:1 for the templated form and charts/cert-manager-config/values-local.yaml:1 for zone IDs.
+
 Certificate CR alternative (when Route annotation integration is not available)
 - Create a Certificate referencing your hostname and desired target secret. Example:
 

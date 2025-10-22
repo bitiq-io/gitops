@@ -1,0 +1,17 @@
+# /etc/systemd/system/route53-apex-ddns.service
+[Unit]
+Description=Route 53 apex DDNS updater
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Use a dedicated AWS profile with least-privilege IAM
+Environment=AWS_PROFILE=route53-ddns
+# Or load credentials from an env file (uncomment, create /etc/route53-apex-ddns.env)
+# EnvironmentFile=-/etc/route53-apex-ddns.env
+# Ensure the script and AWS CLI are in PATH for the service context
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+# Optional: point to a zones file (copy sample to /etc first)
+# Environment=ROUTE53_DDNS_ZONES_FILE=/etc/route53-apex-ddns.zones
+ExecStart=/usr/local/bin/route53-apex-ddns.sh

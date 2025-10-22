@@ -128,6 +128,8 @@ Certificates (HTTP-01 on local)
   oc get routes -n <app-ns>
   curl -I https://relay.<your-fqdn>
 
+Note (multi-zone DNS‑01): If port 80 is unavailable or you prefer DNS‑01, use a single cert-manager ClusterIssuer with per‑zone Route 53 solvers (zone selectors) rather than multiple Issuers. Keep all Ingress annotations pointing to that one issuer (e.g., `letsencrypt-dns01-route53-local`). See charts/cert-manager-config/templates/clusterissuer-dns01-route53.yaml:1 and charts/cert-manager-config/values-local.yaml:1 for the pattern and zone IDs.
+
 Strfry
 - Chart: `charts/strfry` (StatefulSet, Service, Route, PVC). Host formed as `relay.<baseDomain>`.
 - Local values: `charts/strfry/values-local.yaml` (10Gi PVC on default hostpath class; small resources).
