@@ -43,3 +43,10 @@ ingress:
   targetPort: 8091
 
 baseDomain: ""
+
+users:
+  admin:
+    enabled: false
+    name: admin
+    fullName: Admin (GitOps)
+    authSecretName: couchbase-cluster-auth

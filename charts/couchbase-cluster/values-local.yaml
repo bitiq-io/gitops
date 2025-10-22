@@ -42,3 +42,6 @@ buckets:
   - name: dev-eventing-nostr-ai
     memory: 256Mi
     storageBackend: couchstore
+users:
+  admin:
+    enabled: true

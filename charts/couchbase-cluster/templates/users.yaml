@@ -1,0 +1,32 @@
+{{- $u := .Values.users.admin -}}
+{{- if and $u $u.enabled }}
+apiVersion: couchbase.com/v2
+kind: CouchbaseUser
+metadata:
+  name: {{ $u.name | default "admin" }}
+spec:
+  name: {{ $u.name | default "admin" }}
+  fullName: {{ $u.fullName | default "Admin (GitOps)" | quote }}
+  authDomain: local
+  authSecret: {{ $u.authSecretName | default "couchbase-cluster-auth" | quote }}
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseGroup
+metadata:
+  name: full-admins
+spec:
+  roles:
+    - name: admin
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseRoleBinding
+metadata:
+  name: admin-binding
+spec:
+  roleRef:
+    name: full-admins
+  subjects:
+    - kind: CouchbaseUser
+      name: {{ $u.name | default "admin" }}
+{{- end }}
+
