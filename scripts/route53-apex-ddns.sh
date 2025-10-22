@@ -111,7 +111,7 @@ load_zones_file() {
       continue
     fi
     ZONES["$key"]="$val"
-    ((count++))
+    count=$((count+1))
   done < "$file"
   if [[ $count -eq 0 ]]; then
     err "Zones file empty: $file"
