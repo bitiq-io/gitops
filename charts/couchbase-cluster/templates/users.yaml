@@ -24,9 +24,9 @@ metadata:
   name: admin-binding
 spec:
   roleRef:
+    kind: CouchbaseGroup
     name: full-admins
   subjects:
     - kind: CouchbaseUser
       name: {{ $u.name | default "admin" }}
 {{- end }}
-
