@@ -1,7 +1,7 @@
 adminSecretName: couchbase-cluster-auth
 clusterName: couchbase-cluster
 
-image: registry.connect.redhat.com/couchbase/server:7.2.4
+image: couchbase/server:8.0.0
 
 storage:
   defaultSize: 20Gi

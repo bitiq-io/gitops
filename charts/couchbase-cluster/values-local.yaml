@@ -1,5 +1,5 @@
 # Local (CRC) defaults: single-node, hostpath classes via cluster default
-image: couchbase/server:7.2.4
+image: couchbase/server:8.0.0
 
 servers:
   size: 1
@@ -30,6 +30,8 @@ ingress:
 buckets:
   - name: all-nostr-events
     memory: 512Mi
+    storageBackend: magma
+    evictionPolicy: fullEviction
     ioPriority: high
   - name: dev-eventing-threads
     memory: 256Mi
