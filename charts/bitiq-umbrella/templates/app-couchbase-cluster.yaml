@@ -25,6 +25,7 @@ spec:
       kind: CouchbaseBucket
       jsonPointers:
         - /status
+        - /spec/cluster
   source:
     repoURL: {{ .Values.repoUrl }}
     targetRevision: {{ .Values.targetRevision }}
