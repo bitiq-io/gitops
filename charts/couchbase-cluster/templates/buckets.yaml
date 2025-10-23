@@ -8,11 +8,11 @@ spec:
   cluster: {{ $root.Values.clusterName | default "couchbase-cluster" | quote }}
   memoryQuota: {{ .memory | quote }}
   ioPriority: {{ default "low" .ioPriority | quote }}
+  compressionMode: {{ .compressionMode | default "passive" | quote }}
+  evictionPolicy: {{ .evictionPolicy | default "valueOnly" | quote }}
+  rank: {{ .rank | default 0 }}
   {{- if .storageBackend }}
   storageBackend: {{ .storageBackend | quote }}
-  {{- end }}
-  {{- if .evictionPolicy }}
-  evictionPolicy: {{ .evictionPolicy | quote }}
   {{- end }}
   replicas: 1
   conflictResolution: seqno
