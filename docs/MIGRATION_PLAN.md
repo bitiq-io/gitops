@@ -16,7 +16,7 @@ Goal
 - Optimize for ENV=local on a remote Ubuntu home server with dynamic DNS, while keeping the structure easy to extend to ENV=prod.
 
 Executive Summary (Local Decisions)
-- Couchbase on CRC: Run CAO/Couchbase as a single‑node cluster inside CRC by default. No ODF on local; use the default hostpath storage class (by leaving `storageClassName: ""`).
+- Couchbase on CRC: Run CAO/Couchbase as a single-node cluster inside CRC by default. No ODF on local; use the default hostpath storage class (by leaving `storageClassName: ""`). Pin Couchbase Server to 7.6.6 while CAO 2.8.1 is in use (8.0.0 is unsupported).
 - Certificates on local: Prefer cert-manager DNS‑01 with Route 53 for all public hosts, defined via Kubernetes Ingress. Use a single ClusterIssuer with per‑zone solvers (zone selectors) to avoid hosted zone mismatches. HTTP‑01 remains optional if TCP/80 is publicly reachable, but DNS‑01 avoids port 80 entirely and is the default for local.
 - Ollama modes: No CPU mode. For ENV=local, default to `ollama.mode: external` (point at a GPU‑backed Ollama running on the Ubuntu host or another machine). Later, for SNO/prod with supported GPUs, enable GPU Operator and `ollama.mode: gpu`.
 - Storage: Do not install or rely on ODF in ENV=local. Charts must support `storageClassName: ""` and minimal resource footprints.
@@ -37,7 +37,8 @@ Environment Model
 
 Status Summary
 - Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed; apex DDNS script and docs added.
-- In Progress: Operator bootstrap (CAO values verification pending), Strfry chart hardening (NetworkPolicy default‑deny rollout), Couchbase cluster wiring (optional admin ingress), cert-manager issuance verification across all public hosts.
+- In Progress: Operator bootstrap (CAO values verification pending), Strfry chart hardening (NetworkPolicy default-deny rollout), cert-manager issuance verification across all public hosts.
++ Completed: Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`.
 - Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
