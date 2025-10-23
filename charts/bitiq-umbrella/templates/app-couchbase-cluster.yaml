@@ -14,6 +14,17 @@ metadata:
     app.kubernetes.io/part-of: bitiq-umbrella
 spec:
   project: default
+  ignoreDifferences:
+    # Keep this surgical: only ignore status on operator-managed CRs to avoid
+    # perpetual OutOfSync while still surfacing spec drift that matters.
+    - group: couchbase.com
+      kind: CouchbaseCluster
+      jsonPointers:
+        - /status
+    - group: couchbase.com
+      kind: CouchbaseBucket
+      jsonPointers:
+        - /status
   source:
     repoURL: {{ .Values.repoUrl }}
     targetRevision: {{ .Values.targetRevision }}

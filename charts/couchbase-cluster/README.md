@@ -27,3 +27,26 @@ Umbrella integration
 Verification
 - `oc get couchbasecluster`, `oc get couchbasebucket` in the app namespace.
 - Admin Route (if enabled) should be reachable over HTTPS when cert-manager is configured.
+
+Argo CD diff noise (ignoreDifferences)
+- The Couchbase operator mutates status and certain defaults. To keep Argo green
+  without hiding real spec drift, the umbrella Application ignores only `status`
+  on `CouchbaseCluster` and `CouchbaseBucket` (see `app-couchbase-cluster.yaml`).
+- We do NOT ignore spec fields so that meaningful configuration changes still
+  surface as drift.
+
+Sanity checks via API/CLI
+- REST (port-forward):
+  - `oc -n bitiq-local port-forward svc/couchbase-cluster 8091:8091`
+  - List buckets: `curl -u <user>:<pass> http://127.0.0.1:8091/pools/default/buckets`
+  - Who am I: `curl -u <user>:<pass> http://127.0.0.1:8091/whoami`
+- CLI (inside the server pod):
+  - `oc -n bitiq-local exec -ti pod/couchbase-cluster-0001 -- /opt/couchbase/bin/couchbase-cli bucket-list -c 127.0.0.1:8091 -u <user> -p <pass>`
+  - `oc -n bitiq-local exec -ti pod/couchbase-cluster-0001 -- /opt/couchbase/bin/couchbase-cli user-manage --list -c 127.0.0.1:8091 -u <user> -p <pass>`
+
+Admin credentials
+- The operator bootstraps credentials from the Secret named by
+  `spec.security.adminSecret`. Changing the Secret’s username after initial
+  bootstrap does not rename the existing Couchbase admin user; prefer creating
+  a new `CouchbaseUser` and switching the operator Secret only after verifying
+  the new user works.
