@@ -2,13 +2,42 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: strfry-egress
+  name: strfry
 spec:
   podSelector:
     matchLabels:
       app: strfry
   policyTypes:
+    - Ingress
     - Egress
+  ingress:
+{{- $hasIngress := false }}
+{{ if .Values.networkPolicy.ingress.allowOpenShiftIngress }}
+{{- $hasIngress = true }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+{{ end }}
+{{ range .Values.networkPolicy.ingress.additional }}
+{{- $hasIngress = true }}
+    - from:
+{{- if .namespaceSelector }}
+        - namespaceSelector:
+{{ toYaml .namespaceSelector | indent 12 }}
+{{- end }}
+{{- if .podSelector }}
+        - podSelector:
+{{ toYaml .podSelector | indent 12 }}
+{{- end }}
+{{- if .ipBlock }}
+        - ipBlock:
+{{ toYaml .ipBlock | indent 12 }}
+{{- end }}
+{{ end }}
+{{- if not $hasIngress }}
+    []
+{{- end }}
   egress:
     # Allow DNS queries (UDP/TCP 53) to any destination
     - ports:
@@ -16,17 +45,39 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    {{- if .Values.networkPolicy.extraCIDRs }}
+    {{- if .Values.networkPolicy.db.enabled }}
     - to:
-      {{- range $cidr := .Values.networkPolicy.extraCIDRs }}
-        - ipBlock:
-            cidr: {{ $cidr | quote }}
-      {{- end }}
+        - namespaceSelector:
+            {{- if .Values.networkPolicy.db.namespaceSelector }}
+{{ toYaml .Values.networkPolicy.db.namespaceSelector | indent 12 }}
+            {{- else }}
+              matchLabels:
+                kubernetes.io/metadata.name: {{ .Release.Namespace }}
+            {{- end }}
+          {{- if .Values.networkPolicy.db.podSelector }}
+          podSelector:
+{{ toYaml .Values.networkPolicy.db.podSelector | indent 12 }}
+          {{- end }}
+      {{- if .Values.networkPolicy.db.ports }}
       ports:
-      {{- range $p := .Values.networkPolicy.extraPorts }}
+      {{- range $p := .Values.networkPolicy.db.ports }}
         - protocol: {{ default "TCP" $p.protocol }}
           port: {{ $p.port }}
       {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- range .Values.networkPolicy.egress.additional }}
+    - {{- if or .to .ports }}
+      {{- if .to }}
+      to:
+{{ toYaml .to | indent 8 }}
+      {{- end }}
+      {{- if .ports }}
+      ports:
+{{ toYaml .ports | indent 8 }}
+      {{- end }}
+      {{- else }}
+      {}
+      {{- end }}
     {{- end }}
 {{- end }}
-

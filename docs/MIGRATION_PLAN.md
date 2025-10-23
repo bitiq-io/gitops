@@ -5,7 +5,6 @@ Last updated: 2025-10-22 (status updated)
 
 Next Actions (quick scan)
 - Add bootstrap-operators to umbrella (Who: Codex). What: create `app-bootstrap-operators.yaml` to GitOps-manage OLM Subscriptions. Where: `charts/bitiq-umbrella/templates/`. Acceptance: Subscriptions render and reconcile via Argo.
-- Strfry hardening (Who: Codex). What: add ConfigMap(s) and default-deny NetworkPolicy with explicit egress. Where: `charts/strfry/templates/`. Acceptance: Route OK; pods Ready; egress limited to DNS/DB.
 - Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
@@ -34,8 +33,8 @@ Environment Model
 - Public endpoints: use Kubernetes Ingress for internet hosts. The OpenShift router serves these and creates internal Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
 Status Summary
-- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`.
-- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), Strfry chart hardening (NetworkPolicy default-deny rollout), cert-manager issuance verification across all public hosts.
+- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`.
+- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout).
 - Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
@@ -74,7 +73,7 @@ M2. Secrets baseline in Vault
 - Acceptance: All charts reference k8s Secrets created by VSO; no literals in values/manifests; running `make dev-vault` does not overwrite existing Vault keys unless explicitly set with `DEV_VAULT_OVERWRITE=always`.
 
 M3. strfry chart
-- Status: In Progress (StatefulSet/Service/Route/PVC done; ConfigMap added; NetworkPolicy scaffolded and disabled by default pending egress target finalization)
+- Status: Completed (StatefulSet hardened for `restricted-v2`, ConfigMap wiring, and default-deny NetworkPolicy with DNS/DB egress toggles merged)
 - New `charts/strfry/` with: ConfigMap(s), PVC (parametrized), StatefulSet (probes, resources, `restricted-v2` securityContext), Service and Route.
 - Add default‑deny NetworkPolicy with explicit egress (DNS, DB, allowed APIs).
 - Acceptance: Route reachable; PVC binds (`storageClassName: ""` on local); helm‑unittest and `make validate` pass.
@@ -141,12 +140,12 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: `helm lint` and `make validate` pass with env filter `local`; Applications render for all new services.
 
 2) strfry
-- Status: In Progress (core resources done; ConfigMap + NetworkPolicy pending)
+- Status: Completed
 - Who: Codex agent (repo maintainer)
-- What: Port config to ConfigMaps; add PVC; create StatefulSet with probes/securityContext (restricted‑v2), Service, Ingress; add default‑deny NetworkPolicy with explicit egress (DNS/DB).
+- What: Port config to ConfigMaps; add PVC; create StatefulSet with probes/securityContext (restricted‑v2), Service, Ingress; add default‑deny NetworkPolicy with explicit DNS/DB egress.
 - Where: `charts/strfry/*`, `charts/bitiq-umbrella/templates/app-strfry.yaml`
 - Why: Productionize core relay; remove manual manifests.
-- Acceptance: Route reachable over HTTPS in local; PVC binds with `storageClassName: ""`; validation passes.
+- Acceptance: Route reachable over HTTPS in local; PVC binds with `storageClassName: ""`; validation passes (met).
 
 3) Couchbase (CAO + cluster)
 - Status: In Progress (chart scaffolded; operator enablement + VSO Secret wiring pending)
@@ -175,7 +174,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 6) cert-manager config
 - Status: In Progress (chart added; enabled for local; Route 53 DNS‑01 wired with single issuer + per‑zone solvers)
 - Who: Codex agent (repo maintainer) + Human for network/NAT
-- What: Add `cert-manager-config` chart with Route 53 DNS‑01 issuer enabled by default for local; Vault‑backed AWS credentials via VSO; codify operator recursive DNS overrides; document dynamic DNS and NAT details.
+- What: Add `cert-manager-config` chart with Route 53 DNS‑01 issuer enabled by default for local; Vault‑backed AWS credentials via VSO; codify operator recursive DNS overrides; document dynamic DNS and NAT details; verify HTTP‑01 staging issuer once router 80/443 forwarding is active (currently returning `urn:ietf:params:acme:error:connection` from Let’s Encrypt self-check).
 - Where: `charts/cert-manager-config/*`, docs
 - Why: Automated TLS in local/prod; real HTTPS on local via dynamic DNS path.
 - Acceptance: `oc get certificate` shows Ready for local hosts; Ingresses terminate TLS with valid certs.

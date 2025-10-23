@@ -38,3 +38,12 @@ operatorOverrides:
     recursiveNameservers:
       - 1.1.1.1:53
       - 8.8.8.8:53
+
+dns:
+  upstreamResolvers:
+    enabled: true
+    upstreams:
+      - address: 1.1.1.1
+        port: 53
+      - address: 8.8.8.8
+        port: 53

@@ -26,3 +26,11 @@ operatorOverrides:
     recursiveNameservers:
       - 1.1.1.1:53
       - 8.8.8.8:53
+
+dns:
+  upstreamResolvers:
+    enabled: false
+    policy: Sequential
+    protocolStrategy: ""
+    transportConfig: {}
+    upstreams: []

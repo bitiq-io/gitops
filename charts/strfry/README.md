@@ -12,6 +12,8 @@ Key values
 - `persistence.size` (string, default `10Gi`): PVC size.
 - `persistence.storageClassName` (string, default empty): If empty, use cluster default (hostpath on CRC).
 - `resources`: CPU/memory requests/limits sized for CRC by default.
+- `config.strfryConf` / `config.routerConf`: Content for `strfry.conf` and router streams, projected via ConfigMap to `/opt/strfry`.
+- `networkPolicy.*`: Default-deny NetworkPolicy toggle plus optional ingress/egress destinations (DNS always allowed; enable `networkPolicy.db` for Couchbase ports).
 
 Local vs prod
 - Local (CRC): leave `storageClassName` empty to bind to cluster default; keep resource requests small.

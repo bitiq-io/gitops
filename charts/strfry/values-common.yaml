@@ -4,8 +4,8 @@ replicaCount: 1
 hostPrefix: "relay"
 
 image:
-  repository: ghcr.io/paulcapestany/strfry
-  tag: "latest"
+  repository: quay.io/paulcapestany/strfry
+  tag: "0d0faa1"
   pullPolicy: IfNotPresent
 
 service:
@@ -36,7 +36,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# Optional configuration projected via ConfigMap and mounted at /etc/strfry
+# Optional configuration projected via ConfigMap and mounted at /opt/strfry
 config:
   enabled: true
   strfryConf: |
@@ -50,7 +50,17 @@ config:
 
 networkPolicy:
   enabled: false
-  # Additional CIDRs to allow egress to (besides DNS 53)
-  extraCIDRs: []
-  # Additional ports to allow for egress in {port,protocol} objects
-  extraPorts: []
+  ingress:
+    allowOpenShiftIngress: true
+    # Additional ingress rules (list of objects containing namespaceSelector / podSelector / ipBlock)
+    additional: []
+  db:
+    enabled: false
+    # Optional namespaceSelector override for DB destination
+    namespaceSelector: {}
+    podSelector: {}
+    # List of {port, protocol} tuples (protocol defaults to TCP)
+    ports: []
+  egress:
+    # Additional egress rules. Each item may define "to" (list) and "ports" (list)
+    additional: []

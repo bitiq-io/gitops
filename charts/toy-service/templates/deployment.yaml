@@ -90,7 +90,7 @@ spec:
           {{- end }}
       {{- if and $mount.enabled (default false $mount.reloadSidecar.enabled) }}
         - name: configmap-reload
-          image: {{ default "ghcr.io/jimmidyson/configmap-reload:latest" $mount.reloadSidecar.image }}
+          image: {{ default "ghcr.io/jimmidyson/configmap-reload:v0.14.0" $mount.reloadSidecar.image }}
           imagePullPolicy: IfNotPresent
           args:
             - --volume-dir={{ default "/etc/backend-secret" $mount.mountPath }}
