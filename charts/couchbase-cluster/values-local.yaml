@@ -1,5 +1,5 @@
 # Local (CRC) defaults: single-node, hostpath classes via cluster default
-image: couchbase/server:8.0.0
+image: couchbase/server:7.6.6
 
 servers:
   size: 1

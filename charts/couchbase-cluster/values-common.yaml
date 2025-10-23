@@ -1,7 +1,7 @@
 adminSecretName: couchbase-cluster-auth
 clusterName: couchbase-cluster
 
-image: couchbase/server:8.0.0
+image: couchbase/server:7.6.6
 
 storage:
   defaultSize: 20Gi
