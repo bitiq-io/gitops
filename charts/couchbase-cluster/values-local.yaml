@@ -6,7 +6,7 @@ servers:
   storageClassRWO: ""
   storageClassRWX: ""
 clusterQuotas:
-  data: 512Mi
+  data: 2048Mi
   index: 256Mi
   query: 256Mi
   search: 256Mi
