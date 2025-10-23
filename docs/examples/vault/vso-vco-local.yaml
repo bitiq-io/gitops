@@ -10,7 +10,7 @@ metadata:
 spec:
   address: "https://vault.vault-dev.svc:8200"   # adjust to your dev Vault service
   tls:
-    # If using OpenShift service-ca, mount a ConfigMap with injected CA and set VAULT_CACERT via operator Subscription config (see OPERATOR-VERSIONS)
+    # If using OpenShift service-ca, mount a ConfigMap with injected CA and set VAULT_CACERT via operator Subscription config (see VERSION-MATRIX)
     caCertSecretRef:
       name: vault-ca
       key: ca.crt

@@ -24,13 +24,13 @@ It uses:
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
 - [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with Vault via VSO/VCO
-- [OPERATOR-VERSIONS](docs/OPERATOR-VERSIONS.md) — pinned operator channels/CSVs and documentation links
+- [VERSION-MATRIX](docs/VERSION-MATRIX.md) — pinned operator/workload versions and documentation links
 
 ## Prereqs
 
 - OpenShift 4.x cluster (OpenShift Local, SNO, or full) and `oc`, `helm` in PATH
 - Cluster-admin for bootstrap (OLM subscriptions, operators)
-- Operator catalog access to install **OpenShift GitOps 1.18** (`channel: gitops-1.18`) and **OpenShift Pipelines 1.20** (`channel: pipelines-1.20`). See the [Operator Version Matrix](docs/OPERATOR-VERSIONS.md) for the exact CSVs and documentation targets (GitOps 1.18 / Pipelines 1.20).
+- Operator catalog access to install **OpenShift GitOps 1.18** (`channel: gitops-1.18`) and **OpenShift Pipelines 1.20** (`channel: pipelines-1.20`). See the [Version Matrix](docs/VERSION-MATRIX.md) for the exact CSVs and documentation targets (GitOps 1.18 / Pipelines 1.20).
 - Git repo hosting (HTTPS or SSH) with ArgoCD repo credentials configured
 - For OpenShift Local: the app base domain is `apps-crc.testing`. :contentReference[oaicite:7]{index=7}
 
@@ -145,7 +145,7 @@ Production (ENV=prod) quick path
 1. Installs/ensures **OpenShift GitOps** (channel `gitops-1.18`) and **OpenShift Pipelines** (channel `pipelines-1.20`) via OLM Subscriptions aligned with the official compatibility matrices. ([GitOps 1.18 release notes][gitops-1-18-compat], [Pipelines 1.20 release notes][pipelines-1-20-compat])
 2. Waits for the default **Argo CD** instance in `openshift-gitops` (unless disabled). ([Red Hat Docs][3])
 3. Installs an **ApplicationSet** that creates **one** `bitiq-umbrella-${ENV}` Argo Application for your ENV.
-4. Installs **Vault operators** — HashiCorp Vault Secrets Operator (VSO) and Red Hat COP Vault Config Operator (VCO) — via OLM Subscriptions per the [Operator Version Matrix](docs/OPERATOR-VERSIONS.md).
+4. Installs **Vault operators** — HashiCorp Vault Secrets Operator (VSO) and Red Hat COP Vault Config Operator (VCO) — via OLM Subscriptions per the [Version Matrix](docs/VERSION-MATRIX.md).
 5. For ENV=local and ENV=sno, the umbrella enables VSO/VCO Applications by default. For other envs, enable VSO/VCO per env in the ApplicationSet values when ready.
 6. The umbrella app deploys:
 
@@ -292,7 +292,7 @@ Prod secrets verification (quick checklist)
 - Argo CD repo write access (for Image Updater):
   - `argocd repo list` or `git ls-remote https://<user>:$GH_PAT@github.com/bitiq-io/gitops.git | head`
   
-See docs/PROD-RUNBOOK.md for the full production flow and docs/OPERATOR-VERSIONS.md for pinned operator channels/CSVs.
+See docs/PROD-RUNBOOK.md for the full production flow and docs/VERSION-MATRIX.md for pinned operator channels/CSVs.
 
 ### Notes
 

@@ -1,6 +1,6 @@
 # Local Runbook (OpenShift Local / CRC)
 
-> Migration note: Secrets are moving from ESO to Vault operators (VSO/VCO). VSO/VCO are installed by bootstrap (see docs/OPERATOR-VERSIONS.md). Until cutover completes, you may still see ESO-managed resources; follow VSO/VCO guidance for new secrets.
+> Migration note: Secrets are moving from ESO to Vault operators (VSO/VCO). VSO/VCO are installed by bootstrap (see docs/VERSION-MATRIX.md). Until cutover completes, you may still see ESO-managed resources; follow VSO/VCO guidance for new secrets.
 
 This is a concise, copy/pasteable sequence to get ENV=local running end‑to‑end on OpenShift Local (CRC) for smoke testing.
 

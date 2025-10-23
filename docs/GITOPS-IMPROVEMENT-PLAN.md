@@ -81,7 +81,7 @@
       - All platform creds (argocd-image-updater token, quay dockerconfig, github webhook) are delivered by VSO-managed Kubernetes Secrets (names unchanged for consumers).
       - Make targets and docs prohibit direct `oc create secret`; local/dev seeding happens by writing to Vault and reconciling via VSO/VCO.
       - `make validate` renders VSO/VCO resources and passes kubeconform (ignoring CRDs as needed) for local|sno|prod.
-      - A version matrix (docs/CONVENTIONS.md or new `docs/OPERATOR-VERSIONS.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
+      - A version matrix (docs/CONVENTIONS.md or new `docs/VERSION-MATRIX.md`) enumerates exact operator versions/CSVs to use (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) and links to the matching official documentation.
       - Umbrella gating exists to enable VSO/VCO per env without enabling ESO concurrently; avoids dual-writer risk during migration.
    notes: References — VSO: https://github.com/hashicorp/vault-secrets-operator (CRDs: VaultConnection, VaultAuth, VaultStaticSecret, VaultDynamicSecret); VCO: https://github.com/redhat-cop/vault-config-operator (CRDs include KubernetesAuthEngineConfig/Role, SecretEngineMount, Policy). Subscriptions/CRD waits added in PR #54; gated umbrella apps added in PR #57.
 
@@ -217,13 +217,13 @@
     notes: Keep a rollback branch with ESO resources for emergency reversion; do not run ESO and VSO against the same Secret concurrently.
 
 19. id: T18
-    name: Operator Version Matrix & Doc Alignment
+    name: Version Matrix & Doc Alignment
     description: Author and maintain a single source of truth for operator versions (GitOps 1.18.x, Pipelines 1.20.x, VSO v1.0.1, VCO v0.8.34) including their CSV names, catalog channels, support statements, and authoritative documentation links.
     why: Ensures everyone follows the correct install/upgrade guidance and avoids mixing docs across incompatible operator versions.
     dependencies: [T6, T12, T15]
     status: complete (matrix and cross-references merged)
     acceptance_criteria:
-      - `docs/OPERATOR-VERSIONS.md` (or an agreed existing doc) lists: operator name, channel, startingCSV/version, Red Hat/HashiCorp documentation URL, and upgrade cadence expectations.
+      - `docs/VERSION-MATRIX.md` (or an agreed existing doc) lists: operator name, channel, startingCSV/version, Red Hat/HashiCorp documentation URL, and upgrade cadence expectations.
       - README, AGENTS.md, and runbooks link to the matrix when referencing operator setup steps.
       - Process documented for updating the matrix during upgrades (new PR checklist item referencing T12 guardrails).
     notes: Confirm versions against OperatorHub for OCP 4.19 before publishing; include a sanity command (`oc get csv -n <ns>`) to verify deployed versions post-bootstrap.

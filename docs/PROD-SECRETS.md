@@ -6,7 +6,7 @@ HashiCorp Vault Secrets Operator (VSO) and Vault Config Operator (VCO) are the a
 
 - OpenShift 4.19 cluster with cluster-admin access.
 - HashiCorp Vault (OSS or Enterprise) reachable from the cluster (in-cluster Service or external endpoint).
-- Bootstrap installed the pinned operators (GitOps 1.18, Pipelines 1.20, VSO 1.0.1, VCO 0.8.34) — see `docs/OPERATOR-VERSIONS.md`.
+- Bootstrap installed the pinned operators (GitOps 1.18, Pipelines 1.20, VSO 1.0.1, VCO 0.8.34) — see `docs/VERSION-MATRIX.md`.
 - For each environment, configure the Vault address, Kubernetes auth mount, and role names in `charts/argocd-apps/values.yaml` before syncing:
 
   ```yaml

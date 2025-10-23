@@ -4,7 +4,7 @@ Purpose
 - Deploy a CouchbaseCluster (via Couchbase Autonomous Operator) and environment-specific CouchbaseBucket resources.
 
 Prerequisites
-- Couchbase Autonomous Operator (CAO) Subscription installed via `charts/bootstrap-operators` (pinned channel per docs/OPERATOR-VERSIONS.md).
+- Couchbase Autonomous Operator (CAO) Subscription installed via `charts/bootstrap-operators` (pinned channel per docs/VERSION-MATRIX.md).
 - Admin credentials provided via a Kubernetes Secret projected by VSO (Vault) with name matching `values.adminSecretName`.
 
 Key values

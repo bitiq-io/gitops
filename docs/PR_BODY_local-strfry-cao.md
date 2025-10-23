@@ -12,7 +12,7 @@ Key Changes
   - docs/BITIQLIVE-DEV.md: ENV=local runbook (CRC sizing, dynamic DNS, systemd crc tunnel, safe Vault seeding)
   - docs/CERTS-LOCAL.md: HTTP‑01 ClusterIssuer YAML (staging/prod), Route annotation pattern, verification
 - Operator versions
-  - docs/OPERATOR-VERSIONS.md: add Couchbase Autonomous Operator (CAO) row and CSV verify command
+  - docs/VERSION-MATRIX.md: add Couchbase Autonomous Operator (CAO) row and CSV verify command
 - Charts (new)
   - charts/strfry: StatefulSet, Service, Route, PVC, values-{common,local}.yaml
   - charts/couchbase-cluster: CouchbaseCluster + CouchbaseBucket CR templates, values-{common,local}.yaml
@@ -48,7 +48,7 @@ Verification (local)
 Notes
 - Secrets: seed via Vault (VSO) with make dev-vault; default behavior does not overwrite existing keys.
 - GPU/Ollama: not included here; local uses external Ollama (no CPU mode). GPU path reserved for SNO/prod.
-- CAO catalog/package/channel should be verified against your cluster and recorded in docs/OPERATOR-VERSIONS.md if different.
+- CAO catalog/package/channel should be verified against your cluster and recorded in docs/VERSION-MATRIX.md if different.
 
 Follow-ups (separate PRs recommended)
 - Strfry: add ConfigMap(s) and default‑deny NetworkPolicy with explicit egress.

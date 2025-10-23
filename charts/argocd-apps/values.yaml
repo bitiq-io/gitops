@@ -34,7 +34,7 @@ envs:
     certManagerRoute53SecretNamespace: cert-manager
     nginxSitesEnabled: true
     bootstrapOperatorsEnabled: true
-    # CAO defaults for local (verify against docs/OPERATOR-VERSIONS.md on your cluster)
+    # CAO defaults for local (verify against docs/VERSION-MATRIX.md on your cluster)
     caoEnabled: true
     caoName: couchbase-operator-certified
     caoSource: certified-operators

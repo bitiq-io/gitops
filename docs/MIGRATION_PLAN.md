@@ -27,7 +27,7 @@ Repo/Tooling Principles
 - Helm‑first: One chart per service; env values via ApplicationSet/umbrella.
 - Secrets: No clear‑text in Git. Use VSO/VCO (Vault) exclusively (ESO is removed). For local parity, seed dev secrets via `make dev-vault`.
 - Dev‑Vault safety: `make dev-vault` is non‑destructive by default and will not overwrite existing Vault data. It respects env var overrides from `scripts/local-e2e-setup.sh` and supports `DEV_VAULT_OVERWRITE=never|missing|always` (default: `missing`, only adds absent keys).
-- Operators: OLM Subscriptions pinned per `docs/OPERATOR-VERSIONS.md`. Do not bump channels casually.
+- Operators: OLM Subscriptions pinned per `docs/VERSION-MATRIX.md`. Do not bump channels casually.
 - Validation: Keep `make validate` and `make verify-release` green locally and in CI.
 
 Environment Model
