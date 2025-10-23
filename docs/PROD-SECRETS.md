@@ -58,6 +58,7 @@ The `vault-runtime-<env>` Application renders the VSO chart (`charts/vault-runti
 | `gitops/data/argocd/image-updater` | `argocd-image-updater-secret` | `openshift-gitops` | Used by Argo CD Image Updater (API token). |
 | `gitops/data/registry/quay` | `quay-auth` (`kubernetes.io/dockerconfigjson`) | `openshift-pipelines` | Mounted by Tekton pipeline SA and Image Updater. |
 | `gitops/data/github/webhook` | `github-webhook-secret` | `openshift-pipelines` | Consumed by Tekton EventListener (GitHub interceptor). |
+| `gitops/data/github/gitops-repo` | `gitops-repo-creds` | `openshift-gitops` | GitHub PAT for Argo CD repo write-back (Image Updater). |
 | `gitops/data/services/toy-service/config` | `toy-service-config` | `bitiq-<env>` | Includes `rolloutRestartTargets` so pods restart on Secret changes. |
 | `gitops/data/services/toy-web/config` | `toy-web-config` | `bitiq-<env>` | Example runtime config for the frontend. |
 
@@ -84,6 +85,12 @@ vault kv put gitops/data/registry/quay dockerconfigjson='{"auths":{"quay.io":{"a
 
 # GitHub webhook secret used by Tekton triggers
 vault kv put gitops/data/github/webhook token='<random-string>'
+
+# GitHub repo credentials used by Argo CD for write-back
+vault kv put gitops/data/github/gitops-repo \
+  url='https://github.com/bitiq-io/gitops.git' \
+  username='<github-username>' \
+  password='<github-pat>'
 
 # Optional runtime overrides for sample apps
 vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
