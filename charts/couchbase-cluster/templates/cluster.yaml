@@ -3,10 +3,11 @@ kind: CouchbaseCluster
 metadata:
   name: couchbase-cluster
 spec:
-  image: {{ .Values.image | default "registry.connect.redhat.com/couchbase/server:7.2.4" | quote }}
+  image: {{ .Values.image | default "couchbase/server:7.6.6" | quote }}
   security:
     adminSecret: {{ .Values.adminSecretName | quote }}
-  buckets: {}
+  buckets:
+    managed: {{ ternary "true" "false" (.Values.bucketsManaged | default true) }}
   # Define a default volume claim template named "default" and mount it
   volumeClaimTemplates:
     - metadata:

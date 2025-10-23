@@ -3,6 +3,8 @@ clusterName: couchbase-cluster
 
 image: couchbase/server:7.6.6
 
+bucketsManaged: true
+
 storage:
   defaultSize: 20Gi
 
