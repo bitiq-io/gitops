@@ -4,6 +4,8 @@ apiVersion: couchbase.com/v2
 kind: CouchbaseBucket
 metadata:
   name: {{ .name }}
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   cluster: {{ $root.Values.clusterName | default "couchbase-cluster" | quote }}
   memoryQuota: {{ .memory | quote }}
