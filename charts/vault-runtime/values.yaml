@@ -24,6 +24,8 @@ secrets:
     path: registry/quay
     type: kubernetes.io/dockerconfigjson
     sourceKey: dockerconfigjson
+    destinationAnnotations:
+      tekton.dev/docker-0: https://quay.io
   githubWebhook:
     enabled: true
     namespace: ""

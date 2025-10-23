@@ -1,17 +1,25 @@
+{{- $saName := .Values.serviceAccountName | default "pipeline" -}}
+{{- $registrySecret := .Values.registrySecretName | default "" -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: pipeline
+  name: {{ $saName }}
   namespace: openshift-pipelines
+{{- if $registrySecret }}
+imagePullSecrets:
+  - name: {{ $registrySecret }}
+secrets:
+  - name: {{ $registrySecret }}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: pipeline-edit
+  name: {{ printf "%s-edit" $saName }}
   namespace: openshift-pipelines
 subjects:
   - kind: ServiceAccount
-    name: pipeline
+    name: {{ $saName }}
     namespace: openshift-pipelines
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -21,11 +29,11 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: pipeline-scc
+  name: {{ printf "%s-scc" $saName }}
   namespace: openshift-pipelines
 subjects:
   - kind: ServiceAccount
-    name: pipeline
+    name: {{ $saName }}
     namespace: openshift-pipelines
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -35,11 +43,11 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: pipeline-privileged-scc
+  name: {{ printf "%s-privileged-scc" $saName }}
   namespace: openshift-pipelines
 subjects:
   - kind: ServiceAccount
-    name: pipeline
+    name: {{ $saName }}
     namespace: openshift-pipelines
 roleRef:
   apiGroup: rbac.authorization.k8s.io

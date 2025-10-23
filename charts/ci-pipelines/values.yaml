@@ -7,7 +7,9 @@ env: local
 appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshift-pipelines
 
 # Default service account used by generated PipelineRuns
-serviceAccountName: pipeline
+serviceAccountName: ci-pipeline
+# Registry auth Secret to link to the service account (kubernetes.io/dockerconfigjson)
+registrySecretName: quay-auth
 # Optional fsGroup override; leave empty to use cluster SCC defaults
 fsGroup: ""
 
