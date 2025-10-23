@@ -53,7 +53,12 @@ spec:
               mountPath: /opt/strfry/strfry-db
             {{- if .Values.config.enabled }}
             - name: config
-              mountPath: /opt/strfry
+              mountPath: /opt/strfry/strfry.conf
+              subPath: strfry.conf
+              readOnly: true
+            - name: config
+              mountPath: /opt/strfry/strfry-router.conf
+              subPath: strfry-router.conf
               readOnly: true
             {{- end }}
       volumes:

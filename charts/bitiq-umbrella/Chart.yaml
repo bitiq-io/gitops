@@ -3,4 +3,4 @@ name: bitiq-umbrella
 description: App-of-Apps to deploy platform components + a sample app for an ENV
 type: application
 version: 0.1.0
-appVersion: "toy-service-v0.3.32-commit.241bb2c_toy-web-v0.1.28-commit.e1dd216"
+appVersion: "toy-service-v0.3.32-commit.241bb2c_toy-web-v0.1.29-commit.ce18c37"
