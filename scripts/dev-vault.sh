@@ -274,6 +274,11 @@ seed_secrets() {
   argocd_token="${ARGOCD_TOKEN:-local-argocd-token}"
   webhook_secret="${GITHUB_WEBHOOK_SECRET:-local-webhook-secret}"
 
+  local repo_username repo_password repo_url
+  repo_username="${GITOPS_REPO_USERNAME:-local-gitops-user}"
+  repo_password="${GITOPS_REPO_PASSWORD:-local-gitops-token}"
+  repo_url="${GITOPS_REPO_URL:-https://github.com/bitiq-io/gitops.git}"
+
   # Optional Couchbase admin credentials (dev/local convenience)
   local cb_username cb_password
   cb_username="${COUCHBASE_ADMIN_USERNAME:-Administrator}"
@@ -356,6 +361,7 @@ seed_secrets() {
       ensure_put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\"
       ensure_put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\"
       ensure_put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\"
+      ensure_put gitops/github/gitops-repo url=\"${repo_url}\" username=\"${repo_username}\" password=\"${repo_password}\"
       ensure_put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\"
       ensure_put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\"
       ensure_put gitops/couchbase/admin username=\"${cb_username}\" password=\"${cb_password}\"

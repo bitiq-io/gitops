@@ -26,6 +26,14 @@ secrets:
     sourceKey: dockerconfigjson
     destinationAnnotations:
       tekton.dev/docker-0: https://quay.io
+  gitRepoCreds:
+    enabled: true
+    namespace: ""
+    destinationName: gitops-repo-creds
+    path: github/gitops-repo
+    type: Opaque
+    destinationLabels:
+      argocd.argoproj.io/secret-type: repo-creds
   githubWebhook:
     enabled: true
     namespace: ""
