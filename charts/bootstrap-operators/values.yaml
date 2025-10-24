@@ -61,7 +61,9 @@ operators:
     approval: Automatic
 
 argoInstance:
-  create: false                 # If true, create a user-defined ArgoCD instance
-  name: example
+  create: true                  # Manage the cluster ArgoCD instance declaratively
+  name: openshift-gitops
   namespace: openshift-gitops
   routeEnabled: true
+  extraConfig:
+    timeout.reconciliation: 30s
