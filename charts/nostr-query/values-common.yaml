@@ -65,17 +65,17 @@ livenessProbe:
   enabled: true
   tcpSocket:
     port: http
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  failureThreshold: 3
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  failureThreshold: 5
 
 readinessProbe:
   enabled: true
   tcpSocket:
     port: http
-  initialDelaySeconds: 5
+  initialDelaySeconds: 45
   periodSeconds: 10
-  failureThreshold: 3
+  failureThreshold: 5
 
 networkPolicy:
   enabled: true
