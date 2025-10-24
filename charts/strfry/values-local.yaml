@@ -162,74 +162,12 @@ config:
 
       onewaydown {
         dir = "down"
-        filter = {"since":1750087551}
         urls = [
-          # "wss://relay.nostr.band"
-          "wss://relay.damus.io"
-          # "wss://relay.primal.net"
-          # "wss://nos.lol"
-          #################################
-          ## "wss://filter.nostr.wine/npub1mznm66caya6rkvpfgj8zy0e83ps2lym44h923ldpkdc4t7scsytqx7ewwy?global=all"
-          #"wss://nostr.btczh.tw" ## taiwan
-          #"wss://relay.nostrcn.com" ## hong kong, china
-          #"wss://directory.yabu.me" ## japan
-          #"wss://relay.nostr.wirednet.jp"
-          #"wss://nostr.middling.mydns.jp"
-          ## "wss://nostr.okaits7534.net"
-          #"wss://nostr.psychoet.nexus" ## iceland
-          #"wss://relay.nsec.app" ## finland
-          ## "wss://he.relayable.org"
-          ## "wss://nostr.fbxl.net" ## canada
-          #"wss://nostr.sagaciousd.com"
-          #"wss://nostr.dakukitsune.ca"
-          #"wss://relay.hodl.ar" ## argentina
-          ## "wss://nostr.ser1.net" ## India
-          #"wss://nostrua.com" ## ukraine
-          #"wss://relay.notoshi.win" ## thailand
-          #"wss://relay.siamstr.com"
-          ### "wss://teemie1-relay.duckdns.org" ## too many errors
-          ## "wss://nostr.nebuu.la" ## singapore
-          #"wss://adre.su" ## russia
-          #"wss://nostr.gleeze.com" ## hungary
-          ### "wss://relay.hawties.xyz" ## bulgaria ## too many errors
-          #"wss://nostr.donky.social"
-          ## "wss://nostr.lnbitcoin.cz" ## cz
-          #"wss://btc.klendazu.com" ## spain
-          ## "wss://nostr.olwe.link" ## france
-          ## "wss://relay.urbanzap.space" ## england
-          #"wss://nostr.sidnlabs.nl" ## netherlands
-          #"wss://history.nostr.watch"
-          ## "wss://paid.no.str.cr" ## costa rica
-          ## "wss://relay.digitalezukunft.cyou" ## romania
-          #"wss://nostr.self-determined.de" ## germany
-          #"wss://nostr.cahlen.org" ## sweden
-          ## "wss://nostr.252.no" ## norway
-          ## "wss://relay.magiccity.live" ## florida
-          #"wss://nostr.notribe.net"
-          #"wss://nostr.8777.ch" ## new york
-          ## "wss://nostr.zenon.info" ## chicago
-          ## "wss://relay.pleb.to" ## LA
-          ## "wss://nostr.pklhome.net" ## memphis
-          #"wss://relay.westernbtc.com"
-          #"wss://relay.nsecbunker.com" ## special purpose
-          ## "wss://adult.18plus.social"
-          ### "wss://nostr.lnproxy.org" ## too many errors
-          #"wss://relay.nostrati.com"
-          ## "wss://relay.protest.net"
-          #"wss://nostrasia.casa"
-          #"wss://purplepag.es"  ## special purpose
-          #"wss://nostr.at"
-          #"wss://njump.me"
-          #"wss://relay.nostr.net"
-          #"wss://nostr.lopp.social"
-          #"wss://relay.shitforce.one"
-          #"wss://relay.nostr.bg"
-          #"wss://relay.poster.place"
-          ## "wss://r.mleku.net"
-          #"wss://relay.lumina.rocks"
-          ## "wss://relay.s-w.art"
-          ## "wss://brb.io"
-          #"wss://relay.mostr.pub"
+          "wss://offchain.pub"
+          "wss://nostr.noones.com"
+          "wss://nostr.mom"
+          "wss://nostr.oxtr.dev"
+          "wss://at.nostrworks.com"
         ]
       }
     #   onewayup {
