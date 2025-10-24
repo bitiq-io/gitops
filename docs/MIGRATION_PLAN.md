@@ -107,7 +107,7 @@ M5. Ollama (no CPU mode)
 - GPU path: For SNO/prod with supported NVIDIA GPUs, enable NFD + GPU Operator and deploy `charts/ollama/` (Deployment with GPU nodeSelector/tolerations, PVC, Service, optional Route).
 - Acceptance: For local external mode, health checks succeed against the external Ollama; for GPU clusters, `nvidia-smi` usable and pod Ready.
 - Notes:
-  - 2025-10-24: `ollama.cyphai.com` CNAME created (Route 53 → `k7501450.eero.online` / `98.169.20.123`). Remote host now runs Ollama `v0.12.6` via systemd with `OLLAMA_HOST=0.0.0.0`; HTTP `http://ollama.cyphai.com:11434` responds from CRC + local (`/api/version`, `/api/tags`). TLS handshake still fails with LibreSSL (needs reverse proxy or certificates) — follow-up if HTTPS exposure becomes required.
+  - 2025-10-24: `ollama.cyphai.com` CNAME created (Route 53 → `k7501450.eero.online` / `98.169.20.123`). Remote host now runs Ollama `v0.12.6` via systemd with `OLLAMA_HOST=0.0.0.0`; port 11434 is reachable locally but external forwarding has been removed (CRC pods need the host service or a loopback alias; HTTPS still pending if external exposure resumes).
 
 M6. Remaining services (nostr_* + nginx)
 - Status: Pending
