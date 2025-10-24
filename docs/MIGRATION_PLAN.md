@@ -103,9 +103,11 @@ Couchbase quick smoke (post-sync)
 M5. Ollama (no CPU mode)
 - Status: In Progress (chart + umbrella wiring committed; external mode defaults in place; GPU deployment and health verification outstanding)
 - Modes allowed: `disabled | external | gpu` (omit CPU mode).
-- Local default: `external` — point to a GPU‑backed Ollama on the Ubuntu host or another machine via values/Secret (`OLLAMA_HOST`).
+- Local default: `external` — point to a GPU-backed Ollama on the Ubuntu host or another machine via values/Secret (`OLLAMA_HOST`).
 - GPU path: For SNO/prod with supported NVIDIA GPUs, enable NFD + GPU Operator and deploy `charts/ollama/` (Deployment with GPU nodeSelector/tolerations, PVC, Service, optional Route).
 - Acceptance: For local external mode, health checks succeed against the external Ollama; for GPU clusters, `nvidia-smi` usable and pod Ready.
+- Notes:
+  - 2025-10-24: `ollama.cyphai.com` CNAME created (resolves via Route 53 to `k7501450.eero.online` / `98.169.20.123`). HTTPS `:11434` currently times out from both CRC (`curl-images` pod) and local shell — confirm NAT/port-forwarding and remote Ollama service before marking acceptance.
 
 M6. Remaining services (nostr_* + nginx)
 - Status: Pending
