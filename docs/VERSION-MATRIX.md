@@ -25,6 +25,7 @@ Source of truth for the versions we target across the CRC-based environment. Kee
 | Component | Version | Verification | Documentation |
 |-----------|---------|--------------|---------------|
 | Couchbase Server (local) | `couchbase/server:7.6.6` | `oc -n bitiq-local get couchbasecluster couchbase-cluster -o jsonpath='{.spec.image}'` | https://docs.couchbase.com/server/7.6/introduction/intro.html |
+| Strfry relay | `strfry 1.0.4` (`quay.io/paulcapestany/strfry:0d0faa1`) | `oc -n bitiq-local get statefulset strfry -o jsonpath='{.spec.template.spec.containers[0].image}'` | https://github.com/hoytech/strfry/releases/tag/v1.0.4 |
 
 > _Add additional services (Strfry, nostr workloads, etc.) to this matrix as they land in GitOps. Include the exact container tag or release and a stable documentation link for that version._
 
