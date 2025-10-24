@@ -27,6 +27,9 @@ persistence:
   size: 10Gi
   storageClassName: ""   # empty uses cluster default (hostpath on CRC)
 
+dnsPolicy: ""
+dnsConfig: {}
+
 securityContext:
   runAsNonRoot: true
   allowPrivilegeEscalation: false

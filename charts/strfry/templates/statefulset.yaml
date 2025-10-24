@@ -13,6 +13,13 @@ spec:
       labels:
         app: strfry
     spec:
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.dnsConfig | indent 8 }}
+      {{- end }}
       automountServiceAccountToken: false
       securityContext:
         seccompProfile:
