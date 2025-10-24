@@ -34,6 +34,8 @@ spec:
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
             nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
+            ollamaEnabled: {{ default false $e.ollamaEnabled }}
+            ollamaMode: {{ $e.ollamaMode | default "disabled" | quote }}
             # App enablement flags and CAO params per env
             strfryEnabled: {{ default false $e.strfryEnabled }}
             couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
@@ -90,6 +92,10 @@ spec:
               value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
             - name: couchbaseOperator.enabled
               value: '{{ "{{ .couchbaseOperatorEnabled | default false }}" }}'
+            - name: ollama.enabled
+              value: '{{ "{{ .ollamaEnabled | default false }}" }}'
+            - name: ollama.mode
+              value: '{{ "{{ .ollamaMode | default \"disabled\" }}" }}'
             - name: certManager.enabled
               value: '{{ "{{ .certManagerEnabled | default false }}" }}'
             - name: certManager.route53CredentialsEnabled

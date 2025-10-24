@@ -1,0 +1,122 @@
+mode: disabled
+
+baseDomain: ""
+
+external:
+  # Optional explicit FQDN for the external Ollama endpoint.
+  host: ""
+  # Fallback prefix when host is empty; combined with baseDomain.
+  hostPrefix: ollama
+  scheme: https
+  port: 11434
+  configMap:
+    create: true
+    name: ollama-endpoint
+    hostKey: OLLAMA_HOST
+    urlKey: OLLAMA_URL
+    extraData: {}
+  service:
+    enabled: true
+    name: ollama-external
+    annotations: {}
+
+gpu:
+  replicaCount: 1
+  image:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
+  serviceAccount:
+    create: false
+    name: ""
+  service:
+    type: ClusterIP
+    port: 11434
+    annotations: {}
+  podAnnotations: {}
+  podLabels: {}
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: ""
+  route:
+    enabled: false
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+      caCertificate: ""
+      destinationCACertificate: ""
+  persistence:
+    enabled: true
+    existingClaim: ""
+    size: 100Gi
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    mountPath: /root/.ollama
+  runtimeClassName: ""
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+  env: []
+  envFrom: []
+  extraVolumeMounts: []
+  extraVolumes: []
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  affinity: {}
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 8Gi
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: 2000m
+      memory: 16Gi
+      nvidia.com/gpu: "1"
+  startupProbe:
+    httpGet:
+      path: /api/tags
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 30
+  readinessProbe:
+    httpGet:
+      path: /api/tags
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 6
+  livenessProbe:
+    httpGet:
+      path: /api/tags
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    failureThreshold: 6
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowOpenShiftIngress: true
+    additional: []
+  egress:
+    allowDNS: true
+    additional: []

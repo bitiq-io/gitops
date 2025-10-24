@@ -1,0 +1,76 @@
+{{- if and (eq (include "ollama.mode" .) "gpu") .Values.networkPolicy.enabled }}
+{{- $ingressState := dict "hasRules" false }}
+{{- $egressState := dict "hasRules" false }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama
+  labels:
+{{ include "ollama.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+{{- if .Values.networkPolicy.ingress.allowOpenShiftIngress }}
+{{- $_ := set $ingressState "hasRules" true }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+{{- end }}
+{{- range .Values.networkPolicy.ingress.additional }}
+{{- $_ := set $ingressState "hasRules" true }}
+    - from:
+{{- if .namespaceSelector }}
+        - namespaceSelector:
+{{ toYaml .namespaceSelector | indent 12 }}
+{{- end }}
+{{- if .podSelector }}
+        - podSelector:
+{{ toYaml .podSelector | indent 12 }}
+{{- end }}
+{{- if .ipBlock }}
+        - ipBlock:
+{{ toYaml .ipBlock | indent 12 }}
+{{- end }}
+      {{- if .ports }}
+      ports:
+{{ toYaml .ports | indent 8 }}
+      {{- end }}
+{{- end }}
+{{- if not (index $ingressState "hasRules") }}
+    []
+{{- end }}
+  egress:
+{{- if .Values.networkPolicy.egress.allowDNS }}
+{{- $_ := set $egressState "hasRules" true }}
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+{{- range .Values.networkPolicy.egress.additional }}
+{{- $_ := set $egressState "hasRules" true }}
+    - {{- if or .to .ports }}
+      {{- if .to }}
+      to:
+{{ toYaml .to | indent 8 }}
+      {{- end }}
+      {{- if .ports }}
+      ports:
+{{ toYaml .ports | indent 8 }}
+      {{- end }}
+      {{- else }}
+      {}
+      {{- end }}
+{{- end }}
+{{- if not (index $egressState "hasRules") }}
+    []
+{{- end }}
+{{- end }}

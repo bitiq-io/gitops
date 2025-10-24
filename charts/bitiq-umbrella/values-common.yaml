@@ -53,6 +53,10 @@ strfry:
 couchbase:
   enabled: false
 
+ollama:
+  enabled: false
+  mode: disabled
+
 couchbaseOperator:
   enabled: false
 

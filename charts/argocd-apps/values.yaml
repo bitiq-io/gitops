@@ -60,6 +60,8 @@ envs:
     vaultConfigRoleName: gitops-local
     vaultConfigPolicyName: gitops-local
     nostrSiteEnabled: true
+    ollamaEnabled: true
+    ollamaMode: external
   - name: sno
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno
@@ -89,6 +91,8 @@ envs:
     vaultConfigRoleName: gitops-sno
     vaultConfigPolicyName: gitops-sno
     nostrSiteEnabled: false
+    ollamaEnabled: false
+    ollamaMode: disabled
   - name: prod
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
@@ -118,3 +122,5 @@ envs:
     vaultConfigRoleName: gitops-prod
     vaultConfigPolicyName: gitops-prod
     nostrSiteEnabled: false
+    ollamaEnabled: false
+    ollamaMode: disabled

@@ -37,6 +37,9 @@ strfry:
   enabled: false
 couchbase:
   enabled: false
+ollama:
+  enabled: false
+  mode: disabled
 certManager:
   enabled: false
   route53CredentialsEnabled: true

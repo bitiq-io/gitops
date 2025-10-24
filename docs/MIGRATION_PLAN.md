@@ -33,9 +33,9 @@ Environment Model
 - Public endpoints: use Kubernetes Ingress for internet hosts. The OpenShift router serves these and creates internal Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
 Status Summary
-- Completed: Final plan (this file); Dev‑Vault safety (non‑destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS‑01 issuer with per‑zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS‑01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`.
-- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout).
-- Pending: Ollama (external/gpu) charts, Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
+- Completed: Final plan (this file); Dev-Vault safety (non-destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS-01 issuer with per-zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS-01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`; Ollama chart scaffolded with external + GPU modes and umbrella toggles.
+- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout), Ollama GPU deployment validation & secret wiring.
+- Pending: Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
 
@@ -101,7 +101,7 @@ Couchbase quick smoke (post-sync)
   - Optional admin Route responds (if enabled)
 
 M5. Ollama (no CPU mode)
-- Status: Pending
+- Status: In Progress (chart + umbrella wiring committed; external mode defaults in place; GPU deployment and health verification outstanding)
 - Modes allowed: `disabled | external | gpu` (omit CPU mode).
 - Local default: `external` — point to a GPU‑backed Ollama on the Ubuntu host or another machine via values/Secret (`OLLAMA_HOST`).
 - GPU path: For SNO/prod with supported NVIDIA GPUs, enable NFD + GPU Operator and deploy `charts/ollama/` (Deployment with GPU nodeSelector/tolerations, PVC, Service, optional Route).
@@ -156,7 +156,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: Operator CSV Succeeded; cluster Ready with buckets; apps connect via service DNS; validation passes.
 
 4) Ollama
-- Status: Pending
+- Status: In Progress (chart + values scaffolded; ApplicationSet wiring added; GPU runtime validation + Vault secret projection still open)
 - Who: Codex agent (repo maintainer)
 - What: Add values `mode: external|gpu|disabled` (no CPU); local default `external` with `OLLAMA_HOST`; for GPU envs, add `charts/ollama/` Deployment with GPU scheduling, PVC, Service, optional Route.
 - Where: `charts/ollama/*`, umbrella app
@@ -207,8 +207,9 @@ Appendix: Dynamic DNS + NAT quick guide (Local)
 - Router exposure: either user‑space forwarding (as documented) or equivalent rules to allow the OpenShift router to serve your Ingress hosts.
 - cert-manager: default to DNS‑01 (Route 53). Annotate Ingress with the ClusterIssuer; cert-manager will solve and issue real certs.
 
-Recent Changes (2025‑10‑22)
-- Cert‑manager via GitOps bootstrap: added Subscription for the OpenShift cert‑manager operator (stable‑v1) and bootstrap waits for CSV/CRDs.
+Recent Changes (2025-10-22)
+- Ollama GitOps scaffolding: chart added with `external|gpu` modes, external endpoint ConfigMap, GPU Deployment + PVC/Service/Ingress/Route toggles, umbrella Application, and ApplicationSet wiring (local defaults to external).
+- Cert-manager via GitOps bootstrap: added Subscription for the OpenShift cert-manager operator (stable-v1) and bootstrap waits for CSV/CRDs.
 - NGINX static sites under GitOps (bitiq‑local): Deployment/Service/PVC + Ingress per domain + one‑shot seeding Job; apex→www redirect handled by nginx; content served at public hosts (e.g., `www.cyphai.com`).
 - Local FQDNs configured: nostr_site `alpha.cyphai.com`, strfry `relay.cyphai.com`, Couchbase admin `cb.cyphai.com` (internal app Routes remain on `apps-crc.testing`).
 - Vault seeding extended: dev‑vault seeds `gitops/couchbase/admin` from `COUCHBASE_ADMIN_USERNAME/COUCHBASE_ADMIN_PASSWORD`; VSO projects to `bitiq-local/couchbase-cluster-auth`.

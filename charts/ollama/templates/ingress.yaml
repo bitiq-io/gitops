@@ -1,0 +1,35 @@
+{{- if and (eq (include "ollama.mode" .) "gpu") .Values.gpu.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ollama
+  labels:
+{{ include "ollama.labels" . | indent 4 }}
+  {{- with .Values.gpu.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.gpu.ingress.className }}
+  ingressClassName: {{ .Values.gpu.ingress.className | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.gpu.ingress.host | default (include "ollama.externalHost" .) | quote }}
+      http:
+        paths:
+          - path: {{ .Values.gpu.ingress.path | default "/" }}
+            pathType: {{ .Values.gpu.ingress.pathType | default "Prefix" }}
+            backend:
+              service:
+                name: ollama
+                port:
+                  number: {{ .Values.gpu.service.port }}
+  {{- if and .Values.gpu.ingress.tls.enabled (or .Values.gpu.ingress.tls.secretName .Values.gpu.ingress.host) }}
+  tls:
+    - hosts:
+        - {{ .Values.gpu.ingress.host | default (include "ollama.externalHost" .) | quote }}
+      {{- if .Values.gpu.ingress.tls.secretName }}
+      secretName: {{ .Values.gpu.ingress.tls.secretName | quote }}
+      {{- end }}
+  {{- end }}
+{{- end }}
