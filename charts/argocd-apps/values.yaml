@@ -62,6 +62,10 @@ envs:
     nostrSiteEnabled: true
     ollamaEnabled: true
     ollamaMode: external
+    nostrQueryEnabled: true
+    nostrThreadsEnabled: true
+    nostrThreadCopierEnabled: true
+    nostouchEnabled: true
   - name: sno
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-sno
@@ -93,6 +97,10 @@ envs:
     nostrSiteEnabled: false
     ollamaEnabled: false
     ollamaMode: disabled
+    nostrQueryEnabled: false
+    nostrThreadsEnabled: false
+    nostrThreadCopierEnabled: false
+    nostouchEnabled: false
   - name: prod
     clusterServer: https://kubernetes.default.svc
     appNamespace: bitiq-prod
@@ -124,3 +132,7 @@ envs:
     nostrSiteEnabled: false
     ollamaEnabled: false
     ollamaMode: disabled
+    nostrQueryEnabled: false
+    nostrThreadsEnabled: false
+    nostrThreadCopierEnabled: false
+    nostouchEnabled: false

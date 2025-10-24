@@ -62,6 +62,12 @@ secrets:
     destinationName: couchbase-cluster-auth
     path: couchbase/admin
     type: Opaque
+  nostrQuery:
+    enabled: true
+    namespace: ""
+    destinationName: nostr-query-credentials
+    path: services/nostr-query/credentials
+    type: Opaque
 
   # Optional: AWS credentials for Route53 DNS-01
   route53Credentials:

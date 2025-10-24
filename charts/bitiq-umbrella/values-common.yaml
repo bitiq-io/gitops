@@ -52,6 +52,14 @@ strfry:
   enabled: false
 couchbase:
   enabled: false
+nostrQuery:
+  enabled: false
+nostrThreads:
+  enabled: false
+nostrThreadCopier:
+  enabled: false
+nostouch:
+  enabled: false
 
 ollama:
   enabled: false

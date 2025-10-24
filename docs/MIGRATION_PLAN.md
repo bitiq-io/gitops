@@ -4,8 +4,8 @@ Owner: Paul / bitiq platform
 Last updated: 2025-10-22 (status updated)
 
 Next Actions (quick scan)
-- Add bootstrap-operators to umbrella (Who: Codex). What: create `app-bootstrap-operators.yaml` to GitOps-manage OLM Subscriptions. Where: `charts/bitiq-umbrella/templates/`. Acceptance: Subscriptions render and reconcile via Argo.
 - Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
+- Inventory doc (Who: Codex). What: produce `docs/bitiq-inventory.md` from current GitOps state. Acceptance: strfry, Couchbase, nostr services, nginx, GPU prerequisites documented.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
 Goal
@@ -33,9 +33,9 @@ Environment Model
 - Public endpoints: use Kubernetes Ingress for internet hosts. The OpenShift router serves these and creates internal Routes. Hosts come from env base domains; local uses your dynamic DNS hostname.
 
 Status Summary
-- Completed: Final plan (this file); Dev-Vault safety (non-destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS-01 issuer with per-zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS-01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`; Ollama chart scaffolded with external + GPU modes and umbrella toggles.
+- Completed: Final plan (this file); Dev-Vault safety (non-destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS-01 issuer with per-zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS-01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`; Ollama chart scaffolded with external + GPU modes and umbrella toggles; nostr workloads (query, threads, thread-copier, nostouch) migrated to Helm with Vault-managed secrets and network policies.
 - In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout), Ollama GPU deployment validation & secret wiring.
-- Pending: Remaining nostr_* services, Inventory doc, Validation & cutover in a live cluster.
+- Pending: Inventory doc, Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
 
@@ -166,7 +166,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: In local external mode, application health checks succeed against external Ollama; in GPU envs, `nvidia-smi` works and pod Ready.
 
 5) Services (nostr_*)
-- Status: Pending
+- Status: Completed (nostr query/threads/thread-copier/nostouch migrated)
 - Who: Codex agent (repo maintainer)
 - What: Create charts per service; switch to VSO‑projected Secrets; add default‑deny NetworkPolicies; optional Routes as needed; image/tag parametrized and optionally annotated for Image Updater.
 - Where: `charts/nostr-*/`, umbrella apps

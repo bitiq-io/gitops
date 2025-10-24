@@ -1,0 +1,7 @@
+image:
+  tag: 76e87d4
+  pullPolicy: Always
+
+env:
+  envPrefix: dev
+  gitCommitHash: 76e87d4

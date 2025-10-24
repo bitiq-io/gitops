@@ -1,0 +1,85 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "nostr-query.fullname" . }}
+  labels:
+{{ include "nostr-query.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "nostr-query.selectorLabels" . | indent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+{{- $hasIngress := false }}
+{{- if .Values.networkPolicy.ingress.allowSameNamespace }}
+{{- $hasIngress = true }}
+    - from:
+        - podSelector: {}
+{{- end }}
+{{- if .Values.networkPolicy.ingress.allowOpenShiftIngress }}
+{{- $hasIngress = true }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+{{- end }}
+{{- range .Values.networkPolicy.ingress.additional }}
+{{- $hasIngress = true }}
+    - from:
+{{- if .namespaceSelector }}
+        - namespaceSelector:
+{{ toYaml .namespaceSelector | indent 12 }}
+{{- end }}
+{{- if .podSelector }}
+        - podSelector:
+{{ toYaml .podSelector | indent 12 }}
+{{- end }}
+{{- if .ipBlock }}
+        - ipBlock:
+{{ toYaml .ipBlock | indent 12 }}
+{{- end }}
+      {{- if .ports }}
+      ports:
+{{ toYaml .ports | indent 8 }}
+      {{- end }}
+{{- end }}
+{{- if not $hasIngress }}
+    []
+{{- end }}
+  egress:
+{{- $hasEgress := false }}
+{{- if .Values.networkPolicy.egress.allowDNS }}
+{{- $hasEgress = true }}
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+{{- if .Values.networkPolicy.egress.allowSameNamespace }}
+{{- $hasEgress = true }}
+    - to:
+        - podSelector: {}
+{{- end }}
+{{- range .Values.networkPolicy.egress.additional }}
+{{- $hasEgress = true }}
+    - {{- if or .to .ports }}
+      {{- if .to }}
+      to:
+{{ toYaml .to | indent 8 }}
+      {{- end }}
+      {{- if .ports }}
+      ports:
+{{ toYaml .ports | indent 8 }}
+      {{- end }}
+      {{- else }}
+      {}
+      {{- end }}
+{{- end }}
+{{- if not $hasEgress }}
+    []
+{{- end }}
+{{- end }}

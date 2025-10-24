@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nostr-threads
+description: Nostr threads service querying Couchbase for threaded conversations
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

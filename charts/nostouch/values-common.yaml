@@ -1,0 +1,72 @@
+image:
+  repository: quay.io/paulcapestany/nostouch
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+  name: ""
+
+podSecurityContext: null
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+stream:
+  enabled: true
+  replicaCount: 1
+  relayURL: ws://strfry.default.svc.cluster.local:7777
+  couchbaseConn: couchbase-cluster.default.svc.cluster.local
+  shellCommand: ""
+  podAnnotations: {}
+  podLabels: {}
+  env:
+    extra: []
+  envFrom: []
+  resources:
+    requests:
+      cpu: 5m
+      memory: 8Mi
+    limits:
+      cpu: 1000m
+      memory: 7Gi
+  ports:
+    - name: metrics
+      containerPort: 8080
+    - name: relay
+      containerPort: 7777
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /healthz
+      port: metrics
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 3
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /readyz
+      port: metrics
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 3
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowSameNamespace: true
+    allowOpenShiftIngress: false
+    additional: []
+  egress:
+    allowDNS: true
+    allowSameNamespace: true
+    additional: []

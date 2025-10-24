@@ -1,0 +1,8 @@
+image:
+  tag: c02f6f7
+  pullPolicy: Always
+
+env:
+  envPrefix: dev
+  gitCommitHash: c02f6f7
+  ollamaHost: https://ollama.cyphai.com

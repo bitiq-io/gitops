@@ -1,0 +1,36 @@
+{{- if .Values.nostouch.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nostouch-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/nostouch
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

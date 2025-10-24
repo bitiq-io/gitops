@@ -34,6 +34,10 @@ spec:
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
             nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
+            nostrQueryEnabled: {{ default false $e.nostrQueryEnabled }}
+            nostrThreadsEnabled: {{ default false $e.nostrThreadsEnabled }}
+            nostrThreadCopierEnabled: {{ default false $e.nostrThreadCopierEnabled }}
+            nostouchEnabled: {{ default false $e.nostouchEnabled }}
             ollamaEnabled: {{ default false $e.ollamaEnabled }}
             ollamaMode: {{ $e.ollamaMode | default "disabled" | quote }}
             # App enablement flags and CAO params per env
@@ -128,6 +132,14 @@ spec:
               value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
             - name: nostrSite.enabled
               value: '{{ "{{ .nostrSiteEnabled | default false }}" }}'
+            - name: nostrQuery.enabled
+              value: '{{ "{{ .nostrQueryEnabled | default false }}" }}'
+            - name: nostrThreads.enabled
+              value: '{{ "{{ .nostrThreadsEnabled | default false }}" }}'
+            - name: nostrThreadCopier.enabled
+              value: '{{ "{{ .nostrThreadCopierEnabled | default false }}" }}'
+            - name: nostouch.enabled
+              value: '{{ "{{ .nostouchEnabled | default false }}" }}'
             - name: ciPipelines.fsGroup
               value: '{{ "{{ .tektonFsGroup }}" }}'
             - name: ciPipelines.eventListener.debugLogging

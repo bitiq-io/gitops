@@ -61,6 +61,7 @@ The `vault-runtime-<env>` Application renders the VSO chart (`charts/vault-runti
 | `gitops/data/github/gitops-repo` | `gitops-repo-creds` | `openshift-gitops` | GitHub PAT for Argo CD repo write-back (Image Updater). |
 | `gitops/data/services/toy-service/config` | `toy-service-config` | `bitiq-<env>` | Includes `rolloutRestartTargets` so pods restart on Secret changes. |
 | `gitops/data/services/toy-web/config` | `toy-web-config` | `bitiq-<env>` | Example runtime config for the frontend. |
+| `gitops/data/services/nostr-query/credentials` | `nostr-query-credentials` | `bitiq-<env>` | Provides the `OPENAI_API_KEY` consumed by the nostr-query workload. |
 
 **Checklist**
 
@@ -95,6 +96,7 @@ vault kv put gitops/data/github/gitops-repo \
 # Optional runtime overrides for sample apps
 vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
 vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-api.apps.<cluster-domain>'
+vault kv put gitops/data/services/nostr-query/credentials OPENAI_API_KEY='<openai-pat>'
 ```
 
 For local development, `make dev-vault` provisions a dev-mode Vault, seeds demo values, and renders the same VCO/VSO resources with `VAULT_OPERATORS=true`.

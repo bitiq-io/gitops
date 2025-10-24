@@ -1,0 +1,7 @@
+image:
+  tag: d3e49c1
+  pullPolicy: Always
+
+stream:
+  relayURL: ws://strfry.bitiq-local.svc.cluster.local:7777
+  couchbaseConn: couchbase-cluster.bitiq-local.svc.cluster.local

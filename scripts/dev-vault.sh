@@ -180,7 +180,7 @@ ensure_kv_mount() {
   log "Ensuring KV v2 mount exists at path 'gitops'"
   oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
     sh -c "
-      set -euo pipefail
+      set -xeuo pipefail
       export VAULT_ADDR=\"http://127.0.0.1:8200\"
       export VAULT_TOKEN=\"root\"
       if ! vault secrets list -format=json | grep -q '"gitops/"'; then
@@ -302,79 +302,95 @@ seed_secrets() {
   # Escape for inclusion in a double-quoted shell here-string
   local docker_json_esc
   docker_json_esc=$(printf '%s' "$docker_json" | sed -e 's/[\\"]/\\&/g')
+  local nostr_query_api_key
+  nostr_query_api_key="${OPENAI_API_KEY:-sk-local-placeholder}"
+  local r53_ak r53_sk
+  r53_ak="${AWS_ROUTE53_ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:-}}"
+  r53_sk="${AWS_ROUTE53_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-}}"
 
   log "Seeding secrets into Vault KV (mode=${overwrite_mode}; env overrides respected)"
-  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
-    sh -c "
-      set -euo pipefail
-      export VAULT_ADDR=\"http://127.0.0.1:8200\"
-      export VAULT_TOKEN=\"root\"
+  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- env \
+    DEV_VAULT_MODE="${overwrite_mode}" \
+    DEV_VAULT_ARGOCD_TOKEN="${argocd_token}" \
+    DEV_VAULT_DOCKER_JSON_ESC="${docker_json_esc}" \
+    DEV_VAULT_WEBHOOK_SECRET="${webhook_secret}" \
+    DEV_VAULT_REPO_URL="${repo_url}" \
+    DEV_VAULT_REPO_USERNAME="${repo_username}" \
+    DEV_VAULT_REPO_PASSWORD="${repo_password}" \
+    DEV_VAULT_CB_USERNAME="${cb_username}" \
+    DEV_VAULT_CB_PASSWORD="${cb_password}" \
+    DEV_VAULT_NOSTR_QUERY_KEY="${nostr_query_api_key}" \
+    DEV_VAULT_R53_ACCESS_KEY="${r53_ak}" \
+    DEV_VAULT_R53_SECRET_KEY="${r53_sk}" \
+    sh <<'SCRIPT'
+set -euo pipefail
+export VAULT_ADDR="http://127.0.0.1:8200"
+export VAULT_TOKEN="root"
 
-      ensure_put() {
-        # ensure_put <path> key=value [key=value...]
-        # POSIX shell; avoid arrays. Create the secret on first run with 'kv put', then patch keys.
-        if [ \"$#\" -lt 1 ]; then
-          echo \"[dev-vault] ensure_put: missing path argument\"
-          return 1
-        fi
-        path=\"$1\"; shift
-        mode=\"${overwrite_mode}\"
-        # If mode=never and secret exists, do nothing
-        if [ \"$mode\" = never ]; then
-          if vault kv get \"$path\" >/dev/null 2>&1; then
-            echo \"[dev-vault] skip (exists, mode=never): $path\"
-            return 0
-          fi
-        fi
-        # If secret doesn't exist, initialize it with all provided keys in a single put
-        if ! vault kv get \"$path\" >/dev/null 2>&1; then
-          if [ \"$mode\" = never ]; then
-            echo \"[dev-vault] skip (missing path, mode=never): $path\"
-            return 0
-          fi
-          vault kv put \"$path\" "$@" >/dev/null
-          echo \"[dev-vault] created: $path (keys: $@)\"
-          return 0
-        fi
-        wrote_any=0
-        for kv in \"$@\"; do
-          k=\"\${kv%%=*}\"; v=\"\${kv#*=}\"
-          if [ \"$mode\" = always ]; then
-            vault kv patch \"$path\" \"$k=$v\" >/dev/null
-            wrote_any=1
-            echo \"[dev-vault] patched: $path:$k\"
-          else
-            if vault kv get -field=\"$k\" \"$path\" >/dev/null 2>&1; then
-              echo \"[dev-vault] keep (key exists): $path:$k\"
-            else
-              vault kv patch \"$path\" \"$k=$v\" >/dev/null
-              wrote_any=1
-              echo \"[dev-vault] patched (missing): $path:$k\"
-            fi
-          fi
-        done
-        if [ \"$wrote_any\" -eq 0 ]; then
-          echo \"[dev-vault] no-op: $path\"
-        fi
-      }
-
-      ensure_put gitops/argocd/image-updater token=\"${argocd_token}\" argocd.token=\"${argocd_token}\"
-      ensure_put gitops/registry/quay dockerconfigjson=\"${docker_json_esc}\" .dockerconfigjson=\"${docker_json_esc}\"
-      ensure_put gitops/github/webhook token=\"${webhook_secret}\" secretToken=\"${webhook_secret}\"
-      ensure_put gitops/github/gitops-repo url=\"${repo_url}\" username=\"${repo_username}\" password=\"${repo_password}\"
-      ensure_put gitops/services/toy-service/config FAKE_SECRET=\"LOCAL_FAKE_SECRET\"
-      ensure_put gitops/services/toy-web/config API_BASE_URL=\"https://toy-service.bitiq-local.svc.cluster.local\"
-      ensure_put gitops/couchbase/admin username=\"${cb_username}\" password=\"${cb_password}\"
-      # Optional: Route53 credentials for cert-manager DNS-01 solver (do not hardcode; use env vars)
-      r53_ak=\"${AWS_ROUTE53_ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:-}}\"
-      r53_sk=\"${AWS_ROUTE53_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-}}\"
-      if [ -n \"$r53_ak\" ] && [ -n \"$r53_sk\" ]; then
-        ensure_put gitops/cert-manager/route53 access-key-id=\"$r53_ak\" secret-access-key=\"$r53_sk\"
-        echo \"[dev-vault] seeded: gitops/cert-manager/route53 (keys: access-key-id, secret-access-key)\"
+ensure_put() {
+  # ensure_put <path> key=value [key=value...]
+  # POSIX shell; avoid arrays. Create the secret on first run with 'kv put', then patch keys.
+  if [ "$#" -lt 1 ]; then
+    echo "[dev-vault] ensure_put: missing path argument"
+    return 1
+  fi
+  path="$1"; shift
+  mode="${DEV_VAULT_MODE}"
+  # If mode=never and secret exists, do nothing
+  if [ "$mode" = never ]; then
+    if vault kv get "$path" >/dev/null 2>&1; then
+      echo "[dev-vault] skip (exists, mode=never): $path"
+      return 0
+    fi
+  fi
+  # If secret doesn't exist, initialize it with all provided keys in a single put
+  if ! vault kv get "$path" >/dev/null 2>&1; then
+    if [ "$mode" = never ]; then
+      echo "[dev-vault] skip (missing path, mode=never): $path"
+      return 0
+    fi
+    vault kv put "$path" "$@" >/dev/null
+    echo "[dev-vault] created: $path (keys: $@)"
+    return 0
+  fi
+  wrote_any=0
+  for kv in "$@"; do
+    k="${kv%%=*}"; v="${kv#*=}"
+    if [ "$mode" = always ]; then
+      vault kv patch "$path" "$k=$v" >/dev/null
+      wrote_any=1
+      echo "[dev-vault] patched: $path:$k"
+    else
+      if vault kv get -field="$k" "$path" >/dev/null 2>&1; then
+        echo "[dev-vault] keep (key exists): $path:$k"
       else
-        echo \"[dev-vault] skip Route53 creds (set AWS_ROUTE53_ACCESS_KEY_ID/AWS_ROUTE53_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)\"
+        vault kv patch "$path" "$k=$v" >/dev/null
+        wrote_any=1
+        echo "[dev-vault] patched (missing): $path:$k"
       fi
-    "
+    fi
+  done
+  if [ "$wrote_any" -eq 0 ]; then
+    echo "[dev-vault] no-op: $path"
+  fi
+}
+
+ensure_put gitops/argocd/image-updater token="${DEV_VAULT_ARGOCD_TOKEN}" argocd.token="${DEV_VAULT_ARGOCD_TOKEN}"
+ensure_put gitops/registry/quay dockerconfigjson="${DEV_VAULT_DOCKER_JSON_ESC}" .dockerconfigjson="${DEV_VAULT_DOCKER_JSON_ESC}"
+ensure_put gitops/github/webhook token="${DEV_VAULT_WEBHOOK_SECRET}" secretToken="${DEV_VAULT_WEBHOOK_SECRET}"
+ensure_put gitops/github/gitops-repo url="${DEV_VAULT_REPO_URL}" username="${DEV_VAULT_REPO_USERNAME}" password="${DEV_VAULT_REPO_PASSWORD}"
+ensure_put gitops/services/toy-service/config FAKE_SECRET="LOCAL_FAKE_SECRET"
+ensure_put gitops/services/toy-web/config API_BASE_URL="https://toy-service.bitiq-local.svc.cluster.local"
+ensure_put gitops/services/nostr-query/credentials OPENAI_API_KEY="${DEV_VAULT_NOSTR_QUERY_KEY}"
+ensure_put gitops/couchbase/admin username="${DEV_VAULT_CB_USERNAME}" password="${DEV_VAULT_CB_PASSWORD}"
+
+if [ -n "${DEV_VAULT_R53_ACCESS_KEY}" ] && [ -n "${DEV_VAULT_R53_SECRET_KEY}" ]; then
+  ensure_put gitops/cert-manager/route53 access-key-id="${DEV_VAULT_R53_ACCESS_KEY}" secret-access-key="${DEV_VAULT_R53_SECRET_KEY}"
+  echo "[dev-vault] seeded: gitops/cert-manager/route53 (keys: access-key-id, secret-access-key)"
+else
+  echo "[dev-vault] skip Route53 creds (set AWS_ROUTE53_ACCESS_KEY_ID/AWS_ROUTE53_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)"
+fi
+SCRIPT
 }
 
 install_eso_chart() { :; }

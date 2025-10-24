@@ -1,0 +1,98 @@
+{{- if .Values.stream.enabled }}
+{{- $defaultCmd := printf "nak req --stream %s | nostouch -conn %s" .Values.stream.relayURL .Values.stream.couchbaseConn }}
+{{- $shellCommand := default $defaultCmd .Values.stream.shellCommand }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nostouch.streamName" . }}
+  labels:
+{{ include "nostouch.labels" . | indent 4 }}
+    app.kubernetes.io/component: stream
+spec:
+  replicas: {{ .Values.stream.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "nostouch.streamSelectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "nostouch.streamSelectorLabels" . | indent 8 }}
+{{- with .Values.stream.podLabels }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.stream.podAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{- range .Values.imagePullSecrets }}
+        - name: {{ . }}
+{{- end }}
+{{- end }}
+      serviceAccountName: {{ include "nostouch.serviceAccountName" . }}
+{{- with .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      containers:
+        - name: stream
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- with .Values.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+{{- end }}
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - {{ $shellCommand | quote }}
+{{- with .Values.stream.ports }}
+          ports:
+{{ toYaml . | indent 12 }}
+{{- end }}
+{{- if .Values.stream.env.extra }}
+          env:
+{{- range .Values.stream.env.extra }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.stream.envFrom }}
+          envFrom:
+{{- range .Values.stream.envFrom }}
+            - {{- if .configMapRef }}
+              configMapRef:
+{{ toYaml .configMapRef | indent 16 }}
+              {{- else if .secretRef }}
+              secretRef:
+{{ toYaml .secretRef | indent 16 }}
+              {{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.stream.livenessProbe.enabled }}
+          livenessProbe:
+{{ toYaml (omit .Values.stream.livenessProbe "enabled") | indent 12 }}
+{{- end }}
+{{- if .Values.stream.readinessProbe.enabled }}
+          readinessProbe:
+{{ toYaml (omit .Values.stream.readinessProbe "enabled") | indent 12 }}
+{{- end }}
+          resources:
+{{ toYaml .Values.stream.resources | indent 12 }}
+      restartPolicy: Always
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- end }}
