@@ -56,7 +56,11 @@ networkPolicy:
   ingress:
     allowOpenShiftIngress: true
     # Additional ingress rules (list of objects containing namespaceSelector / podSelector / ipBlock)
-    additional: []
+    additional:
+      # Allow in-namespace clients such as nostouch to reach the relay
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: nostouch
   db:
     enabled: false
     # Optional namespaceSelector override for DB destination
