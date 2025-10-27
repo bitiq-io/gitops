@@ -1,5 +1,11 @@
 {{- if .Values.stream.enabled }}
+{{- $cbCreds := .Values.stream.couchbaseCredentials }}
 {{- $defaultCmd := printf "nak req --stream %s | nostouch -conn %s" .Values.stream.relayURL .Values.stream.couchbaseConn }}
+{{- if and $cbCreds (ne (default true $cbCreds.enabled) false) }}
+  {{- $userEnv := default "COUCHBASE_USERNAME" $cbCreds.usernameEnv }}
+  {{- $passEnv := default "COUCHBASE_PASSWORD" $cbCreds.passwordEnv }}
+  {{- $defaultCmd = printf "%s -user $%s -pass $%s" $defaultCmd $userEnv $passEnv }}
+{{- end }}
 {{- $shellCommand := default $defaultCmd .Values.stream.shellCommand }}
 apiVersion: apps/v1
 kind: Deployment
@@ -53,11 +59,30 @@ spec:
           ports:
 {{ toYaml . | indent 12 }}
 {{- end }}
-{{- if .Values.stream.env.extra }}
+{{- $hasCreds := and $cbCreds (ne (default true $cbCreds.enabled) false) }}
+{{- $hasExtraEnv := gt (len (default (list) .Values.stream.env.extra)) 0 }}
+{{- if or $hasCreds $hasExtraEnv }}
           env:
+{{- if $hasCreds }}
+            - name: {{ default "COUCHBASE_USERNAME" $cbCreds.usernameEnv }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "couchbase-cluster-auth" $cbCreds.secretName }}
+                  key: {{ default "username" $cbCreds.usernameKey }}
+            - name: {{ default "COUCHBASE_PASSWORD" $cbCreds.passwordEnv }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "couchbase-cluster-auth" $cbCreds.secretName }}
+                  key: {{ default "password" $cbCreds.passwordKey }}
+{{- end }}
 {{- range .Values.stream.env.extra }}
             - name: {{ .name }}
+{{- if .valueFrom }}
+              valueFrom:
+{{ toYaml .valueFrom | indent 14 }}
+{{- else }}
               value: {{ .value | quote }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if .Values.stream.envFrom }}

@@ -24,10 +24,17 @@ stream:
   enabled: true
   replicaCount: 1
   relayURL: ws://strfry.default.svc.cluster.local:7777
-  couchbaseConn: couchbase-cluster.default.svc.cluster.local
+  couchbaseConn: couchbase://couchbase-cluster.default.svc.cluster.local
   shellCommand: ""
   podAnnotations: {}
   podLabels: {}
+  couchbaseCredentials:
+    enabled: true
+    secretName: couchbase-cluster-auth
+    usernameKey: username
+    passwordKey: password
+    usernameEnv: COUCHBASE_USERNAME
+    passwordEnv: COUCHBASE_PASSWORD
   env:
     extra: []
   envFrom: []

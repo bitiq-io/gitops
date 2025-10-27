@@ -4,4 +4,4 @@ image:
 
 stream:
   relayURL: ws://strfry.bitiq-local.svc.cluster.local:7777
-  couchbaseConn: couchbase-cluster.bitiq-local.svc.cluster.local
+  couchbaseConn: couchbase://couchbase-cluster.bitiq-local.svc.cluster.local
