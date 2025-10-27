@@ -64,6 +64,17 @@ argoInstance:
   create: true                  # Manage the cluster ArgoCD instance declaratively
   name: openshift-gitops
   namespace: openshift-gitops
-  routeEnabled: true
-  extraConfig:
-    timeout.reconciliation: 30s
+  spec:
+    server:
+      route:
+        enabled: true
+    extraConfig:
+      timeout.reconciliation: 30s
+    controller:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi

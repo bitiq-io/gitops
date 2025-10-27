@@ -5,11 +5,7 @@ metadata:
   name: {{ .Values.argoInstance.name }}
   namespace: {{ .Values.argoInstance.namespace }}
 spec:
-  server:
-    route:
-      enabled: {{ .Values.argoInstance.routeEnabled }}
-{{ with .Values.argoInstance.extraConfig }}
-  extraConfig:
-{{ toYaml . | indent 4 }}
+{{- with .Values.argoInstance.spec }}
+{{ toYaml . | indent 2 }}
 {{- end }}
 {{- end }}
