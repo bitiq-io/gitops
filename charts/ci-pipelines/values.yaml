@@ -43,6 +43,26 @@ pipelines:
     fsGroup: ""
     eventTypes: ["push"]
 
+  - name: nostr-threads-build-and-push
+    gitUrl: https://github.com/PaulCapestany/nostr_threads.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
+    testScript: |
+      go test ./...
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: nostr_threads
+    tlsVerify: "true"
+    repoFullNames:
+      - PaulCapestany/nostr_threads
+      - bitiq-io/nostr_threads
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+
   - name: bitiq-web-build-and-push
     gitUrl: https://github.com/PaulCapestany/toy-web.git
     gitRevision: main

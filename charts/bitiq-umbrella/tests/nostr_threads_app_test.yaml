@@ -22,3 +22,12 @@ tests:
       - equal:
           path: spec.source.path
           value: charts/nostr-threads
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "nostr-threads=quay.io/paulcapestany/nostr_threads"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/nostr-threads.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/nostr-threads/values-local.yaml

@@ -36,3 +36,29 @@ tests:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
           value: helmvalues:/charts/toy-web/values-local.yaml
+
+---
+suite: Defaults emit updater annotations (nostr-threads)
+templates:
+  - templates/app-nostr-threads.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image-list and write-back with chart defaults
+    set:
+      env: local
+      nostrThreads:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "nostr-threads=quay.io/paulcapestany/nostr_threads"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/nostr-threads.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/nostr-threads/values-local.yaml
