@@ -73,6 +73,10 @@ Notes for local storage usage (CRC):
     - Default (Results disabled): `./scripts/bootstrap.sh`
   - If supported by your operator build, you can also shrink storage via `TEKTON_RESULTS_STORAGE=5Gi`.
 
+### DNS egress on CRC (important for NetworkPolicies)
+
+CRC/OVN exposes the in-cluster CoreDNS service on 10.217.4.10 **and** answers DNS on both port 53 and 5353. In upstream OpenShift clusters only 53 is typically required, but on CRC a pod that only allows 53 will intermittently fail DNS lookups once its cache expires (manifesting as `lookup <service>: i/o timeout`). When authoring NetworkPolicies for ENV=local make sure both TCP/UDP 53 and 5353 are allowed. This is especially relevant for workloads like `nostouch` that stream continuously and reconnect to services such as `strfry`.
+
 ## 2) Seed Vault secrets (ENV=local)
 
 Run the helper target to deploy a dev Vault, configure Kubernetes auth, seed the required `gitops/data/...` paths, create the `vault-auth` ServiceAccount, and reconcile secrets via the installed Vault operators.
