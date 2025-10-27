@@ -79,7 +79,7 @@ bootstrapOperators:
 
 ciPipelines:
   serviceAccountName: pipeline
-  fsGroup: ""
+  fsGroup: 65532
   eventListener:
     name: bitiq-listener
     githubSecretName: github-webhook-secret
