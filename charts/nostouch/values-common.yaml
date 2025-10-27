@@ -1,6 +1,6 @@
 image:
   repository: quay.io/paulcapestany/nostouch
-  tag: latest
+  tag: v0.0.1-commit.99d10e4
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []

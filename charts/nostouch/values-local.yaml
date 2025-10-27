@@ -1,5 +1,5 @@
 image:
-  tag: d3e49c1
+  tag: v0.0.1-commit.99d10e4
   pullPolicy: Always
 
 stream:

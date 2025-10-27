@@ -24,6 +24,9 @@ imageUpdater:
   nostrThreads:
     enabled: true
     pause: false
+  nostouch:
+    enabled: true
+    pause: false
 
 vault:
   runtime:
@@ -35,6 +38,7 @@ sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service
   toyWeb: quay.io/paulcapestany/toy-web
   nostrThreads: quay.io/paulcapestany/nostr_threads
+  nostouch: quay.io/paulcapestany/nostouch
 
 # New services (env toggles used by templates)
 strfry:
@@ -109,6 +113,22 @@ ciPipelines:
       tlsVerify: "true"
       repoFullNames:
         - PaulCapestany/nostr_threads
+      runTests: "true"
+      testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
+      testScript: |
+        go test ./...
+      eventTypes: ["push"]
+    - name: nostouch-build-and-push
+      gitUrl: https://github.com/PaulCapestany/nostouch.git
+      gitRevision: main
+      dockerfile: Dockerfile
+      contextDir: .
+      imageRegistry: quay.io
+      imageNamespace: paulcapestany
+      imageName: nostouch
+      tlsVerify: "true"
+      repoFullNames:
+        - PaulCapestany/nostouch
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |

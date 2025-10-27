@@ -22,3 +22,12 @@ tests:
       - equal:
           path: spec.source.path
           value: charts/nostouch
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "nostouch=quay.io/paulcapestany/nostouch"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/nostouch.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/nostouch/values-local.yaml

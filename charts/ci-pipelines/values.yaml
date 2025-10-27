@@ -62,6 +62,25 @@ pipelines:
     serviceAccountName: ""
     fsGroup: ""
     eventTypes: ["push"]
+  - name: nostouch-build-and-push
+    gitUrl: https://github.com/PaulCapestany/nostouch.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
+    testScript: |
+      go test ./...
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: nostouch
+    tlsVerify: "true"
+    repoFullNames:
+      - PaulCapestany/nostouch
+      - bitiq-io/nostouch
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
 
   - name: bitiq-web-build-and-push
     gitUrl: https://github.com/PaulCapestany/toy-web.git

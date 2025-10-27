@@ -21,8 +21,16 @@ tests:
       - equal:
           path: metadata.name
           value: nostr-threads-build-and-push-template
-  - it: renders TriggerTemplate for frontend pipeline (toy-web)
+  - it: renders TriggerTemplate for nostouch pipeline
     documentIndex: 2
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: nostouch-build-and-push-template
+  - it: renders TriggerTemplate for frontend pipeline (toy-web)
+    documentIndex: 3
     asserts:
       - isKind:
           of: TriggerTemplate
