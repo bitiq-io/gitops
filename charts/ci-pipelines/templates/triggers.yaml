@@ -76,11 +76,23 @@ spec:
 }}
 {{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
 {{- $filter := "" -}}
-{{- if $pipeline.repoFullNames }}
-  {{- /* Exact match on repository full_name; include all expected variants in values */ -}}
-  {{- $filter = printf "body.repository.full_name in %s" ($pipeline.repoFullNames | toJson) -}}
+{{- $repoNamesLower := list -}}
+{{- $repoShortNames := dict -}}
+{{- range $name := $pipeline.repoFullNames }}
+  {{- $repoNamesLower = append $repoNamesLower (lower $name) }}
+  {{- $parts := splitList "/" $name }}
+  {{- if ge (len $parts) 2 }}
+    {{- $_ := set $repoShortNames (lower (index $parts (sub (len $parts) 1))) true }}
+  {{- end }}
+{{- end }}
+{{- if gt (len $repoNamesLower) 0 }}
+  {{- $shortList := keys $repoShortNames | toJson -}}
+  {{- /* Match on owner/repo or fallback to just the repo name to handle transfers */ -}}
+  {{- $filter = printf "(body.repository.full_name.lowerAscii() in %s) || (body.repository.name.lowerAscii() in %s)" ($repoNamesLower | toJson) $shortList -}}
 {{- else if $pipeline.repoFullName }}
-  {{- $filter = printf "body.repository.full_name == \"%s\"" $pipeline.repoFullName -}}
+  {{- $parts := splitList "/" $pipeline.repoFullName -}}
+  {{- $repoNameLower := lower (index $parts (sub (len $parts) 1)) -}}
+  {{- $filter = printf "body.repository.full_name.lowerAscii() == \"%s\" || body.repository.name.lowerAscii() == \"%s\"" (lower $pipeline.repoFullName) $repoNameLower -}}
 {{- end }}
 {{- if $filter }}
   {{- $celParams := list (dict "name" "filter" "value" $filter) }}
