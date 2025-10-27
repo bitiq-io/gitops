@@ -97,6 +97,7 @@ ciPipelines:
       # Accept either personal or org repo full name
       repoFullNames:
         - PaulCapestany/toy-service
+        - bitiq-io/toy-service
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |
@@ -113,6 +114,7 @@ ciPipelines:
       tlsVerify: "true"
       repoFullNames:
         - PaulCapestany/nostr_threads
+        - bitiq-io/nostr_threads
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |
@@ -129,6 +131,7 @@ ciPipelines:
       tlsVerify: "true"
       repoFullNames:
         - PaulCapestany/nostouch
+        - bitiq-io/nostouch
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/go-toolset:1.20
       testScript: |
@@ -145,6 +148,7 @@ ciPipelines:
       tlsVerify: "true"
       repoFullNames:
         - PaulCapestany/toy-web
+        - bitiq-io/toy-web
       runTests: "true"
       testImage: registry.access.redhat.com/ubi9/nodejs-20:1-1758500456
       testScript: |
