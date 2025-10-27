@@ -316,6 +316,33 @@ Troubleshooting (dev Vault helper)
    oc -n openshift-pipelines port-forward --address 0.0.0.0 svc/el-bitiq-listener ${HOST_PORT}:8080
    ```
 
+   To keep the port-forward alive even after SSH disconnects, you can install the helper script and systemd user unit that live in this repo:
+
+   ```bash
+   # One-time setup (run on the server using the repo checkout)
+   install -Dm0755 scripts/port-forward-eventlistener.sh ~/.local/bin/port-forward-eventlistener
+   install -Dm0644 scripts/systemd/bitiq-eventlistener-portforward.service \
+     ~/.config/systemd/user/bitiq-eventlistener-portforward.service
+
+   # Optional overrides (defaults: HOST_PORT=8080, BIND_ADDRESS=0.0.0.0, TARGET_PORT=8080)
+   cat >~/.config/bitiq/eventlistener-portforward.env <<'EOF'
+   HOST_PORT=18080
+   BIND_ADDRESS=0.0.0.0
+   # NAMESPACE=openshift-pipelines
+   # RESOURCE=svc/el-bitiq-listener
+    # OC_BIN=/usr/local/bin/oc
+   EOF
+
+   systemctl --user daemon-reload
+   systemctl --user enable --now bitiq-eventlistener-portforward.service
+
+   # Allow the unit to keep running after you log out (run once)
+   loginctl enable-linger "$USER"
+
+   # Follow the logs when you need to debug
+   journalctl --user -u bitiq-eventlistener-portforward.service -f
+   ```
+
    - Payload URL in your GitHub webhook: `http://<your-ddns-name>:<HOST_PORT>`
    - Content type: `application/json`
    - Secret: `$GITHUB_WEBHOOK_SECRET`

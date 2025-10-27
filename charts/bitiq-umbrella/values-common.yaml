@@ -104,7 +104,7 @@ bootstrapOperators:
 ciPipelines:
   serviceAccountName: pipeline
   # Optional fsGroup override for Tekton TaskRuns; empty uses SCC defaults
-  fsGroup: 65532
+  fsGroup: 1000690000
   eventListener:
     name: bitiq-listener
     githubSecretName: github-webhook-secret
