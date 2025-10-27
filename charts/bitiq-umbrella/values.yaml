@@ -79,6 +79,7 @@ bootstrapOperators:
 
 ciPipelines:
   serviceAccountName: pipeline
+  # Keep in sync with the namespace supplemental group range so Tekton pods can write PVCs.
   fsGroup: 1000690000
   eventListener:
     name: bitiq-listener

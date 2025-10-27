@@ -11,7 +11,7 @@ serviceAccountName: ci-pipeline
 # Registry auth Secret to link to the service account (kubernetes.io/dockerconfigjson)
 registrySecretName: quay-auth
 # Optional fsGroup override; leave empty to use cluster SCC defaults
-fsGroup: 1000690000
+fsGroup: 1000690000  # matches openshift-pipelines namespace supplemental group range
 
 # Control creation of Namespace resources that match pipeline imageNamespace values
 createImageNamespaces: false

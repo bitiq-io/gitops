@@ -103,7 +103,9 @@ bootstrapOperators:
 
 ciPipelines:
   serviceAccountName: pipeline
-  # Optional fsGroup override for Tekton TaskRuns; empty uses SCC defaults
+  # CRC/OpenShift assigns supplemental groups per namespace. Using the namespace's
+  # configured range (see `oc get project openshift-pipelines -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`)
+  # keeps PVC mounts writable for the non-root Tekton pods.
   fsGroup: 1000690000
   eventListener:
     name: bitiq-listener
