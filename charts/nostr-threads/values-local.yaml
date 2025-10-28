@@ -1,7 +1,7 @@
 image:
-  tag: v0.1.1-commit.55dcef3
+  tag: v0.1.12-commit.a5e49ce
   pullPolicy: Always
-
+  repository: quay.io/paulcapestany/nostr_threads
 env:
   envPrefix: dev
   gitCommitHash: 55dcef3
