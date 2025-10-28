@@ -5,3 +5,6 @@ image:
 stream:
   relayURL: ws://strfry.bitiq-local.svc.cluster.local:7777
   couchbaseConn: couchbase://couchbase-cluster.bitiq-local.svc.cluster.local
+  env:
+    envPrefix: dev
+    gitCommitHash: 386f41d

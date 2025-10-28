@@ -2,7 +2,7 @@
 {{- $cbCreds := .Values.stream.couchbaseCredentials }}
 {{- $defaultCmd := printf "nak req --stream %s | nostouch -conn %s" .Values.stream.relayURL .Values.stream.couchbaseConn }}
 {{- if and $cbCreds (ne (default true $cbCreds.enabled) false) }}
-  {{- $userEnv := default "COUCHBASE_USERNAME" $cbCreds.usernameEnv }}
+  {{- $userEnv := default "COUCHBASE_USER" $cbCreds.usernameEnv }}
   {{- $passEnv := default "COUCHBASE_PASSWORD" $cbCreds.passwordEnv }}
   {{- $defaultCmd = printf "%s -user $%s -pass $%s" $defaultCmd $userEnv $passEnv }}
 {{- end }}
@@ -60,11 +60,25 @@ spec:
 {{ toYaml . | indent 12 }}
 {{- end }}
 {{- $hasCreds := and $cbCreds (ne (default true $cbCreds.enabled) false) }}
-{{- $hasExtraEnv := gt (len (default (list) .Values.stream.env.extra)) 0 }}
-{{- if or $hasCreds $hasExtraEnv }}
+{{- $envConfig := default (dict) .Values.stream.env }}
+{{- $envExtra := default (list) $envConfig.extra }}
+{{- $hasExtraEnv := gt (len $envExtra) 0 }}
+{{- $envPrefix := default "" $envConfig.envPrefix }}
+{{- $hasEnvPrefix := ne $envPrefix "" }}
+{{- $gitCommitHash := default "" $envConfig.gitCommitHash }}
+{{- $hasGitCommitHash := ne $gitCommitHash "" }}
+{{- if or $hasCreds $hasExtraEnv $hasEnvPrefix $hasGitCommitHash }}
           env:
+{{- if $hasEnvPrefix }}
+            - name: ENV_PREFIX
+              value: {{ $envPrefix | quote }}
+{{- end }}
+{{- if $hasGitCommitHash }}
+            - name: GIT_COMMIT_HASH
+              value: {{ $gitCommitHash | quote }}
+{{- end }}
 {{- if $hasCreds }}
-            - name: {{ default "COUCHBASE_USERNAME" $cbCreds.usernameEnv }}
+            - name: {{ default "COUCHBASE_USER" $cbCreds.usernameEnv }}
               valueFrom:
                 secretKeyRef:
                   name: {{ default "couchbase-cluster-auth" $cbCreds.secretName }}
@@ -75,7 +89,7 @@ spec:
                   name: {{ default "couchbase-cluster-auth" $cbCreds.secretName }}
                   key: {{ default "password" $cbCreds.passwordKey }}
 {{- end }}
-{{- range .Values.stream.env.extra }}
+{{- range $envExtra }}
             - name: {{ .name }}
 {{- if .valueFrom }}
               valueFrom:

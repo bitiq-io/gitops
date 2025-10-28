@@ -33,9 +33,11 @@ stream:
     secretName: couchbase-cluster-auth
     usernameKey: username
     passwordKey: password
-    usernameEnv: COUCHBASE_USERNAME
+    usernameEnv: COUCHBASE_USER
     passwordEnv: COUCHBASE_PASSWORD
   env:
+    envPrefix: ""
+    gitCommitHash: ""
     extra: []
   envFrom: []
   resources:
