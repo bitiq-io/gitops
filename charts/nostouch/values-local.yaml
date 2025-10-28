@@ -1,5 +1,5 @@
 image:
-  tag: v0.0.8-commit.386f41d
+  tag: v0.0.10-commit.6869ec0
   pullPolicy: Always
   repository: quay.io/paulcapestany/nostouch
 stream:
