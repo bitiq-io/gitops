@@ -1,7 +1,7 @@
 # Migration Plan: pac-infra → bitiq-io/gitops (Final)
 
 Owner: Paul / bitiq platform
-Last updated: 2025-10-27 (status updated)
+Last updated: 2025-10-28 (status updated; CI/CD E2E verified for nostr_* subset)
 
 Next Actions (quick scan)
 - Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
@@ -220,7 +220,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 - Acceptance: In local external mode, application health checks succeed against external Ollama; in GPU envs, `nvidia-smi` works and pod Ready.
 
 5) Services (nostr_*)
-- Status: Completed (nostr query/threads/thread-copier/nostouch migrated)
+- Status: Completed (nostr query/threads/thread-copier/nostouch migrated); CI/CD E2E validated for nostr-threads and nostouch
 - Who: Codex agent (repo maintainer)
 - What: Create charts per service; switch to VSO‑projected Secrets; add default‑deny NetworkPolicies; optional Routes as needed; image/tag parametrized and optionally annotated for Image Updater.
 - Where: `charts/nostr-*/`, umbrella apps
@@ -262,6 +262,11 @@ Appendix: Dynamic DNS + NAT quick guide (Local)
 - NAT: port forward 443 (and optionally 80 if using HTTP‑01) from router → Ubuntu host.
 - Router exposure: either user‑space forwarding (as documented) or equivalent rules to allow the OpenShift router to serve your Ingress hosts.
 - cert-manager: default to DNS‑01 (Route 53). Annotate Ingress with the ClusterIssuer; cert-manager will solve and issue real certs.
+
+Recent Changes (2025-10-28)
+- CI/CD end-to-end validated for nostouch and nostr-threads: GitHub → Tekton Triggers EventListener → PipelineRun build/push to Quay (VSO-provisioned creds) → Argo CD Image Updater write-back to values-<env>.yaml → Argo CD sync/rollout. Port-forward/Route exposure for the EventListener confirmed per docs/LOCAL-CI-CD.md and scripts/port-forward-eventlistener.sh.
+
+---
 
 Recent Changes (2025-10-22)
 - Ollama GitOps scaffolding: chart added with `external|gpu` modes, external endpoint ConfigMap, GPU Deployment + PVC/Service/Ingress/Route toggles, umbrella Application, and ApplicationSet wiring (local defaults to external).
