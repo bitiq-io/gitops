@@ -34,6 +34,13 @@ secrets:
     type: Opaque
     destinationLabels:
       argocd.argoproj.io/secret-type: repo-creds
+  gitRepoCredsPipelines:
+    enabled: true
+    destinationName: gitops-repo-creds
+    path: github/gitops-repo
+    type: Opaque
+    destinationAnnotations:
+      tekton.dev/git-0: https://github.com
   githubWebhook:
     enabled: true
     namespace: ""

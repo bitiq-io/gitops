@@ -1,0 +1,8 @@
+image:
+  tag: v0.1.12-commit.a5e49ce
+  repository: quay.io/paulcapestany/nostr_threads
+  pullPolicy: IfNotPresent
+
+env:
+  envPrefix: sno
+  gitCommitHash: 55dcef3

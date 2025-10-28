@@ -13,5 +13,18 @@ spec:
     - name: git-revision
       value: $(body.ref)
 {{- end }}
-{{- end }}
 
+{{- $app := .Values.appVersionAutomation -}}
+{{- if and .Values.triggers.create $app.enabled $app.trigger.create }}
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: {{ $app.pipelineName | default "gitops-maintenance" }}-binding
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-revision
+      value: $(body.ref)
+{{- end }}
+{{- end }}

@@ -14,6 +14,7 @@ AppVersion Automation (on‑cluster) — Plan
 
 Scope & Tasks
 1) Expand composite sources
+   - Status: Completed (charts annotated with `bitiq.io/appversion`; compute/verify auto-discover enforces env parity for nostouch, nostr-threads, toy-service, toy-web)
    - Decision: move beyond only toy services. Include any chart that represents a rollout we care to rollback by tag.
    - Mechanism: adopt a simple opt‑in annotation on chart metadata (Chart.yaml), e.g., `annotations.bitiq.io/appversion: "true"`.
    - Update `scripts/compute-appversion.sh` to:
@@ -23,6 +24,7 @@ Scope & Tasks
    - Acceptance: `make verify-release` passes; composite string lists all opted‑in services (to be enumerated in follow‑up PR: nostr‑*, nostouch, strfry, etc.).
 
 2) On‑cluster recompute job (Tekton)
+   - Status: Completed (pipeline + parity sync + VSO-secret plumbing merged; next validation step is observing a live Image Updater write-back)
    - Add a Pipeline in `charts/ci-pipelines` (name: `gitops-maintenance`) with tasks:
      - `git-clone` this repo.
      - `recompute-appversion`: run `scripts/compute-appversion.sh <env>` for the envs we enforce parity on (default: local,sno,prod). If it changes Chart.yaml, stage it.
@@ -33,16 +35,19 @@ Scope & Tasks
    - Acceptance: Pushing a tag change to values‑local.yaml by Image Updater results in a follow‑up commit that updates Chart.yaml within ~1 minute without human action.
 
 3) Triggers for this repo
+   - Status: Completed (GitHub push trigger, CEL filters, and secret wiring landed; monitor initial prod run for confidence)
    - Add a TriggerTemplate/Binding/EventListener route specific to the `bitiq-io/gitops` repo (or re‑use the existing listener with a CEL filter for `repository.full_name`).
    - Filter out the recompute commit: if `head_commit.message` matches `^chore\(release\): recompute umbrella appVersion`, do nothing.
    - Acceptance: `push` to main by `argocd-image-updater` (or matching PAT user) enqueues exactly one PipelineRun; a recompute‑only commit does not re‑enqueue.
 
 4) Env parity policy
+   - Status: In Progress (pipeline auto-syncs annotated chart tags using scripts/sync-env-tags.sh; PR fallback for intentional divergence still open)
    - Default: keep tags aligned across envs for the services that participate in the composite to preserve a single `appVersion` value (required by current `verify-release`).
    - Pipeline behavior: when one env’s values file changes, optionally propagate the same tag to other env overlays (config flag, default on for local until prod is active). Then recompute.
    - Document escape hatch: allow `ENVIRONMENTS=local make verify-release` locally to validate only the changed env when divergence is intended, and make the pipeline open a PR instead of pushing when envs are intentionally different.
 
 5) Documentation & guardrails
+   - Status: In Progress (LOCAL-CI-CD updated with automation notes; commitlint header limit raised to 100; remaining: dedicated runbook + rollback examples)
    - Add a docs section explaining the automation, the annotation to opt‑in charts, and how to roll back by reverting composite/app tags.
    - Add commitlint rule snippet: limit recompute headers to <=100 chars, fixed subject string to simplify trigger filters.
    - Acceptance: Runbooks updated; contributors don’t touch Chart.yaml manually.

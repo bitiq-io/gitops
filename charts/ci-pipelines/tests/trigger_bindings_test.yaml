@@ -61,3 +61,14 @@ tests:
       - equal:
           path: spec.params[1].name
           value: git-revision
+  - it: renders TriggerBinding for gitops maintenance pipeline
+    documentIndex: 4
+    asserts:
+      - isKind:
+          of: TriggerBinding
+      - equal:
+          path: metadata.name
+          value: gitops-maintenance-binding
+      - equal:
+          path: spec.params[0].name
+          value: git-revision

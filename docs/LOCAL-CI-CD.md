@@ -147,13 +147,48 @@ tkn pr logs -L -f -n openshift-pipelines
 
 8) Image Updater writes back and Argo syncs
 
-- Tail Image Updater logs to see detection and Git write‑back:
+- Tail Image Updater logs to see detection and Git write-back:
 
 ```bash
 oc -n openshift-gitops logs deploy/argocd-image-updater -f
 ```
 
 - It updates `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` with the new tags → Argo syncs the apps → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
+
+## AppVersion automation (gitops-maintenance)
+
+The umbrella chart’s `appVersion` now stays in lockstep with annotated chart tags via the `gitops-maintenance` Tekton pipeline.
+
+### Opt-in charts
+
+- Add `bitiq.io/appversion: "true"` to a chart’s `Chart.yaml` to participate in the composite appVersion.
+- Ensure every enabled environment ships a `values-<env>.yaml` with the same `image.tag`. Annotated charts currently include `nostouch`, `nostr-threads`, `toy-service`, and `toy-web`.
+- Additional services can opt in once they publish tags that follow the `v<semver>-commit.<sha>` convention used by Image Updater.
+
+### Pipeline stages
+
+1. Trigger (`charts/ci-pipelines/templates/triggers.yaml`): GitHub `push` events on `bitiq-io/gitops` `main`, excluding commits authored by `bitiq-gitops-bot` and the fixed recompute subject.
+2. `fetch-repo`: clones this repository with full history so `git describe` and `make verify-release` work reliably.
+3. `sync-env-tags.sh`: when parity is enabled (default), aligns annotated chart tags across the configured envs using the source env defined in `appVersionAutomation.parity.primaryEnv` (default `local`).
+4. `compute-appversion.sh`: runs once per env to refresh `charts/bitiq-umbrella/Chart.yaml` with the sorted composite string.
+5. `verify-release.sh`: validates tag format and composite equality for every env.
+6. `commit-changes` / `push-commit`: commits `charts/bitiq-umbrella/Chart.yaml` with the subject `chore(release): recompute umbrella appVersion` and pushes using VSO-projected creds (`gitops-repo-creds` in `openshift-pipelines`).
+
+### Configuration knobs
+
+`charts/ci-pipelines/values.yaml` exposes `appVersionAutomation.*`:
+
+- `environments`: space-separated env list forwarded to the compute/verify scripts.
+- `parity.enabled` / `parity.primaryEnv`: toggle tag propagation and define the source env.
+- `trigger.*`: repo allow-list, branch filters, message/author skips, shared workspace size.
+- `credentials.*`: secret name and key mapping for the Vault-managed GitHub PAT.
+- `toolImage`: image used for the inline task specs (defaults to `registry.access.redhat.com/ubi9/go-toolset:1.24.6`).
+
+### Manual operations & rollback
+
+- Force a recompute: `tkn pipelinerun create gitops-maintenance --param gitRevision=main --workspace name=shared-workspace,claimName=<pvc> --workspace name=git-credentials,secret=gitops-repo-creds` (or reuse the rendered TriggerTemplate via `tkn trigger`).
+- Disable parity temporarily: set `appVersionAutomation.parity.enabled=false` (values or PipelineRun param) before intentional env divergence; re-enable after merging the divergent change.
+- Roll back: revert the offending `values-<env>.yaml` commit *and* the follow-up `chore(release): recompute umbrella appVersion` commit. Argo CD will reconcile once the values files match again.
 
 Troubleshooting
 

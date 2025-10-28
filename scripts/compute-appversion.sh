@@ -28,12 +28,51 @@ fi
 ROOT=$(repo_root)
 UMBRELLA_CHART="$ROOT/charts/bitiq-umbrella/Chart.yaml"
 
-# Default charts to scan for image repo/tag
-CHART_LIST=${CHARTS:-"charts/toy-service charts/toy-web"}
+APPVERSION_ANNOTATION=${APPVERSION_ANNOTATION:-"bitiq.io/appversion"}
+DEFAULT_CHARTS="charts/toy-service charts/toy-web"
+
+escape_regex() {
+  printf '%s' "$1" | sed 's/[.[\\*^$(){}?+|/]/\\&/g'
+}
+
+discover_annotated_charts() {
+  local -n _out=$1
+  local pattern
+  pattern=$(escape_regex "$APPVERSION_ANNOTATION")
+  local chart_files=()
+  mapfile -t chart_files < <(find "$ROOT/charts" -mindepth 2 -maxdepth 2 -name Chart.yaml | sort || true)
+  local charts=()
+  for chart_file in "${chart_files[@]}"; do
+    [[ -n "$chart_file" ]] || continue
+    if grep -Eq "${pattern}:[[:space:]]*\"?true\"?" "$chart_file"; then
+      local chart_dir=${chart_file%/Chart.yaml}
+      local rel=${chart_dir#"$ROOT"/}
+      charts+=("$rel")
+    fi
+  done
+  _out=("${charts[@]}")
+}
+
+declare -a CHART_ARRAY=()
+if [[ -n "${CHARTS:-}" ]]; then
+  read -r -a CHART_ARRAY <<<"${CHARTS}"
+else
+  discover_annotated_charts CHART_ARRAY
+  if ((${#CHART_ARRAY[@]} == 0)); then
+    read -r -a CHART_ARRAY <<<"${DEFAULT_CHARTS}"
+  fi
+fi
+
+if ((${#CHART_ARRAY[@]} == 0)); then
+  echo "No charts found to compute appVersion" >&2
+  exit 1
+fi
+
+echo "Computing appVersion from charts: ${CHART_ARRAY[*]}" >&2
 
 declare -a ENTRIES=()
 
-for CH in ${CHART_LIST}; do
+for CH in "${CHART_ARRAY[@]}"; do
   VALUES_FILE="$ROOT/${CH}/values-${ENV_NAME}.yaml"
   if [[ ! -f "$VALUES_FILE" ]]; then
     # tolerate missing per-env overlay

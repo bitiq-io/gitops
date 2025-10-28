@@ -4,3 +4,5 @@ description: Nostr threads service querying Couchbase for threaded conversations
 type: application
 version: 0.1.1
 appVersion: "0.1.1"
+annotations:
+  bitiq.io/appversion: "true"
