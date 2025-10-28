@@ -135,6 +135,9 @@ spec:
               done
 
               MODE=print ENV="${envs[0]}" bash scripts/compute-appversion.sh "${envs[0]}" > $(results.composite.path)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
     - name: verify-release
       runAfter: [recompute-appversion]
       params:
@@ -160,6 +163,9 @@ spec:
               mkdir -p "$HOME"
               git config --global --add safe.directory "$(workspaces.source.path)"
               ENVIRONMENTS="$(params.environments)" bash scripts/verify-release.sh
+      workspaces:
+        - name: source
+          workspace: shared-workspace
     - name: commit-changes
       runAfter: [verify-release]
       params:
@@ -218,6 +224,9 @@ spec:
               git commit -m "$(params.commitMessage)"
               git rev-parse HEAD > $(results.commit-sha.path)
               printf "true" > $(results.commit-made.path)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
     - name: push-commit
       runAfter: [commit-changes]
       when:
@@ -289,4 +298,9 @@ spec:
 
               git remote set-url origin "$(params.gitUrl)"
               git push origin HEAD:$(params.gitRevision)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: git-credentials
+          workspace: git-credentials
 {{- end }}
