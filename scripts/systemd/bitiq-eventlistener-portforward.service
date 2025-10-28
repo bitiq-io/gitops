@@ -1,0 +1,14 @@
+[Unit]
+Description=Bitiq Tekton EventListener port-forward
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/bitiq/eventlistener-portforward.env
+ExecStart=%h/.local/bin/port-forward-eventlistener
+Restart=on-failure
+RestartSec=3
+KillMode=process
+
+[Install]
+WantedBy=default.target
