@@ -157,6 +157,11 @@ oc -n openshift-gitops logs deploy/argocd-image-updater -f
 
 Troubleshooting
 
+- EventListener keeps rolling and port-forward is flaky:
+  - Symptom: `oc -n openshift-pipelines describe deploy/el-bitiq-listener` shows frequent new ReplicaSets and the systemd port-forward logs drop with "error: lost connection to pod" and `PodSandbox ... not found`.
+  - Cause: multiple envs (local/sno/prod) were rendered on the same cluster and are fighting over shared Tekton resource names in `openshift-pipelines` (labels like `app.kubernetes.io/instance` differ per Helm release, triggering rollouts).
+  - Fix: ensure the ApplicationSet only generates your target env. Re-run bootstrap for your env (e.g., `ENV=local ./scripts/bootstrap.sh`) so it sets `envFilter=local`, or manually upgrade the `argocd-apps` Helm release with `--set-string envFilter=local`. This prevents cross‑env collisions.
+
 - EventListener CrashLoopBackOff with ClusterInterceptor forbidden:
   - Fixed by cluster-scope RBAC included in the chart (`pipeline` SA can list `clusterinterceptors.triggers.tekton.dev`).
 - Pipeline “custom task ref must specify apiVersion”:

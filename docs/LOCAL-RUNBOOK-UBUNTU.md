@@ -343,6 +343,8 @@ Troubleshooting (dev Vault helper)
    journalctl --user -u bitiq-eventlistener-portforward.service -f
    ```
 
+   Note: If you see the EventListener pod constantly rolling (new ReplicaSets created every few minutes) and the port-forward occasionally drops with "lost connection to pod", ensure your Argo CD ApplicationSet is only generating the `local` env on this cluster. Re-run `ENV=local ./scripts/bootstrap.sh` so it sets `envFilter=local` for the `argocd-apps` Helm release.
+
    - Payload URL in your GitHub webhook: `http://<your-ddns-name>:<HOST_PORT>`
    - Content type: `application/json`
    - Secret: `$GITHUB_WEBHOOK_SECRET`
