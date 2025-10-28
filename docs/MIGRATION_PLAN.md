@@ -8,6 +8,60 @@ Next Actions (quick scan)
 - Inventory doc (Who: Codex). What: produce `docs/bitiq-inventory.md` from current GitOps state. Acceptance: strfry, Couchbase, nostr services, nginx, GPU prerequisites documented.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
+AppVersion Automation (on‑cluster) — Plan
+- Why: Today the umbrella `appVersion` is a composite of image tags but is updated only when a human runs `scripts/compute-appversion.sh`. When Argo CD Image Updater writes back a new tag to any values‑<env>.yaml, `appVersion` drifts and `make verify-release` fails until it’s fixed. We want deterministic, automatic healing from inside the cluster.
+- Approach: Add a small Tekton pipeline, triggered on GitHub pushes to this repo, that recomputes and commits the umbrella `appVersion` after Image Updater write‑backs. Use Vault (VSO) to supply a fine‑scoped GitHub token. Guard against loops and race conditions.
+
+Scope & Tasks
+1) Expand composite sources
+   - Decision: move beyond only toy services. Include any chart that represents a rollout we care to rollback by tag.
+   - Mechanism: adopt a simple opt‑in annotation on chart metadata (Chart.yaml), e.g., `annotations.bitiq.io/appversion: "true"`.
+   - Update `scripts/compute-appversion.sh` to:
+     - Discover charts with that annotation (fallback to `CHARTS="…"` for compatibility).
+     - For each included chart, read `image.repository` and `image.tag` from `values-<env>.yaml` and build the sorted composite string.
+   - Update `scripts/verify-release.sh` to use the same discovery and keep ENV parity checks.
+   - Acceptance: `make verify-release` passes; composite string lists all opted‑in services (to be enumerated in follow‑up PR: nostr‑*, nostouch, strfry, etc.).
+
+2) On‑cluster recompute job (Tekton)
+   - Add a Pipeline in `charts/ci-pipelines` (name: `gitops-maintenance`) with tasks:
+     - `git-clone` this repo.
+     - `recompute-appversion`: run `scripts/compute-appversion.sh <env>` for the envs we enforce parity on (default: local,sno,prod). If it changes Chart.yaml, stage it.
+     - `verify`: run `make verify-release` (same environment policy as pre‑push).
+     - `commit-and-push`: commit with a conventional message (e.g., `chore(release): recompute umbrella appVersion`) and push using a bot credential.
+   - Avoid commit loops: trigger filters ignore commits authored by the bot or with the specific commit subject, and the pipeline no‑ops if only Chart.yaml changed since the last push.
+   - Secrets: project a VSO‑managed secret (Vault path `gitops/github/gitops-repo`) into `openshift-pipelines` (either re‑use and copy the current `gitops-repo-creds` or add a dedicated pipelines variant). Mount into the commit step as `GIT_USERNAME/GIT_PASSWORD`.
+   - Acceptance: Pushing a tag change to values‑local.yaml by Image Updater results in a follow‑up commit that updates Chart.yaml within ~1 minute without human action.
+
+3) Triggers for this repo
+   - Add a TriggerTemplate/Binding/EventListener route specific to the `bitiq-io/gitops` repo (or re‑use the existing listener with a CEL filter for `repository.full_name`).
+   - Filter out the recompute commit: if `head_commit.message` matches `^chore\(release\): recompute umbrella appVersion`, do nothing.
+   - Acceptance: `push` to main by `argocd-image-updater` (or matching PAT user) enqueues exactly one PipelineRun; a recompute‑only commit does not re‑enqueue.
+
+4) Env parity policy
+   - Default: keep tags aligned across envs for the services that participate in the composite to preserve a single `appVersion` value (required by current `verify-release`).
+   - Pipeline behavior: when one env’s values file changes, optionally propagate the same tag to other env overlays (config flag, default on for local until prod is active). Then recompute.
+   - Document escape hatch: allow `ENVIRONMENTS=local make verify-release` locally to validate only the changed env when divergence is intended, and make the pipeline open a PR instead of pushing when envs are intentionally different.
+
+5) Documentation & guardrails
+   - Add a docs section explaining the automation, the annotation to opt‑in charts, and how to roll back by reverting composite/app tags.
+   - Add commitlint rule snippet: limit recompute headers to <=100 chars, fixed subject string to simplify trigger filters.
+   - Acceptance: Runbooks updated; contributors don’t touch Chart.yaml manually.
+
+6) Nice‑to‑have
+   - Concurrency control: only one recompute PipelineRun per branch at a time (use `concurrencyPolicy`/CEL gates or a simple K8s lock via a ConfigMap).
+   - Argo sync: after pushing, annotate `bitiq-umbrella-<env>` with `argocd.argoproj.io/refresh=hard` for a quicker converge in dev.
+   - Observability: label recompute runs and add a short dashboard card in README linking to `tkn pr logs -L` usage.
+
+Risks & Mitigations
+- Infinite loops: avoid by filtering commit subjects/authors and by making the recompute job a no‑op when only Chart.yaml changed.
+- Secret exposure: keep PAT in Vault and projected to the pipeline namespace via VSO; never commit secrets; use HTTPS basic auth with least privilege (repo:write). Rotate via Vault.
+- Multi‑env collisions: we already set `envFilter=local` for CRC. The parity propagation step ensures `verify-release` remains green until we formally support env divergence.
+
+Deliverables
+- PR 1: compute/verify scripts discovery + docs.
+- PR 2: Tekton pipeline/triggers + VSO secret projection to `openshift-pipelines`.
+- PR 3: opt‑in annotations on selected charts and initial parity propagation (toggle documented).
+
 Goal
 - Migrate manual OpenShift/K8s manifests and setup steps into the Helm‑first GitOps repo `bitiq-io/gitops` managed by Argo CD, with environment overlays and Vault‑backed secrets.
 - Optimize for ENV=local on a remote Ubuntu home server with dynamic DNS, while keeping the structure easy to extend to ENV=prod.
