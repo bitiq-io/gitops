@@ -84,9 +84,20 @@ spec:
           workspace: shared-workspace
     - name: recompute-appversion
       runAfter: [fetch-repo]
+      params:
+        - name: environments
+          value: $(params.environments)
+        - name: parityEnabled
+          value: $(params.parityEnabled)
+        - name: primaryEnv
+          value: $(params.primaryEnv)
       taskSpec:
         params:
           - name: environments
+            type: string
+          - name: parityEnabled
+            type: string
+          - name: primaryEnv
             type: string
         workspaces:
           - name: source
@@ -126,6 +137,9 @@ spec:
               MODE=print ENV="${envs[0]}" bash scripts/compute-appversion.sh "${envs[0]}" > $(results.composite.path)
     - name: verify-release
       runAfter: [recompute-appversion]
+      params:
+        - name: environments
+          value: $(params.environments)
       taskSpec:
         params:
           - name: environments
