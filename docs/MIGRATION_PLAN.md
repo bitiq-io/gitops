@@ -41,7 +41,7 @@ Scope & Tasks
    - Acceptance: `push` to main by `argocd-image-updater` (or matching PAT user) enqueues exactly one PipelineRun; a recompute‑only commit does not re‑enqueue.
 
 4) Env parity policy
-   - Status: In Progress (pipeline auto-syncs annotated chart tags using scripts/sync-env-tags.sh; PR fallback for intentional divergence still open)
+   - Status: Completed (pipeline auto-syncs annotated chart tags using scripts/sync-env-tags.sh; LOCAL-CI-CD documents the `parity.enabled` override for intentional divergence)
    - Default: keep tags aligned across envs for the services that participate in the composite to preserve a single `appVersion` value (required by current `verify-release`).
    - Pipeline behavior: when one env’s values file changes, optionally propagate the same tag to other env overlays (config flag, default on for local until prod is active). Then recompute.
    - Document escape hatch: allow `ENVIRONMENTS=local make verify-release` locally to validate only the changed env when divergence is intended, and make the pipeline open a PR instead of pushing when envs are intentionally different.
@@ -270,6 +270,12 @@ Appendix: Dynamic DNS + NAT quick guide (Local)
 
 Recent Changes (2025-10-28)
 - CI/CD end-to-end validated for nostouch and nostr-threads: GitHub → Tekton Triggers EventListener → PipelineRun build/push to Quay (VSO-provisioned creds) → Argo CD Image Updater write-back to values-<env>.yaml → Argo CD sync/rollout. Port-forward/Route exposure for the EventListener confirmed per docs/LOCAL-CI-CD.md and scripts/port-forward-eventlistener.sh.
+
+---
+
+Recent Changes (2025-10-29)
+- Vault dev cluster (vault-dev namespace) reconfigured: kubernetes auth config re-written, `kube-auth` role restored, GitOps KV seeded with PAT, and VaultStaticSecret `gitops-repo-creds` now syncs healthy in openshift-pipelines. Manual Secret removed in favour of VSO-managed projection.
+- gitops-maintenance pipeline verified with pushEnabled=true (no-op commit, push stage skipped by design) — ready to push when Image Updater writes new tags.
 
 ---
 
