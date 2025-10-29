@@ -5,6 +5,8 @@ image:
   tag: "1.15.6"
   pullPolicy: IfNotPresent
 
+logLevel: info
+
 service:
   name: vault-dev
   port: 8200
@@ -20,6 +22,11 @@ securityContext:
     type: RuntimeDefault
   capabilities:
     drop: ["ALL"]
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1000710000
+  fsGroupChangePolicy: OnRootMismatch
 
 resources: {}
 
