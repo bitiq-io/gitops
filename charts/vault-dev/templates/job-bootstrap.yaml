@@ -9,10 +9,8 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: {{ if .Values.bootstrap.createSecret }}{{ printf "%s-bootstrap" .Values.service.name }}{{ else }}default{{ end }}
+      serviceAccountName: {{ printf "%s-bootstrap" .Values.service.name }}
       volumes:
-        - name: shared
-          emptyDir: {}
         - name: bootstrap-secret
           secret:
             secretName: {{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}
@@ -37,8 +35,7 @@ spec:
               CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
               NAMESPACE="{{ .Release.Namespace }}"
               SECRET_PATH="/bootstrap-secret"
-              SHARED_DIR="/shared"
-              mkdir -p "$SHARED_DIR"
+              SECRET_NAME='{{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}'
 
               ROOT_TOKEN=""
               UNSEAL_KEY=""
@@ -75,9 +72,30 @@ spec:
                 UNSEAL_KEY=$(printf '%s' "$flat" | sed -n 's/.*"unseal_keys_b64":\["\([^"]*\)".*/\1/p')
               }
 
-              write_shared_files() {
-                printf '%s' "$ROOT_TOKEN" > "$SHARED_DIR/root_token"
-                printf '%s' "$UNSEAL_KEY" > "$SHARED_DIR/unseal_key"
+              ensure_secret() {
+                if [ -z "$ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
+                  log "WARNING: skipping secret creation (missing tokens)"
+                  return 0
+                fi
+                AUTH_HEADER="Authorization: Bearer $(cat ${SA_TOKEN_FILE})"
+                cat > /tmp/secret.json <<JSON
+                {
+                  "apiVersion": "v1",
+                  "kind": "Secret",
+                  "metadata": {
+                    "name": "${SECRET_NAME}",
+                    "namespace": "${NAMESPACE}"
+                  },
+                  "type": "Opaque",
+                  "stringData": {
+                    "root_token": "${ROOT_TOKEN}",
+                    "unseal_key": "${UNSEAL_KEY}"
+                  }
+                }
+                JSON
+                log "storing credentials in Secret ${SECRET_NAME}"
+                wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --method=DELETE "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}" || true
+                wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --header "Content-Type: application/json" --post-file=/tmp/secret.json "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets"
               }
 
               wait_for_vault
@@ -97,7 +115,7 @@ spec:
                 fi
                 log "unsealing newly initialized Vault"
                 vault operator unseal "$UNSEAL_KEY"
-                write_shared_files
+                ensure_secret
               else
                 if [ "$sealed" = "true" ]; then
                   if [ -z "$UNSEAL_KEY" ]; then
@@ -109,8 +127,6 @@ spec:
                 fi
                 if [ -z "$ROOT_TOKEN" ]; then
                   log "WARNING: root token not available; policy/bootstrap steps may be skipped"
-                else
-                  write_shared_files
                 fi
               fi
 
@@ -187,55 +203,11 @@ spec:
                 log "WARNING: skipping policy bootstrap (no root token)"
               fi
 
-              write_shared_files
+              ensure_secret
               log "bootstrap complete"
           volumeMounts:
-            - name: shared
-              mountPath: /shared
             - name: bootstrap-secret
               mountPath: /bootstrap-secret
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- if .Values.bootstrap.createSecret }}
-        - name: kubectl-writer
-          image: quay.io/bitnami/kubectl:1.30
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh","-ceu","x"]
-          args:
-            - |
-              set -euo pipefail
-              SHARED_DIR="/shared"
-              SECRET_NAME="{{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}"
-              NAMESPACE="{{ .Release.Namespace }}"
-
-              log() { printf '[secret-sync] %s\n' "$*"; }
-
-              for i in $(seq 1 60); do
-                if [ -s "$SHARED_DIR/root_token" ] && [ -s "$SHARED_DIR/unseal_key" ]; then
-                  break
-                fi
-                sleep 2
-              done
-
-              if [ ! -s "$SHARED_DIR/root_token" ] || [ ! -s "$SHARED_DIR/unseal_key" ]; then
-                log "WARNING: bootstrap files not found; skipping secret sync"
-                exit 0
-              fi
-
-              ROOT_TOKEN=$(cat "$SHARED_DIR/root_token")
-              UNSEAL_KEY=$(cat "$SHARED_DIR/unseal_key")
-
-              kubectl create secret generic "$SECRET_NAME" \
-                --from-literal=root_token="$ROOT_TOKEN" \
-                --from-literal=unseal_key="$UNSEAL_KEY" \
-                --dry-run=client -o yaml \
-                | kubectl apply -n "$NAMESPACE" -f -
-
-              log "secret ${SECRET_NAME} updated"
-          volumeMounts:
-            - name: shared
-              mountPath: /shared
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- end }}
 {{- end }}

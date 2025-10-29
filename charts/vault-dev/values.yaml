@@ -25,7 +25,6 @@ resources: {}
 
 bootstrap:
   enabled: true
-  createSecret: true
   secretName: vault-bootstrap
   # Names to use in policies/roles for dev parity
   appPolicyName: gitops-local
