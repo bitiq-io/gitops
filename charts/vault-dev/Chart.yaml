@@ -4,4 +4,3 @@ description: Local-only Vault server (PVC-backed Raft) with one-time bootstrap
 type: application
 version: 0.1.0
 appVersion: "1.15.6"
-

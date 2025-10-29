@@ -40,4 +40,3 @@ bootstrap:
   # VCO control-plane binding (operator runs in openshift-gitops:default)
   vcoNamespace: openshift-gitops
   vcoServiceAccount: default
-
