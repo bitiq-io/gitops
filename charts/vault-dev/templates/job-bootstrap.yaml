@@ -4,12 +4,19 @@ kind: Job
 metadata:
   name: {{ .Values.service.name }}-bootstrap
   annotations:
-    # Re-run if the config changes
     checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
 spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: {{ if .Values.bootstrap.createSecret }}{{ printf "%s-bootstrap" .Values.service.name }}{{ else }}default{{ end }}
+      volumes:
+        - name: shared
+          emptyDir: {}
+        - name: bootstrap-secret
+          secret:
+            secretName: {{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}
+            optional: true
       containers:
         - name: vault-bootstrap
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -17,99 +24,218 @@ spec:
           env:
             - name: VAULT_ADDR
               value: http://{{ .Values.service.name }}:{{ .Values.service.port }}
+            - name: KUBERNETES_HOST
+              value: https://kubernetes.default.svc
           command: ["/bin/sh","-ceu","x"]
           args:
             - |
-              echo "[bootstrap] waiting for Vault HTTP endpoint…"
-              for i in $(seq 1 120); do
-                if curl -sSf "${VAULT_ADDR}/v1/sys/health" >/dev/null 2>&1; then break; fi
+              set -euo pipefail
+
+              log() { printf '[bootstrap] %s\n' "$*"; }
+
+              SA_TOKEN_FILE="/var/run/secrets/kubernetes.io/serviceaccount/token"
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              NAMESPACE="{{ .Release.Namespace }}"
+              SECRET_PATH="/bootstrap-secret"
+              SHARED_DIR="/shared"
+              mkdir -p "$SHARED_DIR"
+
+              ROOT_TOKEN=""
+              UNSEAL_KEY=""
+
+              if [ -f "$SECRET_PATH/root_token" ]; then
+                ROOT_TOKEN=$(cat "$SECRET_PATH/root_token")
+              fi
+              if [ -f "$SECRET_PATH/unseal_key" ]; then
+                UNSEAL_KEY=$(cat "$SECRET_PATH/unseal_key")
+              fi
+
+              wait_for_vault() {
+                log "waiting for Vault HTTP endpoint…"
+                for i in $(seq 1 120); do
+                  if wget -qO- "${VAULT_ADDR}/v1/sys/health" >/dev/null 2>&1; then
+                    return 0
+                  fi
+                  sleep 2
+                done
+                log "ERROR: Vault HTTP endpoint not reachable"
+                return 1
+              }
+
+              json_get_bool() {
+                key="$1"
+                data="$2"
+                printf '%s' "$data" | tr -d '\n' | sed -n "s/.*\"${key}\":\s*\(true\|false\).*/\1/p"
+              }
+
+              parse_init_json() {
+                init_json="$1"
+                flat=$(printf '%s' "$init_json" | tr -d '\n')
+                ROOT_TOKEN=$(printf '%s' "$flat" | sed -n 's/.*"root_token":"\([^"]*\)".*/\1/p')
+                UNSEAL_KEY=$(printf '%s' "$flat" | sed -n 's/.*"unseal_keys_b64":\["\([^"]*\)".*/\1/p')
+              }
+
+              write_shared_files() {
+                printf '%s' "$ROOT_TOKEN" > "$SHARED_DIR/root_token"
+                printf '%s' "$UNSEAL_KEY" > "$SHARED_DIR/unseal_key"
+              }
+
+              wait_for_vault
+
+              status_json=$(vault status -format=json 2>/dev/null || true)
+              status_flat=$(printf '%s' "$status_json" | tr -d '\n')
+              initialized=$(json_get_bool initialized "$status_flat")
+              sealed=$(json_get_bool sealed "$status_flat")
+
+              if [ "$initialized" != "true" ]; then
+                log "initializing Vault (single-share dev setup)"
+                init_out=$(vault operator init -key-shares=1 -key-threshold=1 -format=json)
+                parse_init_json "$init_out"
+                if [ -z "$ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
+                  log "ERROR: failed to parse init response"
+                  exit 1
+                fi
+                log "unsealing newly initialized Vault"
+                vault operator unseal "$UNSEAL_KEY"
+                write_shared_files
+              else
+                if [ "$sealed" = "true" ]; then
+                  if [ -z "$UNSEAL_KEY" ]; then
+                    log "ERROR: Vault sealed and no unseal key provided (mount Secret '{{ .Values.bootstrap.secretName }}')"
+                    exit 1
+                  fi
+                  log "unsealing existing Vault"
+                  vault operator unseal "$UNSEAL_KEY"
+                fi
+                if [ -z "$ROOT_TOKEN" ]; then
+                  log "WARNING: root token not available; policy/bootstrap steps may be skipped"
+                else
+                  write_shared_files
+                fi
+              fi
+
+              if [ -n "$ROOT_TOKEN" ]; then
+                export VAULT_TOKEN="$ROOT_TOKEN"
+
+                log "ensuring KV v2 mount 'gitops' exists"
+                if ! vault secrets list -format=json 2>/dev/null | tr -d '\n' | grep -q '"gitops/"'; then
+                  vault secrets enable -path=gitops -version=2 kv >/dev/null
+                fi
+
+                log "configuring Kubernetes auth mount"
+                vault auth enable -path=kubernetes kubernetes >/dev/null 2>&1 || true
+                vault write auth/kubernetes/config \
+                  token_reviewer_jwt="$(cat ${SA_TOKEN_FILE})" \
+                  kubernetes_host="${KUBERNETES_HOST}" \
+                  kubernetes_ca_cert=@${CA_CERT} >/dev/null
+
+                log "writing dev policies"
+                cat > /tmp/app.hcl <<'HCL'
+path "gitops/data/*" {
+  capabilities = ["create","read","update","list"]
+}
+path "gitops/metadata/*" {
+  capabilities = ["read","list"]
+}
+HCL
+                vault policy write {{ .Values.bootstrap.appPolicyName }} /tmp/app.hcl >/dev/null
+                vault write auth/kubernetes/role/{{ .Values.bootstrap.appRoleName }} \
+                  bound_service_account_names="{{ join "," .Values.bootstrap.appServiceAccounts }}" \
+                  bound_service_account_namespaces="{{ join "," .Values.bootstrap.appNamespaces }}" \
+                  policies="{{ .Values.bootstrap.appPolicyName }}" \
+                  ttl="1h" >/dev/null
+
+                cat > /tmp/vco.hcl <<'HCL'
+path "auth/kubernetes/role/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "auth/kubernetes/config" {
+  capabilities = ["read","update"]
+}
+path "auth/kubernetes/*" {
+  capabilities = ["create","read","update","list"]
+}
+path "sys/policies/acl/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "auth/token/lookup-self" {
+  capabilities = ["read"]
+}
+path "auth/token/lookup" {
+  capabilities = ["read"]
+}
+path "auth/role/*" {
+  capabilities = ["read","list"]
+}
+path "sys/auth" {
+  capabilities = ["read","update"]
+}
+path "sys/auth/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "sys/policies/acl" {
+  capabilities = ["read","list"]
+}
+HCL
+                vault policy write {{ .Values.bootstrap.vcoPolicyName }} /tmp/vco.hcl >/dev/null
+                vault write auth/kubernetes/role/{{ .Values.bootstrap.vcoRoleName }} \
+                  bound_service_account_names="{{ .Values.bootstrap.vcoServiceAccount }}" \
+                  bound_service_account_namespaces="{{ .Values.bootstrap.vcoNamespace }}" \
+                  policies="{{ .Values.bootstrap.vcoPolicyName }}" \
+                  ttl="1h" >/dev/null
+              else
+                log "WARNING: skipping policy bootstrap (no root token)"
+              fi
+
+              write_shared_files
+              log "bootstrap complete"
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+            - name: bootstrap-secret
+              mountPath: /bootstrap-secret
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- if .Values.bootstrap.createSecret }}
+        - name: kubectl-writer
+          image: quay.io/bitnami/kubectl:1.30
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh","-ceu","x"]
+          args:
+            - |
+              set -euo pipefail
+              SHARED_DIR="/shared"
+              SECRET_NAME="{{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}"
+              NAMESPACE="{{ .Release.Namespace }}"
+
+              log() { printf '[secret-sync] %s\n' "$*"; }
+
+              for i in $(seq 1 60); do
+                if [ -s "$SHARED_DIR/root_token" ] && [ -s "$SHARED_DIR/unseal_key" ]; then
+                  break
+                fi
                 sleep 2
               done
 
-              echo "[bootstrap] checking init status…"
-              if ! vault status >/dev/null 2>&1; then
-                echo "[bootstrap] Vault not responding; abort" >&2
-                exit 1
+              if [ ! -s "$SHARED_DIR/root_token" ] || [ ! -s "$SHARED_DIR/unseal_key" ]; then
+                log "WARNING: bootstrap files not found; skipping secret sync"
+                exit 0
               fi
 
-              if vault status -format=json | jq -e '.initialized' >/dev/null 2>&1; then
-                initialized=$(vault status -format=json | jq -r '.initialized')
-              else
-                initialized=false
-              fi
+              ROOT_TOKEN=$(cat "$SHARED_DIR/root_token")
+              UNSEAL_KEY=$(cat "$SHARED_DIR/unseal_key")
 
-              if [ "$initialized" != "true" ]; then
-                echo "[bootstrap] initializing Vault (dev-only: 1-of-1 shares)…"
-                init=$(vault operator init -key-shares=1 -key-threshold=1 -format=json)
-                unseal=$(echo "$init" | jq -r '.unseal_keys_b64[0]')
-                root=$(echo "$init" | jq -r '.root_token')
-                echo "[bootstrap] unsealing…"
-                vault operator unseal "$unseal"
-                echo "[bootstrap] saving bootstrap secret (dev-only)"
-                kubectl -n {{ .Release.Namespace }} apply -f - <<EOF
-                apiVersion: v1
-                kind: Secret
-                metadata:
-                  name: {{ .Values.service.name }}-bootstrap
-                type: Opaque
-                stringData:
-                  unseal_key: "$unseal"
-                  root_token: "$root"
-                EOF
-              else
-                echo "[bootstrap] already initialized; attempting to read stored root token…"
-                root=$(kubectl -n {{ .Release.Namespace }} get secret {{ .Values.service.name }}-bootstrap -o jsonpath='{.data.root_token}' 2>/dev/null | base64 -d || true)
-                unseal=$(kubectl -n {{ .Release.Namespace }} get secret {{ .Values.service.name }}-bootstrap -o jsonpath='{.data.unseal_key}' 2>/dev/null | base64 -d || true)
-                if [ -z "$root" ]; then echo "[bootstrap] WARNING: missing stored root token; continuing best-effort"; fi
-              fi
+              kubectl create secret generic "$SECRET_NAME" \
+                --from-literal=root_token="$ROOT_TOKEN" \
+                --from-literal=unseal_key="$UNSEAL_KEY" \
+                --dry-run=client -o yaml \
+                | kubectl apply -n "$NAMESPACE" -f -
 
-              export VAULT_TOKEN="$root"
-
-              echo "[bootstrap] ensure KV v2 mount 'gitops' exists"
-              if ! vault secrets list -format=json | jq -e 'has("gitops/")' >/dev/null; then
-                vault secrets enable -path=gitops -version=2 kv
-              fi
-
-              echo "[bootstrap] enable/configure Kubernetes auth"
-              vault auth enable -path=kubernetes kubernetes >/dev/null 2>&1 || true
-              vault write auth/kubernetes/config \
-                token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-                kubernetes_host="https://kubernetes.default.svc" \
-                kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt >/dev/null
-
-              echo "[bootstrap] write dev policies/roles for apps and VCO"
-              cat > /tmp/app.hcl <<'HCL'
-              path "gitops/data/*" { capabilities = ["create","read","update","list"] }
-              path "gitops/metadata/*" { capabilities = ["read","list"] }
-              HCL
-              vault policy write {{ .Values.bootstrap.appPolicyName }} /tmp/app.hcl >/dev/null
-              vault write auth/kubernetes/role/{{ .Values.bootstrap.appRoleName }} \
-                bound_service_account_names="{{ join "," .Values.bootstrap.appServiceAccounts }}" \
-                bound_service_account_namespaces="{{ join "," .Values.bootstrap.appNamespaces }}" \
-                policies="{{ .Values.bootstrap.appPolicyName }}" \
-                ttl="1h" >/dev/null
-
-              cat > /tmp/vco.hcl <<'HCL'
-              path "auth/kubernetes/role/*" { capabilities = ["create","read","update","delete","list"] }
-              path "auth/kubernetes/config" { capabilities = ["read","update"] }
-              path "auth/kubernetes/*" { capabilities = ["create","read","update","list"] }
-              path "sys/policies/acl/*" { capabilities = ["create","read","update","delete","list"] }
-              path "auth/token/lookup-self" { capabilities = ["read"] }
-              path "auth/token/lookup" { capabilities = ["read"] }
-              path "auth/role/*" { capabilities = ["read","list"] }
-              path "sys/auth" { capabilities = ["read","update"] }
-              path "sys/auth/*" { capabilities = ["create","read","update","delete","list"] }
-              path "sys/policies/acl" { capabilities = ["read","list"] }
-              HCL
-              vault policy write {{ .Values.bootstrap.vcoPolicyName }} /tmp/vco.hcl >/dev/null
-              vault write auth/kubernetes/role/{{ .Values.bootstrap.vcoRoleName }} \
-                bound_service_account_names="{{ .Values.bootstrap.vcoServiceAccount }}" \
-                bound_service_account_namespaces="{{ .Values.bootstrap.vcoNamespace }}" \
-                policies="{{ .Values.bootstrap.vcoPolicyName }}" \
-                ttl="1h" >/dev/null
-
-              echo "[bootstrap] done"
+              log "secret ${SECRET_NAME} updated"
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- end }}
 {{- end }}
-

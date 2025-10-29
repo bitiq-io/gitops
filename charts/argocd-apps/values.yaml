@@ -63,7 +63,7 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-local
     vaultConfigPolicyName: gitops-local
-    vaultServerEnabled: false
+    vaultServerEnabled: true
     nostrSiteEnabled: true
     ollamaEnabled: true
     ollamaMode: external
