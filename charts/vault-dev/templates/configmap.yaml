@@ -14,9 +14,10 @@ data:
 
     listener "tcp" {
       address     = "0.0.0.0:8200"
+      cluster_address = "0.0.0.0:8201"
       tls_disable = 1
     }
 
     api_addr = "http://{{ .Values.service.name }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}"
+    cluster_addr = "http://127.0.0.1:8201"
 {{- end }}
-
