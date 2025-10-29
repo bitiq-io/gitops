@@ -3,11 +3,22 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Values.service.name }}-bootstrap
+  labels:
+    app.kubernetes.io/name: {{ .Values.service.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     "argocd.argoproj.io/sync-options": Replace=true
     checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
 spec:
+  selector:
+    matchLabels:
+      job.kubernetes.io/name: {{ printf "%s-bootstrap" .Values.service.name }}
   template:
+    metadata:
+      labels:
+        job.kubernetes.io/name: {{ printf "%s-bootstrap" .Values.service.name }}
+        app.kubernetes.io/name: {{ .Values.service.name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       restartPolicy: OnFailure
       serviceAccountName: {{ printf "%s-bootstrap" .Values.service.name }}
@@ -147,14 +158,14 @@ spec:
                   kubernetes_ca_cert=@${CA_CERT} >/dev/null
 
                 log "writing dev policies"
-                cat > /tmp/app.hcl <<'HCL'
-path "gitops/data/*" {
-  capabilities = ["create","read","update","list"]
-}
-path "gitops/metadata/*" {
-  capabilities = ["read","list"]
-}
-HCL
+                printf '%s\n' \
+                  'path "gitops/data/*" {' \
+                  '  capabilities = ["create","read","update","list"]' \
+                  '}' \
+                  'path "gitops/metadata/*" {' \
+                  '  capabilities = ["read","list"]' \
+                  '}' \
+                  > /tmp/app.hcl
                 vault policy write {{ .Values.bootstrap.appPolicyName }} /tmp/app.hcl >/dev/null
                 vault write auth/kubernetes/role/{{ .Values.bootstrap.appRoleName }} \
                   bound_service_account_names="{{ join "," .Values.bootstrap.appServiceAccounts }}" \
@@ -162,38 +173,38 @@ HCL
                   policies="{{ .Values.bootstrap.appPolicyName }}" \
                   ttl="1h" >/dev/null
 
-                cat > /tmp/vco.hcl <<'HCL'
-path "auth/kubernetes/role/*" {
-  capabilities = ["create","read","update","delete","list"]
-}
-path "auth/kubernetes/config" {
-  capabilities = ["read","update"]
-}
-path "auth/kubernetes/*" {
-  capabilities = ["create","read","update","list"]
-}
-path "sys/policies/acl/*" {
-  capabilities = ["create","read","update","delete","list"]
-}
-path "auth/token/lookup-self" {
-  capabilities = ["read"]
-}
-path "auth/token/lookup" {
-  capabilities = ["read"]
-}
-path "auth/role/*" {
-  capabilities = ["read","list"]
-}
-path "sys/auth" {
-  capabilities = ["read","update"]
-}
-path "sys/auth/*" {
-  capabilities = ["create","read","update","delete","list"]
-}
-path "sys/policies/acl" {
-  capabilities = ["read","list"]
-}
-HCL
+                printf '%s\n' \
+                  'path "auth/kubernetes/role/*" {' \
+                  '  capabilities = ["create","read","update","delete","list"]' \
+                  '}' \
+                  'path "auth/kubernetes/config" {' \
+                  '  capabilities = ["read","update"]' \
+                  '}' \
+                  'path "auth/kubernetes/*" {' \
+                  '  capabilities = ["create","read","update","list"]' \
+                  '}' \
+                  'path "sys/policies/acl/*" {' \
+                  '  capabilities = ["create","read","update","delete","list"]' \
+                  '}' \
+                  'path "auth/token/lookup-self" {' \
+                  '  capabilities = ["read"]' \
+                  '}' \
+                  'path "auth/token/lookup" {' \
+                  '  capabilities = ["read"]' \
+                  '}' \
+                  'path "auth/role/*" {' \
+                  '  capabilities = ["read","list"]' \
+                  '}' \
+                  'path "sys/auth" {' \
+                  '  capabilities = ["read","update"]' \
+                  '}' \
+                  'path "sys/auth/*" {' \
+                  '  capabilities = ["create","read","update","delete","list"]' \
+                  '}' \
+                  'path "sys/policies/acl" {' \
+                  '  capabilities = ["read","list"]' \
+                  '}' \
+                  > /tmp/vco.hcl
                 vault policy write {{ .Values.bootstrap.vcoPolicyName }} /tmp/vco.hcl >/dev/null
                 vault write auth/kubernetes/role/{{ .Values.bootstrap.vcoRoleName }} \
                   bound_service_account_names="{{ .Values.bootstrap.vcoServiceAccount }}" \
