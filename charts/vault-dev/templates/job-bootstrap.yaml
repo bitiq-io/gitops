@@ -148,13 +148,13 @@ spec:
 
                 log "writing dev policies"
                 cat > /tmp/app.hcl <<'HCL'
-                path "gitops/data/*" {
-                  capabilities = ["create","read","update","list"]
-                }
-                path "gitops/metadata/*" {
-                  capabilities = ["read","list"]
-                }
-                HCL
+path "gitops/data/*" {
+  capabilities = ["create","read","update","list"]
+}
+path "gitops/metadata/*" {
+  capabilities = ["read","list"]
+}
+HCL
                 vault policy write {{ .Values.bootstrap.appPolicyName }} /tmp/app.hcl >/dev/null
                 vault write auth/kubernetes/role/{{ .Values.bootstrap.appRoleName }} \
                   bound_service_account_names="{{ join "," .Values.bootstrap.appServiceAccounts }}" \
@@ -163,37 +163,37 @@ spec:
                   ttl="1h" >/dev/null
 
                 cat > /tmp/vco.hcl <<'HCL'
-                path "auth/kubernetes/role/*" {
-                  capabilities = ["create","read","update","delete","list"]
-                }
-                path "auth/kubernetes/config" {
-                  capabilities = ["read","update"]
-                }
-                path "auth/kubernetes/*" {
-                  capabilities = ["create","read","update","list"]
-                }
-                path "sys/policies/acl/*" {
-                  capabilities = ["create","read","update","delete","list"]
-                }
-                path "auth/token/lookup-self" {
-                  capabilities = ["read"]
-                }
-                path "auth/token/lookup" {
-                  capabilities = ["read"]
-                }
-                path "auth/role/*" {
-                  capabilities = ["read","list"]
-                }
-                path "sys/auth" {
-                  capabilities = ["read","update"]
-                }
-                path "sys/auth/*" {
-                  capabilities = ["create","read","update","delete","list"]
-                }
-                path "sys/policies/acl" {
-                  capabilities = ["read","list"]
-                }
-                HCL
+path "auth/kubernetes/role/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "auth/kubernetes/config" {
+  capabilities = ["read","update"]
+}
+path "auth/kubernetes/*" {
+  capabilities = ["create","read","update","list"]
+}
+path "sys/policies/acl/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "auth/token/lookup-self" {
+  capabilities = ["read"]
+}
+path "auth/token/lookup" {
+  capabilities = ["read"]
+}
+path "auth/role/*" {
+  capabilities = ["read","list"]
+}
+path "sys/auth" {
+  capabilities = ["read","update"]
+}
+path "sys/auth/*" {
+  capabilities = ["create","read","update","delete","list"]
+}
+path "sys/policies/acl" {
+  capabilities = ["read","list"]
+}
+HCL
                 vault policy write {{ .Values.bootstrap.vcoPolicyName }} /tmp/vco.hcl >/dev/null
                 vault write auth/kubernetes/role/{{ .Values.bootstrap.vcoRoleName }} \
                   bound_service_account_names="{{ .Values.bootstrap.vcoServiceAccount }}" \
