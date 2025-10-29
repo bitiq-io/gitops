@@ -78,21 +78,21 @@ spec:
                   return 0
                 fi
                 AUTH_HEADER="Authorization: Bearer $(cat ${SA_TOKEN_FILE})"
-                cat > /tmp/secret.json <<JSON
-                {
-                  "apiVersion": "v1",
-                  "kind": "Secret",
-                  "metadata": {
-                    "name": "${SECRET_NAME}",
-                    "namespace": "${NAMESPACE}"
-                  },
-                  "type": "Opaque",
-                  "stringData": {
-                    "root_token": "${ROOT_TOKEN}",
-                    "unseal_key": "${UNSEAL_KEY}"
-                  }
-                }
-                JSON
+                printf '%s\n' \
+                  '{' \
+                  '  "apiVersion": "v1",' \
+                  '  "kind": "Secret",' \
+                  '  "metadata": {' \
+                  "    \"name\": \"${SECRET_NAME}\"," \
+                  "    \"namespace\": \"${NAMESPACE}\"" \
+                  '  },' \
+                  '  "type": "Opaque",' \
+                  '  "stringData": {' \
+                  "    \"root_token\": \"${ROOT_TOKEN}\"," \
+                  "    \"unseal_key\": \"${UNSEAL_KEY}\"" \
+                  '  }' \
+                  '}' \
+                  > /tmp/secret.json
                 log "storing credentials in Secret ${SECRET_NAME}"
                 wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --method=DELETE "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}" || true
                 wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --header "Content-Type: application/json" --post-file=/tmp/secret.json "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets"
