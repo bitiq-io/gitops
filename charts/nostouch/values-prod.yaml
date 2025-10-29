@@ -1,5 +1,5 @@
 image:
-  tag: v0.0.10-commit.6869ec0
+  tag: v0.0.11-commit.7395f7f
   repository: quay.io/paulcapestany/nostouch
   pullPolicy: IfNotPresent
 
