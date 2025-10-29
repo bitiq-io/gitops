@@ -4,7 +4,7 @@ Owner: Paul / bitiq platform
 Last updated: 2025-10-28 (status updated; CI/CD E2E verified for nostr_* subset)
 
 Next Actions (quick scan)
-- Persistent dev Vault (PVC‑backed, GitOps‑managed). Replace the in‑memory helper with a StatefulSet using integrated Raft storage and a bootstrap Job; wire via umbrella and pass‑through in argocd‑apps; document seeding via `vault kv put` (no secrets in Git).
+- Persistent dev Vault (PVC‑backed, GitOps‑managed) — verify the new StatefulSet + bootstrap Job landed cleanly (PVC bound, Job succeeded, `vault-bootstrap` Secret present) and update runbooks with recovery steps.
 - Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
 - Inventory doc (Who: Codex). What: produce `docs/bitiq-inventory.md` from current GitOps state. Acceptance: strfry, Couchbase, nostr services, nginx, GPU prerequisites documented.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
@@ -199,13 +199,11 @@ Design
   - Namespace‑scoped Service `vault-dev` in `vault-dev` ns, matching the current address `http://vault-dev.vault-dev.svc:8200`.
   - StatefulSet (1 replica) running `hashicorp/vault` with a `vault.hcl` ConfigMap using `storage "raft" { path = "/vault/file" }` and HTTP listener for local.
   - PVC for data (size/class configurable), probes, `restricted-v2` security context.
-  - Bootstrap Job (idempotent) that:
-    - Detects initialization; if not initialized, runs `vault operator init -key-shares=1 -key-threshold=1 -format=json`, saves unseal key + root token to Secret `vault-bootstrap` (dev‑only), and performs first unseal.
-    - Enables KV v2 at `gitops/` mount if missing.
-    - Enables/configures Kubernetes auth (`auth/kubernetes/config`) against `https://kubernetes.default.svc` with in‑pod SA JWT and CA.
-    - Writes policy `gitops-local` (read/list on `gitops/*`) and role `gitops-local` binding SAs in `openshift-gitops,openshift-pipelines,bitiq-local` (parity with today’s helper).
-    - Writes policy `kube-auth` and role `kube-auth` for VCO control‑plane access (AuthEngineMount/Role/Policy management), scoped to `openshift-gitops:default`.
-    - Skips all steps if already initialized (Secret present) so re‑applies are no‑ops.
+  - Bootstrap Job (idempotent) composed of a `vault` container and a `kubectl` sidecar:
+    - Vault container waits for the HTTP listener, runs `vault operator init -key-shares=1 -key-threshold=1 -format=json` on first run, unseals once, and writes the root + unseal values to an `emptyDir` shared with the sidecar.
+    - On subsequent executions the job mounts the `vault-bootstrap` Secret (optional) to recover credentials, automatically unseals if needed, and re-applies policy/auth configuration.
+    - Policies: ensure KV v2 mount `gitops/` exists, enable/configure Kubernetes auth (`auth/kubernetes/config`), write policy/role `gitops-local` for app namespaces (`openshift-gitops`, `openshift-pipelines`, `bitiq-local`), and policy/role `kube-auth` scoped to `openshift-gitops:default` for VCO.
+    - Sidecar updates/creates the `vault-bootstrap` Secret via `kubectl create secret … --dry-run=client | kubectl apply` so operators can recover the keys without scraping logs.
 - Wiring:
   - `charts/argocd-apps/`: add pass‑through values `vault.server.enabled` and an Application for `charts/vault-dev` targeting `vault-dev` ns; enable for `local` only.
   - `charts/bitiq-umbrella/`: add `app-vault-dev.yaml` to deploy the new chart when `.Values.vault.server.enabled=true` and keep existing `vault.runtime.*` and `vault.config.*` pointing at `vault-dev` Service.
@@ -219,13 +217,14 @@ Migration Plan
    - `vault kv put gitops/data/registry/quay dockerconfigjson=@<(echo "$DOCKERCONFIGJSON")`
    - Any app credentials under `gitops/services/...` as documented.
    - `gitops/github/gitops-repo` **must** include `url=https://github.com/bitiq-io/gitops.git` alongside `username/password`; missing `url` causes Argo CD to ignore the credentials (regression observed 2025-10-29).
-   Verify: `VaultStaticSecret` objects show Healthy in `openshift-gitops` and `openshift-pipelines`.
+   Verify: `VaultStaticSecret` objects show Healthy in `openshift-gitops` and `openshift-pipelines`, and `oc -n vault-dev get secret vault-bootstrap -o yaml` contains base64 values for `root_token` and `unseal_key`.
 4) Deprecate `scripts/dev-vault.sh` in docs/Makefile; keep a thin wrapper that prints guidance and exits.
 
 Acceptance
 - `oc -n vault-dev get sts vault-dev` shows Ready; PVC bound.
+- Bootstrap Job succeeds (no CrashLoop) and `oc -n vault-dev get secret vault-bootstrap` exists with root/unseal keys.
 - Pod restarts do not lose data; after a node/Pod restart, Vault remains initialized and data persists (first unseal handled by bootstrap only on initial init).
-- VCO objects (AuthEngineMount, KubernetesAuthEngineConfig/Role, Policy) are Healthy; VSO `VaultStaticSecret` objects are Healthy and Secrets present with non‑placeholder values.
+- VCO objects (AuthEngineMount, KubernetesAuthEngineConfig/Role, Policy) are Healthy; VSO `VaultStaticSecret` objects are Healthy and Secrets present with non-placeholder values.
 - CI/CD (Image Updater write‑back → appVersion recompute) continues to function after cluster restart.
 
 Risks/Notes
@@ -319,6 +318,7 @@ Recent Changes (2025-10-28)
 Recent Changes (2025-10-29)
 - Vault dev cluster (vault-dev namespace) reconfigured: kubernetes auth config re-written, `kube-auth` role restored, GitOps KV seeded with PAT, and VaultStaticSecret `gitops-repo-creds` now syncs healthy in openshift-pipelines. Manual Secret removed in favour of VSO-managed projection.
 - gitops-maintenance pipeline verified with pushEnabled=true (no-op commit, push stage skipped by design) — ready to push when Image Updater writes new tags.
+- Local env now runs the GitOps-managed `vault-dev` chart (PVC-backed StatefulSet + bootstrap Job). `vault-bootstrap` Secret carries root/unseal keys; Umbrella + argocd-apps enabled via `vault.server.enabled=true` for `local`.
 - Planned: migrate dev Vault to a PVC-backed, GitOps-managed StatefulSet (integrated Raft storage) to eliminate in-memory loss. This plan is documented below; implementation will land behind a local-only flag and replace `scripts/dev-vault.sh`.
 
 ---
