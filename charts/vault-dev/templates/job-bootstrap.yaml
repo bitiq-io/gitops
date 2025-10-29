@@ -4,7 +4,7 @@ kind: Job
 metadata:
   name: {{ .Values.service.name }}-bootstrap
   annotations:
-    argocd.argoproj.io/sync-options: Replace=true
+    "argocd.argoproj.io/sync-options": Replace=true
     checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
 spec:
   template:
