@@ -1,0 +1,43 @@
+enabled: false
+
+image:
+  repository: docker.io/hashicorp/vault
+  tag: "1.15.6"
+  pullPolicy: IfNotPresent
+
+service:
+  name: vault-dev
+  port: 8200
+
+storage:
+  size: 1Gi
+  storageClassName: ""   # empty -> default SC
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop: ["ALL"]
+
+resources: {}
+
+bootstrap:
+  enabled: true
+  # Names to use in policies/roles for dev parity
+  appPolicyName: gitops-local
+  appRoleName: gitops-local
+  vcoPolicyName: kube-auth
+  vcoRoleName: kube-auth
+  # Namespaces and SAs to bind for app role
+  appNamespaces:
+    - openshift-gitops
+    - openshift-pipelines
+    - bitiq-local
+  appServiceAccounts:
+    - "*"
+  # VCO control-plane binding (operator runs in openshift-gitops:default)
+  vcoNamespace: openshift-gitops
+  vcoServiceAccount: default
+

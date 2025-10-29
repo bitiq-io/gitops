@@ -33,6 +33,8 @@ vault:
     enabled: false
   config:
     enabled: false
+  server:
+    enabled: false
 
 sampleAppImages:
   toyService: quay.io/paulcapestany/toy-service

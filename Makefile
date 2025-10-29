@@ -2,7 +2,7 @@ SHELL := /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL := help
 
-CHARTS := charts/bootstrap-operators charts/argocd-apps charts/bitiq-umbrella charts/image-updater charts/ci-pipelines charts/toy-service charts/toy-web charts/strfry charts/ollama charts/nostr-query charts/nostr-threads charts/nostr-thread-copier charts/nostouch charts/vault-runtime charts/vault-config charts/nostr-site charts/couchbase-cluster
+CHARTS := charts/bootstrap-operators charts/argocd-apps charts/bitiq-umbrella charts/image-updater charts/ci-pipelines charts/toy-service charts/toy-web charts/strfry charts/ollama charts/nostr-query charts/nostr-threads charts/nostr-thread-copier charts/nostouch charts/vault-runtime charts/vault-config charts/vault-dev charts/nostr-site charts/couchbase-cluster
 
 # Export common secret/env overrides so recipe shells inherit them.
 # This makes `make dev-vault GITHUB_WEBHOOK_SECRET=...` reliably pass through

@@ -166,6 +166,8 @@ spec:
               value: '{{ "{{ .vaultConfigRoleName }}" }}'
             - name: vault.config.policyName
               value: '{{ "{{ .vaultConfigPolicyName }}" }}'
+            - name: vault.server.enabled
+              value: '{{ "{{ .vaultServerEnabled | default false }}" }}'
       destination:
         server: '{{ "{{ .cluster }}" }}'
         namespace: '{{ "{{ .appNamespace }}" }}'

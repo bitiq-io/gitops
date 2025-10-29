@@ -63,6 +63,7 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-local
     vaultConfigPolicyName: gitops-local
+    vaultServerEnabled: false
     nostrSiteEnabled: true
     ollamaEnabled: true
     ollamaMode: external
@@ -98,6 +99,7 @@ envs:
     vaultConfigConnectionRole: kube-auth
     vaultConfigRoleName: gitops-sno
     vaultConfigPolicyName: gitops-sno
+    vaultServerEnabled: false
     nostrSiteEnabled: false
     ollamaEnabled: false
     ollamaMode: disabled
@@ -126,6 +128,7 @@ envs:
     vaultRuntimeAddress: https://vault-prod.vault.svc:8200
     vaultRuntimeKubernetesMount: kubernetes
     vaultRuntimeRoleName: gitops-prod
+    vaultServerEnabled: false
     vaultConfigEnabled: true
     vaultConfigAddress: https://vault-prod.vault.svc:8200
     vaultConfigKubernetesHost: https://kubernetes.default.svc
