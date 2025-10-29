@@ -34,3 +34,23 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
+{{- if .Values.vault.server.enabled }}
+---
+# Grant Argo CD application-controller admin in the vault-dev namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-app-admin
+  namespace: vault-dev
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+    bitiq.io/env: {{ .Values.env }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.argocdControllerServiceAccount | default "openshift-gitops-argocd-application-controller" }}
+    namespace: {{ .Values.gitopsNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+{{- end }}
