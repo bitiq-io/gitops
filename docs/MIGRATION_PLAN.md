@@ -213,11 +213,12 @@ Design
 Migration Plan
 1) Land chart and plumbing with default disabled; validate `helm template` and `make validate`.
 2) Enable `vault.server.enabled=true` for `local` in argocd‑apps; push and let Argo deploy the StatefulSet side‑by‑side (same Service name for continuity).
-3) When Ready, re‑seed required paths via CLI only (no Git):
+3) When Ready, re-seed required paths via CLI only (no Git):
    - `vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"`
    - `vault kv put gitops/data/github/webhook token="$GITHUB_WEBHOOK_SECRET"`
    - `vault kv put gitops/data/registry/quay dockerconfigjson=@<(echo "$DOCKERCONFIGJSON")`
    - Any app credentials under `gitops/services/...` as documented.
+   - `gitops/github/gitops-repo` **must** include `url=https://github.com/bitiq-io/gitops.git` alongside `username/password`; missing `url` causes Argo CD to ignore the credentials (regression observed 2025-10-29).
    Verify: `VaultStaticSecret` objects show Healthy in `openshift-gitops` and `openshift-pipelines`.
 4) Deprecate `scripts/dev-vault.sh` in docs/Makefile; keep a thin wrapper that prints guidance and exits.
 
