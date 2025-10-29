@@ -33,6 +33,7 @@ spec:
             vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
             vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
+            vaultServerEnabled: {{ default false $e.vaultServerEnabled }}
             nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
             nostrQueryEnabled: {{ default false $e.nostrQueryEnabled }}
             nostrThreadsEnabled: {{ default false $e.nostrThreadsEnabled }}
