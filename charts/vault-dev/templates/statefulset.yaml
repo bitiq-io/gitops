@@ -32,6 +32,8 @@ spec:
           env:
             - name: SKIP_SETCAP
               value: "true"
+            - name: SKIP_CHOWN
+              value: "true"
             - name: VAULT_DISABLE_MLOCK
               value: "true"
           readinessProbe:
@@ -65,4 +67,3 @@ spec:
           requests:
             storage: {{ .Values.storage.size }}
 {{- end }}
-

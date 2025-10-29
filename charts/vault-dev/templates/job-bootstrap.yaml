@@ -24,7 +24,7 @@ spec:
               value: http://{{ .Values.service.name }}:{{ .Values.service.port }}
             - name: KUBERNETES_HOST
               value: https://kubernetes.default.svc
-          command: ["/bin/sh","-ceu","x"]
+          command: ["/bin/sh","-c"]
           args:
             - |
               set -euo pipefail
