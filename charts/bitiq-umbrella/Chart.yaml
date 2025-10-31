@@ -3,4 +3,4 @@ name: bitiq-umbrella
 description: App-of-Apps to deploy platform components + a sample app for an ENV
 type: application
 version: 0.1.0
-appVersion: "nostouch-v0.0.11-commit.7395f7f_nostr_threads-v0.1.13-commit.c711c10_toy-service-v0.3.37-commit.981af5f_toy-web-v0.1.8-commit.a064058"
+appVersion: "nostouch-v0.0.11-commit.7395f7f_nostr_threads-v0.1.13-commit.c711c10_toy-service-v0.2.33-commit.5cf34a2_toy-web-v0.1.8-commit.a064058"
