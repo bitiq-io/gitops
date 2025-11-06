@@ -63,6 +63,8 @@ export ARGOCD_TOKEN=$(argocd account generate-token --grpc-web)
 vault kv put gitops/data/argocd/image-updater token="$ARGOCD_TOKEN"
 ```
 
+If you are using the dev Vault helper (`make dev-vault`), rerun it after writing the token so the helper re-seeds Vault and prompts VSO to reconcile the `argocd-image-updater-secret`.
+
 4) Tekton prerequisites (namespace + webhook secret via VSO)
 
 ```bash
