@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: init-static-sites-v6
+  name: init-static-sites-v7
   namespace: bitiq-local
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -26,6 +26,11 @@ spec:
               fi
               if [ -f /seed/neuance/index.html ]; then
                 mkdir -p "$BASE/neuance.net" && cp -f /seed/neuance/index.html "$BASE/neuance.net/index.html"
+              fi
+              if [ -f /seed/signet/site.tar.gz ]; then
+                rm -rf "$BASE/signet.ing"
+                mkdir -p "$BASE/signet.ing"
+                tar -xzf /seed/signet/site.tar.gz -C "$BASE/signet.ing"
               fi
               seed() {
                 dir="$1"
@@ -60,6 +65,7 @@ spec:
               seed "beatricecapestany.com"   "beatricecapestany.com"
               seed "ipiqi.com"               "ipiqi.com"
               seed "neuance.net"             "neuance.net"
+              seed "signet.ing"              "signet.ing"
           volumeMounts:
             - name: static-files
               mountPath: /mnt
@@ -67,6 +73,8 @@ spec:
               mountPath: /seed/cyphai
             - name: site-neuance
               mountPath: /seed/neuance
+            - name: site-signet
+              mountPath: /seed/signet
       volumes:
         - name: static-files
           persistentVolumeClaim:
@@ -83,3 +91,9 @@ spec:
             items:
               - key: index.html
                 path: index.html
+        - name: site-signet
+          configMap:
+            name: site-signet
+            items:
+              - key: site.tar.gz
+                path: site.tar.gz
