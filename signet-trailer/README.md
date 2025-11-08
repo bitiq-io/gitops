@@ -1,7 +1,7 @@
 
   # Landing Page Animation
 
-  This is a code bundle for Signet's Landing Page Animation. The original project is available at https://www.figma.com/design/EEXWRPbx80aYfOHTZe39LK/Landing-Page-Animation.
+  This is a code bundle for Landing Page Animation. The original project is available at https://www.figma.com/design/EEXWRPbx80aYfOHTZe39LK/Landing-Page-Animation.
 
   ## Running the code
 

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Page Not Found | Signet</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        background: #000000;
+        color: #ffffff;
+        font-family: system-ui, -apple-system, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      
+      .container {
+        text-align: center;
+        max-width: 600px;
+      }
+      
+      h1 {
+        font-size: 8rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        line-height: 1;
+      }
+      
+      h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #d8b4fe;
+      }
+      
+      p {
+        font-size: 1.125rem;
+        color: #a1a1aa;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+      }
+      
+      a {
+        display: inline-block;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      
+      a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);
+      }
+      
+      @media (max-width: 640px) {
+        h1 {
+          font-size: 5rem;
+        }
+        
+        h2 {
+          font-size: 1.5rem;
+        }
+        
+        p {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>404</h1>
+      <h2>Page Not Found</h2>
+      <p>The page you're looking for doesn't exist or has been moved.</p>
+      <a href="/">Return to Home</a>
+    </div>
+  </body>
+</html>

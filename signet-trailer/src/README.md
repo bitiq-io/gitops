@@ -53,6 +53,12 @@ dist/
 │   ├── index-[hash].js
 │   ├── index-[hash].css
 │   └── ...
+├── favicon.svg
+├── og-image.png
+├── manifest.json
+├── robots.txt
+├── sitemap.xml
+└── 404.html
 ```
 
 These are the files you'll deploy to nginx.
@@ -72,18 +78,32 @@ Since this is a single-page application (SPA), nginx needs to serve `index.html`
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name signet.ing;
     
     root /path/to/nginx/webroot/signet;
     index index.html;
+    
+    # Custom 404 page
+    error_page 404 /404.html;
     
     location / {
         try_files $uri $uri/ /index.html;
     }
     
+    # Serve 404 page
+    location = /404.html {
+        internal;
+    }
+    
     # Optional: Cache static assets
     location /assets/ {
         expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Optional: Cache other static files
+    location ~* \.(svg|png|jpg|jpeg|gif|ico|json|txt|xml)$ {
+        expires 30d;
         add_header Cache-Control "public, immutable";
     }
 }
@@ -116,6 +136,16 @@ This starts a development server (usually at `http://localhost:5173`) with hot-r
 ```
 /
 ├── App.tsx                  # Main landing page component
+├── index.html               # HTML entry point with SEO meta tags
+├── src/
+│   └── main.tsx            # React app bootstrapper
+├── public/                  # Static assets (copied to dist/)
+│   ├── favicon.svg         # Site icon
+│   ├── og-image.png        # Social media preview image
+│   ├── manifest.json       # PWA manifest
+│   ├── robots.txt          # Search engine crawler instructions
+│   ├── sitemap.xml         # Site structure for SEO
+│   └── 404.html            # Custom error page
 ├── styles/globals.css       # Global styles and Tailwind config
 ├── components/
 │   ├── figma/              # Figma-specific components

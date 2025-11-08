@@ -42,7 +42,7 @@ export default function App() {
       />
       
       <div className="text-center px-4 relative z-10">
-        <div className="mb-4 flex justify-center items-center flex-wrap gap-1">
+        <div className="flex justify-center items-center flex-wrap gap-1">
           {letters.map((letter, index) => (
             <motion.span
               key={index}
@@ -114,7 +114,7 @@ export default function App() {
             letterSpacing: '-0.02em'
           }}
         >
-          THE INTERNET
+          THE<br />INTERNET
         </motion.div>
         
         <motion.div
