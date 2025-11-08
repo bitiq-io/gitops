@@ -21,7 +21,8 @@ imageUpdater:
   pullSecret: ""
   toyService:
     enabled: true
-    pause: false
+    # Temporarily pause Image Updater write-back until toy-service publishes multi-arch images.
+    pause: true
   toyWeb:
     pause: false
   nostrThreads:
