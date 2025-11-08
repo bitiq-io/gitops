@@ -34,6 +34,10 @@ Starting 2025-11-07 15:51 UTC the `toy-service-local` Argo CD Application began 
 - Paused toy-service Image Updater annotations (via `imageUpdater.toyService.pause=true` and `toyServiceImageUpdater.pause=true` in ApplicationSet values). Both clusters now render the Application without Image Updater annotations, so no further automated write-backs occur.
 - Re-aligned `charts/toy-service/values-*.yaml` to `v0.3.38-commit.c709549` and forced an Argo hard refresh to redeploy the healthy image.
 - Documented the pause and the manual tag update process in `docs/LOCAL-CI-CD.md` so engineers know to use `scripts/pin-images.sh` until multi-arch builds ship.
+- After confirming no other contributors depended on the noisy history, rewrote `main` so the repository only contains the two human commits (`fix(signet-trailer)` and `fix(umbrella)`). The pre-rewrite history is still available on backup branches:
+  - `main-loop-backup` — the short-term branch created during the cleanup.
+  - `bot-loop-history` — the original `main` with every bot commit for future reference/audits.
+  - `release-please--branches--main` was reset to the rewritten main as part of the cleanup so release tooling follows the new lineage.
 
 ## Follow-up Actions
 1. **Ship multi-arch toy-service builds** – extend the Tekton `bitiq-build-and-push` pipeline (and/or the sample repo’s GitHub Actions) to produce linux/amd64 and linux/arm64 images plus a manifest list per tag. Target: 2025-11-15 owner: Platform.
