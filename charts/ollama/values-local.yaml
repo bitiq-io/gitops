@@ -1,0 +1,21 @@
+mode: external
+
+baseDomain: ""
+
+external:
+  host: ollama.cyphai.com
+  scheme: https
+  port: 11434
+  configMap:
+    create: true
+    name: ollama-endpoint
+    hostKey: OLLAMA_HOST
+    urlKey: OLLAMA_URL
+    extraData: {}
+  service:
+    enabled: true
+    name: ollama-external
+    annotations: {}
+
+networkPolicy:
+  enabled: false

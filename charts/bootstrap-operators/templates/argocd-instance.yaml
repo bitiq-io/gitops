@@ -1,0 +1,11 @@
+{{- if .Values.argoInstance.create }}
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: {{ .Values.argoInstance.name }}
+  namespace: {{ .Values.argoInstance.namespace }}
+spec:
+{{- with .Values.argoInstance.spec }}
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- end }}

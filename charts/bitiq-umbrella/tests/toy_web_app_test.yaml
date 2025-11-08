@@ -1,0 +1,32 @@
+suite: Toy web Application annotations
+templates:
+  - templates/app-toy-web.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image updater annotations when enabled
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "toy-web=quay.io/paulcapestany/toy-web"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-web.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/toy-web/values-local.yaml
+  - it: omits annotations when paused
+    set:
+      imageUpdater:
+        toyWeb:
+          pause: true
+    asserts:
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-web.helm.image-name"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]

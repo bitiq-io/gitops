@@ -1,0 +1,9 @@
+image:
+  tag: v0.0.11-commit.7395f7f
+  repository: quay.io/paulcapestany/nostouch
+  pullPolicy: IfNotPresent
+
+stream:
+  env:
+    envPrefix: sno
+    gitCommitHash: 386f41d

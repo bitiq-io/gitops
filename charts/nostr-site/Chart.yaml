@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nostr-site
+description: Public-facing Nostr site (static web)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

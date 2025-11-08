@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: bitiq-local
+data:
+  nginx.conf: |
+    pid /tmp/nginx.pid;
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      server {
+        listen 8080;
+        server_name www.cyphai.com;
+
+        location / {
+          root /usr/share/nginx/html/cyphai.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name cyphai.com;
+
+        location / {
+          return 301 https://www.cyphai.com$request_uri;
+        }
+      }
+
+      server {
+        listen 8080;
+        server_name didgo.com;
+
+        location / {
+          root /usr/share/nginx/html/didgo.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.didgo.com;
+
+        location / {
+          return 301 https://didgo.com$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name paulcapestany.com;
+
+        location / {
+          root /usr/share/nginx/html/paulcapestany.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.paulcapestany.com;
+
+        location / {
+          return 301 https://paulcapestany.com$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name bitiq.io;
+
+        location / {
+          root /usr/share/nginx/html/bitiq.io;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.bitiq.io;
+
+        location / {
+          return 301 https://bitiq.io$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name noelcapestany.com;
+
+        location / {
+          root /usr/share/nginx/html/noelcapestany.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.noelcapestany.com;
+
+        location / {
+          return 301 https://noelcapestany.com$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name beatricecapestany.com;
+
+        location / {
+          root /usr/share/nginx/html/beatricecapestany.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.beatricecapestany.com;
+
+        location / {
+          return 301 https://beatricecapestany.com$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name ipiqi.com;
+
+        location / {
+          root /usr/share/nginx/html/ipiqi.com;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.ipiqi.com;
+
+        location / {
+          return 301 https://ipiqi.com$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name neuance.net;
+
+        location / {
+          root /usr/share/nginx/html/neuance.net;
+          index index.html index.htm;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.neuance.net;
+
+        location / {
+          return 301 https://neuance.net$request_uri;
+        }
+      }
+      server {
+        listen 8080;
+        server_name signet.ing;
+
+        location / {
+          root /usr/share/nginx/html/signet.ing;
+          index index.html index.htm;
+          try_files $uri $uri/ /index.html;
+        }
+      }
+      server {
+        listen 8080;
+        server_name www.signet.ing;
+
+        location / {
+          return 301 https://signet.ing$request_uri;
+        }
+      }
+      # Ensure correct MIME types
+      types {
+          text/html  html htm shtml;
+          text/css   css;
+          text/xml   xml;
+          image/gif  gif;
+          image/jpeg jpg;
+          application/javascript js;
+          # other types as needed
+      }
+
+      default_type application/octet-stream;
+    }

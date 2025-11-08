@@ -1,0 +1,195 @@
+{{- $pipelines := .Values.pipelines -}}
+{{- range $idx, $pipeline := $pipelines }}
+{{- if $idx }}
+---
+{{- end }}
+{{- $image := printf "%s/%s/%s" $pipeline.imageRegistry $pipeline.imageNamespace $pipeline.imageName }}
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ $pipeline.name }}
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: {{ $pipeline.gitUrl | quote }}
+    - name: git-revision
+      type: string
+      default: {{ $pipeline.gitRevision | quote }}
+    - name: image
+      type: string
+      default: {{ $image | quote }}
+    - name: runTests
+      type: string
+      default: {{ $pipeline.runTests | default "false" | quote }}
+    - name: testImage
+      type: string
+      default: {{ $pipeline.testImage | default "" | quote }}
+    - name: testScript
+      type: string
+      default: {{ $pipeline.testScript | default "" | quote }}
+    - name: dockerfile
+      type: string
+      default: {{ $pipeline.dockerfile | quote }}
+    - name: context
+      type: string
+      default: {{ $pipeline.contextDir | quote }}
+    - name: tlsverify
+      type: string
+      default: {{ $pipeline.tlsVerify | quote }}
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: fetch-repo
+      taskRef:
+        resolver: hub
+        params:
+          - name: type
+            value: artifact
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.10.0"
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+        # Use full history so tag detection works reliably
+        - name: depth
+          value: "0"
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: compute-image-tag
+      runAfter: [fetch-repo]
+      taskSpec:
+        workspaces:
+          - name: source
+        results:
+          - name: tag
+            description: "Deterministic image tag v<semver>-commit.<shortSHA>"
+        steps:
+          - name: compute
+            image: alpine/git:2.45.2
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/bin/sh
+              set -euo pipefail
+              # Force HOME to a writable path for git + creds init
+              export HOME=/tekton/home
+              mkdir -p "$HOME"
+              cd $(workspaces.source.path)
+              git config --global --add safe.directory "$(workspaces.source.path)"
+
+              echo "[compute-image-tag] workspace path: $(workspaces.source.path)"
+              echo "[compute-image-tag] ref: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)"
+
+              # Ensure we have sufficient history + tags for describe
+              if [ -f .git/shallow ]; then
+                echo "[compute-image-tag] repository is shallow; unshallowing"
+                git fetch --unshallow --force
+              fi
+              echo "[compute-image-tag] fetching tags"
+              git fetch --tags --force --prune
+              echo "[compute-image-tag] available tags (last 20):"
+              git tag -l | tail -n 20 || true
+
+              # Prefer exact semver tag on HEAD if present
+              EXACT_TAG=$(git describe --tags --exact-match --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+              if [ -n "$EXACT_TAG" ]; then
+                VER="$EXACT_TAG"
+                echo "[compute-image-tag] exact tag match found: $VER"
+              else
+                # Find the closest reachable semver tag
+                VER=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+                if [ -n "$VER" ]; then
+                  echo "[compute-image-tag] using most recent tag: $VER"
+                else
+                  VER="v0.0.0"
+                  echo "[compute-image-tag] no tags found; defaulting to $VER"
+                fi
+              fi
+
+              SHA=$(git rev-parse --short=7 HEAD)
+              echo "[compute-image-tag] HEAD short SHA: $SHA"
+
+              TAG="${VER}-commit.${SHA}"
+              echo "[compute-image-tag] writing tag result: $TAG"
+              printf "%s" "$TAG" > $(results.tag.path)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: run-tests
+      runAfter: [fetch-repo]
+      when:
+        - input: "$(params.runTests)"
+          operator: in
+          values: ["true", "True", "TRUE"]
+      taskSpec:
+        workspaces:
+          - name: source
+        params:
+          - name: test-image
+          - name: test-script
+        steps:
+          - name: tests
+            image: $(params.test-image)
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/bin/sh
+              set -euo pipefail
+              # Force a writable HOME for creds and caches (Go, npm, etc.)
+              export HOME=/tekton/home
+              export XDG_CACHE_HOME="$HOME/.cache"
+              export GOCACHE="$XDG_CACHE_HOME/go-build"
+              mkdir -p "$HOME" "$XDG_CACHE_HOME" "$GOCACHE"
+              cd $(workspaces.source.path)
+              $(params.test-script)
+      params:
+        - name: test-image
+          value: $(params.testImage)
+        - name: test-script
+          value: $(params.testScript)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: build-and-push
+      runAfter: [compute-image-tag, run-tests]
+      taskRef:
+        resolver: hub
+        params:
+          - name: type
+            value: artifact
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: version
+            value: "0.9.0"
+      params:
+        - name: IMAGE
+          value: $(params.image):$(tasks.compute-image-tag.results.tag)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: $(params.context)
+        - name: TLSVERIFY
+          value: $(params.tlsverify)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+{{- end }}

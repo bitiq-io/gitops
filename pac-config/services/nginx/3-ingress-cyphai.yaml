@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-cyphai
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
+spec:
+  tls:
+    - hosts:
+        - www.cyphai.com
+        - cyphai.com
+      secretName: nginx-cyphai-tls
+  rules:
+    - host: www.cyphai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+    - host: cyphai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080

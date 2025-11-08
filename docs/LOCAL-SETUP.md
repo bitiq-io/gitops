@@ -1,0 +1,111 @@
+Local setup on macOS (OpenShift Local)
+
+Prereqs
+- Tools: install `helm`, `oc`, `argocd`.
+  - Homebrew: `brew install helm openshift-cli argocd`
+- OpenShift Local (CRC): install from Red Hat (or `brew install crc`).
+- Resources: 4+ CPUs, 12–16 GiB RAM, 35+ GiB free disk.
+
+Start OpenShift Local
+- Configure resources:
+  - `crc config set memory 12288`
+  - `crc config set cpus 4`
+- Start cluster:
+  - `crc setup && crc start`
+  - `eval $(crc oc-env)`
+- Login to the cluster:
+  - `oc login -u kubeadmin -p "$(crc console --credentials | awk -F': *' '/Password/ {print $2; exit}')"`
+
+CRC domains & TLS
+- API endpoint: `https://api.crc.testing:6443` (self-signed cert).
+- Application wildcard: `*.apps-crc.testing` resolves inside the CRC VM. The sample stack uses:
+  - Backend Route host prefix `svc-api` → `https://svc-api.apps-crc.testing`
+  - Frontend Route host prefix `svc-web` → `https://svc-web.apps-crc.testing`
+- Changing `BASE_DOMAIN`? Update `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` (and other env files) and rerun `make compute-appversion ENV=local` so Routes and appVersion remain consistent.
+- Browsers may warn about TLS; accept the cert for local testing or import the CRC CA if desired.
+
+Bootstrap this repo
+- Clone your fork and ensure `origin` points to it.
+- From the repo root:
+  - `export ENV=local`
+  - `./scripts/bootstrap.sh`
+- This installs the GitOps and Pipelines operators and creates an ApplicationSet that renders one umbrella app for `local`.
+
+Argo CD access and token for Image Updater (Vault operators)
+- Get the Argo CD host:
+  - `ARGOCD_HOST=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')`
+- Open the UI and log in via OAuth:
+  - `open https://$ARGOCD_HOST` (or paste in browser)
+
+Grant RBAC so kubeadmin can create tokens (once per cluster)
+- Patch RBAC ConfigMap:
+  - `oc -n openshift-gitops patch cm argocd-rbac-cm --type merge -p $'{"data":{"policy.csv":"g, system:cluster-admins, role:admin\ng, kubeadmin, role:admin\n","policy.default":"role:readonly"}}'`
+- Restart Argo CD server:
+  - `oc -n openshift-gitops rollout restart deploy/openshift-gitops-server`
+
+Generate an Argo CD API token and write it to Vault
+- CLI (SSO):
+  - `argocd login "$ARGOCD_HOST" --sso --grpc-web --insecure`
+  - `TOKEN=$(argocd account generate-token --grpc-web)`
+- Or UI: user menu → Generate token → copy value.
+
+Seed Vault (VSO will reconcile the Kubernetes Secret):
+- `vault kv put gitops/data/argocd/image-updater token="$TOKEN"`
+- For local CRC, you can run `make dev-vault` to seed demo values; then replace the token using the same path.
+
+Configure Argo CD repo write access
+- CLI (recommended for OpenShift GitOps):
+
+  ```bash
+  export ARGOCD_SERVER=$(oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}')
+  argocd login "$ARGOCD_SERVER" --sso --grpc-web
+
+  # Fine-grained PAT with Contents:Read/Write, SSO-authorized for bitiq-io org
+  export GH_PAT=<your_token>
+  argocd repo add https://github.com/bitiq-io/gitops.git \
+    --username <github-username> \
+    --password "$GH_PAT" --grpc-web
+  ```
+
+- Sanity checks (either call should flip the PAT to “Last used …” in GitHub):
+
+  ```bash
+  curl -sS https://api.github.com/repos/bitiq-io/gitops \
+    -H "Authorization: Bearer $GH_PAT" \
+    -H "X-GitHub-Api-Version: 2022-11-28" | head -n 5
+
+  git ls-remote https://<github-username>:$GH_PAT@github.com/bitiq-io/gitops.git | head
+  ```
+
+- UI alternative: Settings → Repositories → CONNECT REPO → HTTPS. Ensure the PAT (or SSH key) is authorized for the bitiq-io org.
+- Image Updater uses Argo CD’s repo creds to commit Helm value changes, so the credential must have write access.
+
+Sample app images
+- Backend (`toy-service`) defaults to `quay.io/paulcapestany/toy-service` with `/healthz` probe and host prefix `svc-api`.
+- Frontend (`toy-web`) defaults to `quay.io/paulcapestany/toy-web` with `/` probe and host prefix `svc-web`.
+- Override tags in `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml`; rerun `make compute-appversion ENV=local` (or let Image Updater write back) and `make verify-release` before merging.
+- If you change ports or health paths, adjust the chart templates (`service.port`, `healthPath`) in the respective chart.
+
+Tekton pipeline (optional)
+- Default pushes to the in-cluster registry namespace `bitiq-ci`.
+- Create namespace and allow pipeline SA to push:
+  - `oc new-project bitiq-ci || true`
+  - `oc policy add-role-to-user system:image-pusher system:serviceaccount:openshift-pipelines:pipeline -n bitiq-ci`
+- Webhook: VSO manages the webhook Secret. Seed Vault at `gitops/data/github/webhook` (key `token`) and point a GitHub webhook to the EventListener Route.
+
+Validate and inspect
+- Lint and template:
+  - `make lint`
+  - `make template`
+- Watch applications:
+  - `oc -n openshift-gitops get applications,applicationsets`
+- Get sample app routes and test:
+  - `oc -n bitiq-local get route toy-service -o jsonpath='{.spec.host}{"\n"}'`
+  - `oc -n bitiq-local get route toy-web -o jsonpath='{.spec.host}{"\n"}'`
+  - `curl -k https://svc-api.apps-crc.testing/healthz`
+  - `curl -k https://svc-web.apps-crc.testing/`
+
+Troubleshooting
+- Lint issues: run `helm lint charts/toy-service -f charts/toy-service/values-common.yaml -f charts/toy-service/values-local.yaml` and the same for `charts/toy-web`.
+- RBAC errors generating token: ensure `argocd-rbac-cm` has `g, kubeadmin, role:admin` and server is restarted.
+- Image pull errors: confirm image exists and is pullable from the cluster, and ports/probes match.

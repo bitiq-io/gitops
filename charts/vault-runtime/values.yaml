@@ -1,0 +1,86 @@
+enabled: false
+
+vault:
+  address: https://vault.vault-dev.svc:8200
+  kubernetesMount: kubernetes
+  roleName: gitops-local
+
+namespaces:
+  gitops: openshift-gitops
+  pipelines: openshift-pipelines
+  app: bitiq-local
+
+secrets:
+  argocdImageUpdater:
+    enabled: true
+    namespace: ""
+    destinationName: argocd-image-updater-secret
+    path: argocd/image-updater
+    type: Opaque
+  quayAuth:
+    enabled: true
+    namespace: ""
+    destinationName: quay-auth
+    path: registry/quay
+    type: kubernetes.io/dockerconfigjson
+    sourceKey: dockerconfigjson
+    destinationAnnotations:
+      tekton.dev/docker-0: https://quay.io
+  gitRepoCreds:
+    enabled: true
+    namespace: ""
+    destinationName: gitops-repo-creds
+    path: github/gitops-repo
+    type: Opaque
+    destinationLabels:
+      argocd.argoproj.io/secret-type: repo-creds
+  gitRepoCredsPipelines:
+    enabled: true
+    destinationName: gitops-repo-creds
+    path: github/gitops-repo
+    type: Opaque
+    destinationAnnotations:
+      tekton.dev/git-0: https://github.com
+  githubWebhook:
+    enabled: true
+    namespace: ""
+    destinationName: github-webhook-secret
+    path: github/webhook
+    type: Opaque
+    sourceKey: token
+  toyServiceConfig:
+    enabled: true
+    namespace: ""
+    destinationName: toy-service-config
+    path: services/toy-service/config
+    restartTargets:
+      enabled: true
+      items:
+        - kind: Deployment
+          name: toy-service
+  toyWebConfig:
+    enabled: true
+    namespace: ""
+    destinationName: toy-web-config
+    path: services/toy-web/config
+  couchbaseAdmin:
+    enabled: true
+    namespace: ""
+    destinationName: couchbase-cluster-auth
+    path: couchbase/admin
+    type: Opaque
+  nostrQuery:
+    enabled: true
+    namespace: ""
+    destinationName: nostr-query-credentials
+    path: services/nostr-query/credentials
+    type: Opaque
+
+  # Optional: AWS credentials for Route53 DNS-01
+  route53Credentials:
+    enabled: false
+    # Vault KV v2 path with keys "access-key-id" and "secret-access-key"
+    path: cert-manager/route53
+    destinationName: route53-credentials
+    namespace: cert-manager
+    type: Opaque

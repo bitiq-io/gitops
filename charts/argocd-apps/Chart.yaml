@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argocd-apps
+description: ApplicationSet that emits one umbrella Application per environment
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

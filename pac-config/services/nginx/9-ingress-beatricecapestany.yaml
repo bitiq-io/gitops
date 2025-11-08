@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-beatricecapestany
+  namespace: bitiq-local
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01-route53-local
+spec:
+  tls:
+    - hosts:
+        - beatricecapestany.com
+        - www.beatricecapestany.com
+      secretName: nginx-beatricecapestany-tls
+  rules:
+    - host: beatricecapestany.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080
+    - host: www.beatricecapestany.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8080

@@ -1,0 +1,28 @@
+# macOS / Linux
+.DS_Store
+*.swp
+*.swo
+
+# Helm & build artifacts
+charts/**/charts/
+charts/**/tmp/
+charts/**/.helmignore
+*.tgz
+
+# Logs
+logs/
+# Local caches
+.cache/
+
+# Rendered manifests output
+.out/
+/.out/
+/.bin/
+
+# Local pac-config contains secrets; keep untracked by default, but allow
+# explicitly whitelisted, non-secret subfolders to be tracked.
+pac-config/*
+!pac-config/services/
+pac-config/services/*
+!pac-config/services/nginx/
+!pac-config/services/nginx/**

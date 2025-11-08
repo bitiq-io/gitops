@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cyphai — Search you can trust</title>
+  <meta name="description" content="Cyphai: AI search over public, signature‑verified conversation. Find real voices—fast.">
+  <style>
+    :root {
+      --bg: #0f172a;      /* charcoal */
+      --fg: #e5e7eb;      /* light gray */
+      --muted: #94a3b8;   /* slate */
+      --accent: #14b8a6;  /* teal */
+      --card: #111827;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    header { padding: 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 700; letter-spacing: 0.5px; }
+    .btn { padding: 10px 16px; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #002b27; border-color: var(--accent); }
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 80px 0 48px; }
+    h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.1; margin: 0 0 16px; }
+    h2 { font-size: 28px; margin-top: 48px; }
+    p.lead { color: var(--muted); font-size: clamp(16px, 2.2vw, 22px); max-width: 720px; }
+    .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+    .card { background: var(--card); border: 1px solid #1f2937; border-radius: 12px; padding: 18px; }
+    .muted { color: var(--muted); }
+    details { background: var(--card); border: 1px solid #1f2937; border-radius: 12px; padding: 16px; margin-top: 16px; }
+    footer { padding: 48px 24px; border-top: 1px solid #1f2937; margin-top: 48px; }
+    input[type=email] { width: 100%; max-width: 360px; padding: 12px 14px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: var(--fg); margin-right: 8px; }
+    form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .kicker { letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-size: 12px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="container">
+    <div class="logo">CYPHAI</div>
+    <nav><a class="btn" href="#how">How it works</a> <a class="btn primary" href="#waitlist">Join waitlist</a></nav>
+  </header>
+  <main class="container">
+    <section class="hero">
+      <h1>Search you can trust.</h1>
+      <p class="lead">Find real voices—fast. Cyphai indexes public, <strong>signature‑verified</strong> conversations and uses AI to lift the <em>signal</em> above the noise.</p>
+      <div style="margin-top:24px;">
+        <a class="btn primary" href="#waitlist">Join the waitlist</a>
+        <a class="btn" href="#how">See how it works</a>
+      </div>
+    </section>
+
+    <section id="value">
+      <div class="pillars">
+        <div class="card">
+          <h3>Authenticated voices</h3>
+          <p class="muted">Every post we index is <strong>digitally signed</strong>, so you know it came from a real public key—not a bot farm.</p>
+        </div>
+        <div class="card">
+          <h3>Trust you control</h3>
+          <p class="muted">Tune your <strong>trust graph</strong> to highlight voices you value. Results explain <em>why</em> they rank.</p>
+        </div>
+        <div class="card">
+          <h3>Transparent & open‑source</h3>
+          <p class="muted">No hidden feeds or black boxes. Our ranking logic is <strong>auditable</strong>; our code is open.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="use" style="margin-top:32px;">
+      <h2>What you can do</h2>
+      <ul class="muted">
+        <li>Cut through spam & astroturf</li>
+        <li>Find topical expertise</li>
+        <li>Explore the conversation graph</li>
+      </ul>
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <ol class="muted">
+        <li><strong>Verify</strong> — Ingest publicly available, signature‑verified posts.</li>
+        <li><strong>Understand</strong> — AI <strong>embeddings</strong> and reasoning grasp meaning beyond keywords.</li>
+        <li><strong>Rank & explain</strong> — Your <strong>trust graph</strong> and relevance scores surface better results, with clear “Why this result”.</li>
+      </ol>
+
+      <details>
+        <summary><strong>For developers & reviewers</strong></summary>
+        <ul class="muted">
+          <li>Vector search with <strong>Couchbase 7.6</strong> FTS vector indexes (hybrid keyword + vector).</li>
+          <li>Trust/relevance scoring on GPUs using <strong>RAPIDS cuGraph</strong> / nx‑cuGraph (e.g., PageRank, Louvain, betweenness).</li>
+          <li>Model serving via <strong>NVIDIA Triton Inference Server</strong> (PyTorch/ONNX/TensorRT). Patched releases only.</li>
+          <li>Open‑weights LLMs for summaries, tagging, expertise inference; optional <strong>TensorRT‑LLM</strong> optimizations.</li>
+          <li>OpenShift + GitOps; cloud‑agnostic deployment.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section id="team">
+      <h2>Team</h2>
+      <p class="muted"><strong>Paul Capestany</strong> — Founder & Full‑Stack (ex‑SRE; distributed systems & data)<br>
+      <strong>Traun Leyden</strong> — Senior Software & Deep Learning Engineer</p>
+    </section>
+
+    <section id="status">
+      <h2>Status</h2>
+      <p class="muted">Alpha. Target latency: <strong>sub‑1s P50</strong> for common queries. Open‑source: GitHub (coming soon). Public data only.</p>
+    </section>
+
+    <section id="waitlist">
+      <h2>Join the waitlist</h2>
+      <form>
+        <input type="email" placeholder="you@example.com" aria-label="Email">
+        <button class="btn primary" type="submit">Notify me</button>
+      </form>
+      <p class="muted" style="margin-top:8px;">By submitting, you agree to be contacted about the Cyphai beta.</p>
+    </section>
+  </main>
+
+  <footer class="container">
+    <div class="kicker">Cyphai</div>
+    <p class="muted">© 2025 Cyphai Inc. All rights reserved. MIT‑licensed code.</p>
+  </footer>
+</body>
+</html>

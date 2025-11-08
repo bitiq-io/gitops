@@ -1,0 +1,29 @@
+{{- if .Values.vault.server.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-dev-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl | quote }}
+    targetRevision: {{ .Values.targetRevision | quote }}
+    path: charts/vault-dev
+    helm:
+      parameters:
+        - name: enabled
+          value: "true"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
+

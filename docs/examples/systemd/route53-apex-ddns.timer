@@ -1,0 +1,11 @@
+# /etc/systemd/system/route53-apex-ddns.timer
+[Unit]
+Description=Run Route 53 apex DDNS updater every 5 minutes
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=5m
+Unit=route53-apex-ddns.service
+
+[Install]
+WantedBy=timers.target

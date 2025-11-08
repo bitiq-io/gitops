@@ -1,0 +1,16 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: strfry-config
+data:
+  strfry.conf: |
+{{- if .Values.config.strfryConf }}
+{{ .Values.config.strfryConf | indent 4 }}
+{{- end }}
+  strfry-router.conf: |
+{{- if .Values.config.routerConf }}
+{{ .Values.config.routerConf | indent 4 }}
+{{- end }}
+{{- end }}
+

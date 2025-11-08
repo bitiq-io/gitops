@@ -1,0 +1,31 @@
+suite: Bootstrap Operators Application
+templates:
+  - templates/app-bootstrap-operators.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders Application with CAO inline values when enabled
+    set:
+      env: local
+      bootstrapOperators:
+        enabled: true
+        caoEnabled: true
+        caoName: couchbase-operator-certified
+        caoSource: certified-operators
+        caoChannel: stable
+    asserts:
+      - equal:
+          path: kind
+          value: Application
+      - equal:
+          path: metadata.name
+          value: bootstrap-operators-local
+      - equal:
+          path: spec.source.path
+          value: charts/bootstrap-operators
+      - matchRegex:
+          path: spec.source.helm.values
+          pattern: "cao:\\n\\s+enabled: true"

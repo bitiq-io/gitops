@@ -1,0 +1,145 @@
+repoUrl: https://github.com/bitiq-io/gitops.git
+targetRevision: main
+argocdNamespace: openshift-gitops
+argocdInstanceName: openshift-gitops
+# Safe default: only render the selected env on a given cluster.
+# The bootstrap script always sets this to the chosen ENV, but if someone
+# installs this chart manually without overrides, prefer 'local' to avoid
+# multi-env collisions in shared namespaces (e.g., openshift-pipelines).
+envFilter: "local"   # if set to local|sno|prod, only that env is generated
+
+# Optional global override applied to generated env baseDomain values
+baseDomainOverride: ""
+
+# Defaults for child umbrella chart
+imageUpdater:
+  platforms: linux/amd64
+
+envs:
+  - name: local
+    clusterServer: https://kubernetes.default.svc   # in-cluster
+    appNamespace: bitiq-local
+    baseDomain: apps-crc.testing                    # OpenShift Local default
+    platforms: linux/amd64
+    toyServiceImageUpdater:
+      enabled: true
+      pause: false
+    toyWebImageUpdater:
+      pause: false
+    # Enable selected services for local env
+    strfryEnabled: true
+    couchbaseEnabled: true
+    couchbaseOperatorEnabled: true
+    certManagerEnabled: true
+    # Route53 DNS-01 via VSO on local
+    certManagerRoute53CredentialsEnabled: true
+    certManagerRoute53CredentialsPath: cert-manager/route53
+    certManagerRoute53SecretName: route53-credentials
+    certManagerRoute53SecretNamespace: cert-manager
+    nginxSitesEnabled: true
+    bootstrapOperatorsEnabled: true
+    # CAO defaults for local (verify against docs/VERSION-MATRIX.md on your cluster)
+    caoEnabled: true
+    caoName: couchbase-operator-certified
+    caoSource: certified-operators
+    caoChannel: stable
+    caoSourceNamespace: openshift-marketplace
+    caoInstallNamespace: openshift-operators
+    caoApproval: Automatic
+    caoStartingCSV: ""
+    # Optional: fsGroup for Tekton TaskRun pods. If set, it will be passed to
+    # the umbrella chart as ciPipelines.fsGroup so workspaces (PVCs) are group‑writable.
+    # Leave empty to use cluster defaults/SCC. The bootstrap script auto-detects
+    # a valid group for the cluster and overrides this when installing.
+    tektonFsGroup: ""
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: http://vault-dev.vault-dev.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-local
+    vaultConfigEnabled: true
+    vaultConfigAddress: http://vault-dev.vault-dev.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-local
+    vaultConfigPolicyName: gitops-local
+    vaultServerEnabled: true
+    nostrSiteEnabled: true
+    ollamaEnabled: true
+    ollamaMode: external
+    nostrQueryEnabled: true
+    nostrThreadsEnabled: true
+    nostrThreadCopierEnabled: true
+    nostouchEnabled: true
+  - name: sno
+    clusterServer: https://kubernetes.default.svc
+    appNamespace: bitiq-sno
+    baseDomain: apps.sno.example
+    platforms: linux/amd64
+    toyServiceImageUpdater:
+      enabled: true
+      pause: false
+    toyWebImageUpdater:
+      pause: false
+    strfryEnabled: false
+    couchbaseEnabled: false
+    couchbaseOperatorEnabled: false
+    certManagerEnabled: false
+    bootstrapOperatorsEnabled: false
+    caoEnabled: false
+    tektonFsGroup: ""
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: http://vault-sno.vault.sno.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-sno
+    vaultConfigEnabled: true
+    vaultConfigAddress: http://vault-sno.vault.sno.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-sno
+    vaultConfigPolicyName: gitops-sno
+    vaultServerEnabled: false
+    nostrSiteEnabled: false
+    ollamaEnabled: false
+    ollamaMode: disabled
+    nostrQueryEnabled: false
+    nostrThreadsEnabled: false
+    nostrThreadCopierEnabled: false
+    nostouchEnabled: false
+  - name: prod
+    clusterServer: https://kubernetes.default.svc
+    appNamespace: bitiq-prod
+    baseDomain: apps.prod.example
+    platforms: linux/amd64
+    toyServiceImageUpdater:
+      enabled: true
+      pause: false
+    toyWebImageUpdater:
+      pause: false
+    strfryEnabled: false
+    couchbaseEnabled: false
+    couchbaseOperatorEnabled: false
+    certManagerEnabled: false
+    bootstrapOperatorsEnabled: false
+    caoEnabled: false
+    tektonFsGroup: ""
+    vaultRuntimeEnabled: true
+    vaultRuntimeAddress: https://vault-prod.vault.svc:8200
+    vaultRuntimeKubernetesMount: kubernetes
+    vaultRuntimeRoleName: gitops-prod
+    vaultServerEnabled: false
+    vaultConfigEnabled: true
+    vaultConfigAddress: https://vault-prod.vault.svc:8200
+    vaultConfigKubernetesHost: https://kubernetes.default.svc
+    vaultConfigMountPath: kubernetes
+    vaultConfigConnectionRole: kube-auth
+    vaultConfigRoleName: gitops-prod
+    vaultConfigPolicyName: gitops-prod
+    nostrSiteEnabled: false
+    ollamaEnabled: false
+    ollamaMode: disabled
+    nostrQueryEnabled: false
+    nostrThreadsEnabled: false
+    nostrThreadCopierEnabled: false
+    nostouchEnabled: false

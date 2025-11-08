@@ -1,0 +1,284 @@
+{{- if .Values.triggers.create }}
+{{- $root := . -}}
+{{- $defaultSA := .Values.serviceAccountName | default "pipeline" -}}
+{{- $listenerSA := .Values.triggers.serviceAccountName -}}
+{{ if .Values.triggers.createSecret }}
+{{- $secretKey := $root.Values.triggers.secretKey | default "token" -}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.triggers.githubSecretName }}
+  namespace: openshift-pipelines
+type: Opaque
+stringData:
+  {{ $secretKey }}: {{ required "Set triggers.secretToken when triggers.createSecret=true" .Values.triggers.secretToken | quote }}
+{{ end }}
+
+{{ range $idx, $pipeline := .Values.pipelines }}
+{{ if $idx }}
+---
+{{ end }}
+{{- $pipelineSA := $pipeline.serviceAccountName | default $defaultSA -}}
+{{- $pipelineFsGroup := coalesce $pipeline.fsGroup $root.Values.fsGroup -}}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ $pipeline.name }}-template
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-revision
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: {{ $pipeline.name }}-
+        namespace: openshift-pipelines
+      spec:
+        taskRunTemplate:
+          serviceAccountName: {{ $pipelineSA }}
+{{- if $pipelineFsGroup }}
+          podTemplate:
+            securityContext:
+              fsGroup: {{ $pipelineFsGroup }}
+{{- end }}
+        pipelineRef:
+          name: {{ $pipeline.name }}
+        params:
+          - name: git-url
+            value: {{ $pipeline.gitUrl | quote }}
+          - name: git-revision
+            value: $(tt.params.git-revision)
+          - name: runTests
+            value: {{ $pipeline.runTests | default "false" | quote }}
+          - name: testImage
+            value: {{ $pipeline.testImage | default "" | quote }}
+          - name: testScript
+            value: {{ $pipeline.testScript | default "" | quote }}
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 2Gi
+{{- end }}
+
+{{- $app := .Values.appVersionAutomation -}}
+{{- if and $app.enabled $app.trigger.create }}
+{{- $appEnvs := or $app.environments (list "local" "sno" "prod") -}}
+{{- $appDefaultPrimary := "" -}}
+{{- if gt (len $appEnvs) 0 }}
+  {{- $appDefaultPrimary = index $appEnvs 0 -}}
+{{- end }}
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ $app.pipelineName | default "gitops-maintenance" }}-template
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-revision
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: {{ $app.pipelineName | default "gitops-maintenance" }}-
+        namespace: openshift-pipelines
+      spec:
+        taskRunTemplate:
+          serviceAccountName: {{ coalesce $app.serviceAccountName $defaultSA }}
+{{- $appFsGroup := coalesce $app.fsGroup $root.Values.fsGroup -}}
+{{- if $appFsGroup }}
+          podTemplate:
+            securityContext:
+              fsGroup: {{ $appFsGroup }}
+{{- end }}
+        pipelineRef:
+          name: {{ $app.pipelineName | default "gitops-maintenance" }}
+        params:
+          - name: gitUrl
+            value: {{ $app.gitUrl | default "https://github.com/bitiq-io/gitops.git" | quote }}
+          - name: gitRevision
+            value: $(tt.params.git-revision)
+          - name: environments
+            value: {{ (join " " $appEnvs) | quote }}
+          - name: commitMessage
+            value: {{ $app.commitMessage | default "chore(release): recompute umbrella appVersion" | quote }}
+          - name: botName
+            value: {{ $app.botName | default "bitiq-gitops-bot" | quote }}
+          - name: botEmail
+            value: {{ $app.botEmail | default "gitops-bot@bitiq.io" | quote }}
+          - name: pushEnabled
+            value: {{ (ternary "true" "false" ($app.push | default true)) | quote }}
+          - name: gitUsernameKey
+            value: {{ $app.credentials.usernameKey | default "username" | quote }}
+          - name: gitPasswordKey
+            value: {{ $app.credentials.passwordKey | default "password" | quote }}
+          - name: parityEnabled
+            value: {{ (ternary "true" "false" ($app.parity.enabled | default true)) | quote }}
+          - name: primaryEnv
+            value: {{ ($app.parity.primaryEnv | default $appDefaultPrimary) | quote }}
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: {{ $app.trigger.sharedWorkspaceSize | default "2Gi" }}
+          - name: git-credentials
+            secret:
+              secretName: {{ $app.credentials.secretName | default "gitops-repo-creds" }}
+{{- if $app.credentials.items }}
+              items:
+{{ toYaml $app.credentials.items | indent 16 }}
+{{- end }}
+{{- end }}
+
+{{- $triggerAccumulator := dict "items" (list) }}
+{{- range $idx, $pipeline := .Values.pipelines }}
+{{- $events := $pipeline.eventTypes | default (list "push" "pull_request") -}}
+{{- $githubSecretKey := $root.Values.triggers.secretKey | default "token" -}}
+{{- $githubParams := list
+  (dict "name" "secretRef" "value" (dict "secretName" $root.Values.triggers.githubSecretName "secretKey" $githubSecretKey))
+  (dict "name" "eventTypes" "value" $events)
+}}
+{{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) }}
+{{- $filter := "" -}}
+{{- $repoNamesLower := list -}}
+{{- $repoShortNames := dict -}}
+{{- range $name := $pipeline.repoFullNames }}
+  {{- $repoNamesLower = append $repoNamesLower (lower $name) }}
+  {{- $parts := splitList "/" $name }}
+  {{- if ge (len $parts) 2 }}
+    {{- $_ := set $repoShortNames (lower (index $parts (sub (len $parts) 1))) true }}
+  {{- end }}
+{{- end }}
+{{- if gt (len $repoNamesLower) 0 }}
+  {{- $shortList := keys $repoShortNames | toJson -}}
+  {{- /* Match on owner/repo or fallback to just the repo name to handle transfers */ -}}
+  {{- $filter = printf "(body.repository.full_name.lowerAscii() in %s) || (body.repository.name.lowerAscii() in %s)" ($repoNamesLower | toJson) $shortList -}}
+{{- else if $pipeline.repoFullName }}
+  {{- $parts := splitList "/" $pipeline.repoFullName -}}
+  {{- $repoNameLower := lower (index $parts (sub (len $parts) 1)) -}}
+  {{- $filter = printf "body.repository.full_name.lowerAscii() == \"%s\" || body.repository.name.lowerAscii() == \"%s\"" (lower $pipeline.repoFullName) $repoNameLower -}}
+{{- end }}
+{{- if $filter }}
+  {{- $celParams := list (dict "name" "filter" "value" $filter) }}
+  {{- $interceptors = append $interceptors (dict "ref" (dict "name" "cel") "params" $celParams) }}
+{{- end }}
+{{- $triggerName := trimSuffix "-" (trunc 63 (printf "%s-github" $pipeline.name)) }}
+{{- $trigger := dict
+  "name" $triggerName
+  "interceptors" $interceptors
+  "bindings" (list (dict "ref" (printf "%s-binding" $pipeline.name)))
+  "template" (dict "ref" (printf "%s-template" $pipeline.name))
+}}
+{{- $_ := set $triggerAccumulator "items" (append (index $triggerAccumulator "items") $trigger) }}
+{{- end }}
+
+{{- if and $app.enabled $app.trigger.create }}
+{{- $githubSecretKey := $root.Values.triggers.secretKey | default "token" -}}
+{{- $eventTypes := $app.trigger.eventTypes | default (list "push") -}}
+{{- $githubParams := list
+  (dict "name" "secretRef" "value" (dict "secretName" $root.Values.triggers.githubSecretName "secretKey" $githubSecretKey))
+  (dict "name" "eventTypes" "value" $eventTypes)
+}}
+{{- $interceptors := list (dict "ref" (dict "name" "github") "params" $githubParams) -}}
+{{- $filterClauses := list -}}
+{{- $repoFull := $app.trigger.repoFullNames | default (list "bitiq-io/gitops") -}}
+{{- $repoNamesLower := list -}}
+{{- $repoShortNames := dict -}}
+{{- range $name := $repoFull }}
+  {{- $repoNamesLower = append $repoNamesLower (lower $name) }}
+  {{- $parts := splitList "/" $name }}
+  {{- if ge (len $parts) 2 }}
+    {{- $_ := set $repoShortNames (lower (index $parts (sub (len $parts) 1))) true }}
+  {{- end }}
+{{- end }}
+{{- if gt (len $repoNamesLower) 0 }}
+  {{- $shortList := keys $repoShortNames | toJson -}}
+  {{- $repoClause := printf "(body.repository.full_name.lowerAscii() in %s) || (body.repository.name.lowerAscii() in %s)" ($repoNamesLower | toJson) $shortList -}}
+  {{- $filterClauses = append $filterClauses (printf "(%s)" $repoClause) }}
+{{- end }}
+{{- $branches := $app.trigger.branches | default (list "refs/heads/main") -}}
+{{- if gt (len $branches) 0 }}
+  {{- $filterClauses = append $filterClauses (printf "(body.ref in %s)" ($branches | toJson)) }}
+{{- end }}
+{{- $filterClauses = append $filterClauses "(body.head_commit != null)" }}
+{{- $skipRegex := $app.trigger.skipCommitMessageRegex | default "" -}}
+{{- if $skipRegex }}
+  {{- $filterClauses = append $filterClauses (printf "!(body.head_commit.message.matches(%q))" $skipRegex) }}
+{{- end }}
+{{- $skipAuthors := $app.trigger.skipAuthorLogins | default (list) -}}
+{{- if gt (len $skipAuthors) 0 }}
+  {{- $authorsLower := list -}}
+  {{- range $login := $skipAuthors }}
+    {{- $authorsLower = append $authorsLower (lower $login) }}
+  {{- end }}
+  {{- $filterClauses = append $filterClauses (printf "!(body.sender != null && body.sender.login.lowerAscii() in %s)" ($authorsLower | toJson)) }}
+{{- end }}
+{{- if gt (len $filterClauses) 0 }}
+  {{- $filter := join " && " $filterClauses -}}
+  {{- $celParams := list (dict "name" "filter" "value" $filter) }}
+  {{- $interceptors = append $interceptors (dict "ref" (dict "name" "cel") "params" $celParams) }}
+{{- end }}
+{{- $triggerName := trimSuffix "-" (trunc 63 (printf "%s-github" ($app.pipelineName | default "gitops-maintenance"))) }}
+{{- $trigger := dict
+  "name" $triggerName
+  "interceptors" $interceptors
+  "bindings" (list (dict "ref" (printf "%s-binding" ($app.pipelineName | default "gitops-maintenance"))))
+  "template" (dict "ref" (printf "%s-template" ($app.pipelineName | default "gitops-maintenance")))
+}}
+{{- $_ := set $triggerAccumulator "items" (append (index $triggerAccumulator "items") $trigger) }}
+{{- end }}
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ .Values.triggers.eventListenerName }}
+  namespace: openshift-pipelines
+spec:
+{{- if $listenerSA }}
+  # If a serviceAccountName is explicitly provided, use it; otherwise allow
+  # Tekton Triggers to create and bind an EventListener-specific SA with the
+  # required RBAC.
+  serviceAccountName: {{ $listenerSA }}
+{{- end }}
+  triggers: {{ toYaml (index $triggerAccumulator "items") | nindent 4 }}
+{{- if .Values.triggers.debugLogging }}
+  # Temporary debug logging for troubleshooting. This injects a verbose zap
+  # logger config into the EventListener sink container via the supported
+  # resources.kubernetesResource Pod spec overlay (Triggers v0.33 on OCP 1.20).
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            containers:
+              - env:
+                  - name: K_LOGGING_CONFIG
+                    value: |
+                      {"zap-logger-config":"{\n  \"level\": \"debug\",\n  \"development\": true,\n  \"disableStacktrace\": false,\n  \"sampling\": {\n    \"initial\": 1,\n    \"thereafter\": 1\n  },\n  \"outputPaths\": [\"stdout\"],\n  \"errorOutputPaths\": [\"stderr\"],\n  \"encoding\": \"json\",\n  \"encoderConfig\": {\n    \"timeKey\": \"timestamp\",\n    \"levelKey\": \"severity\",\n    \"nameKey\": \"logger\",\n    \"callerKey\": \"caller\",\n    \"messageKey\": \"message\",\n    \"stacktraceKey\": \"stacktrace\",\n    \"lineEnding\": \"\",\n    \"levelEncoder\": \"\",\n    \"timeEncoder\": \"iso8601\",\n    \"durationEncoder\": \"\",\n    \"callerEncoder\": \"\"\n  }\n}\n"}
+{{- end }}
+
+{{ if .Values.triggers.route }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ .Values.triggers.eventListenerName }}
+  namespace: openshift-pipelines
+spec:
+  to:
+    kind: Service
+    name: el-{{ .Values.triggers.eventListenerName }}
+  tls:
+    termination: edge
+{{ end }}
+{{- end }}

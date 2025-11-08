@@ -1,0 +1,18 @@
+suite: Namespace manifest labels
+templates:
+  - templates/namespace.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: creates namespace with env label
+    set:
+      env: prod
+      appNamespace: bitiq-prod
+    asserts:
+      - equal:
+          path: metadata.name
+          value: bitiq-prod
+      - equal:
+          path: metadata.labels["bitiq.io/env"]
+          value: prod

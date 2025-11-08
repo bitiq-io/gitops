@@ -1,0 +1,26 @@
+suite: CI pipelines Application
+templates:
+  - templates/app-ci-pipelines.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: aggregates both pipelines under a single Argo CD Application
+    set:
+      env: sno
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ci-pipelines-sno
+      - equal:
+          path: metadata.labels["bitiq.io/env"]
+          value: sno
+      - matchRegex:
+          path: spec.source.helm.values
+          pattern: "eventListenerName: bitiq-listener"
+      - matchRegex:
+          path: spec.source.helm.values
+          pattern: "name: bitiq-build-and-push"
+      - matchRegex:
+          path: spec.source.helm.values
+          pattern: "name: bitiq-web-build-and-push"

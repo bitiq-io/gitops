@@ -1,0 +1,61 @@
+suite: Deployment container image
+templates:
+  - templates/deployment.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: toy-service
+  namespace: bitiq-local
+tests:
+  - it: includes FAKE_SECRET secret ref by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FAKE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: toy-service-config
+                key: FAKE_SECRET
+  - it: uses repository + tag from values
+    set:
+      image:
+        repository: quay.io/example/sample
+        tag: v1.2.3-commit.abc1234
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/example/sample:v1.2.3-commit.abc1234
+  - it: propagates health path into readiness probe
+    set:
+      healthPath: /ping
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /ping
+  - it: renders backend env and secret mappings
+    set:
+      backend:
+        env:
+          - name: LOG_LEVEL
+            value: debug
+        secret:
+          enabled: true
+          name: toy-service-config
+          items:
+            - name: API_KEY
+              key: apiKey
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: toy-service-config
+                key: apiKey

@@ -1,0 +1,16 @@
+{
+  "name": "Signet - See What Matters and Why",
+  "short_name": "Signet",
+  "description": "The internet has a credibility crisis and polarization problem. Signet helps you see what matters and why. With receipts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

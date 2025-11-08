@@ -1,0 +1,73 @@
+baseDomain: ""
+
+replicaCount: 1
+hostPrefix: "relay"
+
+image:
+  repository: quay.io/paulcapestany/strfry
+  tag: "0d0faa1"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 7777
+  type: ClusterIP
+
+route:
+  host: ""  # Optional explicit FQDN; if set, overrides hostPrefix+baseDomain
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: ""   # empty uses cluster default (hostpath on CRC)
+
+dnsPolicy: ""
+dnsConfig: {}
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Optional configuration projected via ConfigMap and mounted at /opt/strfry
+config:
+  enabled: true
+  strfryConf: |
+    # Example strfry config (tune as needed)
+    [server]
+    listen = ":7777"
+  routerConf: |
+    # Example router config
+    [routes]
+    # add routing rules here
+
+networkPolicy:
+  enabled: false
+  ingress:
+    allowOpenShiftIngress: true
+    # Additional ingress rules (list of objects containing namespaceSelector / podSelector / ipBlock)
+    additional:
+      # Allow in-namespace clients such as nostouch to reach the relay
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: nostouch
+  db:
+    enabled: false
+    # Optional namespaceSelector override for DB destination
+    namespaceSelector: {}
+    podSelector: {}
+    # List of {port, protocol} tuples (protocol defaults to TCP)
+    ports: []
+  egress:
+    # Additional egress rules. Each item may define "to" (list) and "ports" (list)
+    additional: []

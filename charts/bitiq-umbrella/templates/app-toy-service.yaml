@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{- $toyServiceCfg := default (dict) .Values.imageUpdater.toyService }}
+{{- $toyServiceEnabled := true }}
+{{- if hasKey $toyServiceCfg "enabled" }}
+  {{- $toyServiceEnabled = eq (lower (printf "%v" (get $toyServiceCfg "enabled"))) "true" }}
+{{- end }}
+{{- $toyServicePaused := false }}
+{{- if hasKey $toyServiceCfg "pause" }}
+  {{- $toyServicePaused = eq (lower (printf "%v" (get $toyServiceCfg "pause"))) "true" }}
+{{- end }}
+{{- $manageToyService := and $toyServiceEnabled (not $toyServicePaused) }}
+{{- $toyServiceRepo := default "" (get .Values.sampleAppImages "toyService") }}
+metadata:
+  name: toy-service-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+  annotations:
+    {{- if $manageToyService }}
+    {{- if $toyServiceRepo }}
+    argocd-image-updater.argoproj.io/image-list: toy-service={{ $toyServiceRepo }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/toy-service.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/toy-service.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
+    {{- if .Values.imageUpdater.pullSecret }}
+    argocd-image-updater.argoproj.io/toy-service.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/toy-service.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/toy-service.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/toy-service.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/toy-service/values-{{ .Values.env }}.yaml
+    argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}
+    argocd-image-updater.argoproj.io/dry-run: "false"
+    argocd-image-updater.argoproj.io/interval: 1m
+    {{- end }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/toy-service
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+        - values-{{ .Values.env }}-local.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true

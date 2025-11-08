@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{- $toyWebCfg := default (dict) .Values.imageUpdater.toyWeb }}
+{{- $toyWebPaused := false }}
+{{- if hasKey $toyWebCfg "pause" }}
+  {{- $toyWebPaused = eq (lower (printf "%v" (get $toyWebCfg "pause"))) "true" }}
+{{- end }}
+{{- $manageToyWeb := not $toyWebPaused }}
+{{- $toyWebRepo := default "" (get .Values.sampleAppImages "toyWeb") }}
+metadata:
+  name: toy-web-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+  annotations:
+    {{- if $manageToyWeb }}
+    {{- if $toyWebRepo }}
+    argocd-image-updater.argoproj.io/image-list: toy-web={{ $toyWebRepo }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/toy-web.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/toy-web.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
+    {{- if .Values.imageUpdater.pullSecret }}
+    argocd-image-updater.argoproj.io/toy-web.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/toy-web.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/toy-web.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/toy-web.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/toy-web/values-{{ .Values.env }}.yaml
+    argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}
+    argocd-image-updater.argoproj.io/dry-run: "false"
+    argocd-image-updater.argoproj.io/interval: 1m
+    {{- end }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/toy-web
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+        - values-{{ .Values.env }}-local.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true

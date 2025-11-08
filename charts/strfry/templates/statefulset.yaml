@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: strfry
+spec:
+  serviceName: strfry
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: strfry
+  template:
+    metadata:
+      labels:
+        app: strfry
+    spec:
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.dnsConfig | indent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: strfry
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: relay
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: STRFRY_CONFIG
+              value: /opt/strfry/strfry.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /opt/strfry/strfry-db
+            {{- if .Values.config.enabled }}
+            - name: config
+              mountPath: /opt/strfry/strfry.conf
+              subPath: strfry.conf
+              readOnly: true
+            - name: config
+              mountPath: /opt/strfry/strfry-router.conf
+              subPath: strfry-router.conf
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: strfry-data
+        {{- if .Values.config.enabled }}
+        - name: config
+          configMap:
+            name: strfry-config
+        {{- end }}

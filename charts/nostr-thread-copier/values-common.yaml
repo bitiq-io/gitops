@@ -1,0 +1,77 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/paulcapestany/nostr_thread_copier
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: null
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8081
+  annotations: {}
+
+command:
+  - /usr/local/bin/nostr_thread_copier
+args: []
+
+env:
+  extra: []
+
+envFrom: []
+
+resources:
+  requests:
+    cpu: 1m
+    memory: 4Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  failureThreshold: 5
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 45
+  periodSeconds: 10
+  failureThreshold: 5
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowSameNamespace: true
+    allowOpenShiftIngress: false
+    additional: []
+  egress:
+    allowDNS: true
+    allowSameNamespace: true
+    additional: []

@@ -1,0 +1,305 @@
+{{- $cfg := .Values.appVersionAutomation -}}
+{{- if $cfg.enabled }}
+{{- $pipelineName := $cfg.pipelineName | default "gitops-maintenance" -}}
+{{- $toolImage := $cfg.toolImage | default "registry.access.redhat.com/ubi9/go-toolset:1.24.6" -}}
+{{- $environments := or $cfg.environments (list "local" "sno" "prod") -}}
+{{- $envString := join " " $environments -}}
+{{- $pushEnabled := $cfg.push | default true -}}
+{{- $parityEnabled := $cfg.parity.enabled | default true -}}
+{{- $defaultPrimary := "" -}}
+{{- if gt (len $environments) 0 }}
+  {{- $defaultPrimary = index $environments 0 -}}
+{{- end }}
+{{- $primaryEnv := $cfg.parity.primaryEnv | default $defaultPrimary -}}
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ $pipelineName }}
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: gitUrl
+      type: string
+      default: {{ $cfg.gitUrl | default "https://github.com/bitiq-io/gitops.git" | quote }}
+    - name: gitRevision
+      type: string
+      default: {{ $cfg.gitRevision | default "main" | quote }}
+    - name: environments
+      type: string
+      default: {{ $envString | quote }}
+    - name: commitMessage
+      type: string
+      default: {{ $cfg.commitMessage | default "chore(release): recompute umbrella appVersion" | quote }}
+    - name: botName
+      type: string
+      default: {{ $cfg.botName | default "bitiq-gitops-bot" | quote }}
+    - name: botEmail
+      type: string
+      default: {{ $cfg.botEmail | default "gitops-bot@bitiq.io" | quote }}
+    - name: pushEnabled
+      type: string
+      default: {{ (ternary "true" "false" $pushEnabled) | quote }}
+    - name: gitUsernameKey
+      type: string
+      default: {{ $cfg.credentials.usernameKey | default "username" | quote }}
+    - name: gitPasswordKey
+      type: string
+      default: {{ $cfg.credentials.passwordKey | default "password" | quote }}
+    - name: parityEnabled
+      type: string
+      default: {{ (ternary "true" "false" $parityEnabled) | quote }}
+    - name: primaryEnv
+      type: string
+      default: {{ $primaryEnv | quote }}
+  workspaces:
+    - name: shared-workspace
+    - name: git-credentials
+  tasks:
+    - name: fetch-repo
+      taskRef:
+        resolver: hub
+        params:
+          - name: type
+            value: artifact
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.10.0"
+      params:
+        - name: url
+          value: $(params.gitUrl)
+        - name: revision
+          value: $(params.gitRevision)
+        - name: depth
+          value: "0"
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: recompute-appversion
+      runAfter: [fetch-repo]
+      params:
+        - name: environments
+          value: $(params.environments)
+        - name: parityEnabled
+          value: $(params.parityEnabled)
+        - name: primaryEnv
+          value: $(params.primaryEnv)
+      taskSpec:
+        params:
+          - name: environments
+            type: string
+          - name: parityEnabled
+            type: string
+          - name: primaryEnv
+            type: string
+        workspaces:
+          - name: source
+        results:
+          - name: composite
+            description: "Composite appVersion after recompute"
+        steps:
+          - name: recompute
+            image: {{ $toolImage }}
+            workingDir: $(workspaces.source.path)
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              export HOME=/tekton/home
+              mkdir -p "$HOME"
+              git config --global --add safe.directory "$(workspaces.source.path)"
+
+              IFS=' ' read -r -a envs <<< "$(params.environments)"
+              if [ ${#envs[@]} -eq 0 ]; then
+                echo "[recompute] No environments provided" >&2
+                exit 1
+              fi
+
+              if [[ "$(params.parityEnabled)" =~ ^(true|True|TRUE)$ ]]; then
+                echo "[recompute] Synchronizing tags across envs (primary=$(params.primaryEnv))"
+                PRIMARY_ENV="$(params.primaryEnv)" ENVIRONMENTS="$(params.environments)" bash scripts/sync-env-tags.sh
+              fi
+
+              for env in "${envs[@]}"; do
+                echo "[recompute] Updating appVersion for env=$env"
+                MODE=update ENV="$env" bash scripts/compute-appversion.sh "$env"
+              done
+
+              MODE=print ENV="${envs[0]}" bash scripts/compute-appversion.sh "${envs[0]}" > $(results.composite.path)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: verify-release
+      runAfter: [recompute-appversion]
+      params:
+        - name: environments
+          value: $(params.environments)
+      taskSpec:
+        params:
+          - name: environments
+            type: string
+        workspaces:
+          - name: source
+        steps:
+          - name: verify
+            image: {{ $toolImage }}
+            workingDir: $(workspaces.source.path)
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              export HOME=/tekton/home
+              mkdir -p "$HOME"
+              git config --global --add safe.directory "$(workspaces.source.path)"
+              ENVIRONMENTS="$(params.environments)" bash scripts/verify-release.sh
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: commit-changes
+      runAfter: [verify-release]
+      params:
+        - name: commitMessage
+          value: $(params.commitMessage)
+        - name: botName
+          value: $(params.botName)
+        - name: botEmail
+          value: $(params.botEmail)
+      taskSpec:
+        params:
+          - name: commitMessage
+            type: string
+          - name: botName
+            type: string
+          - name: botEmail
+            type: string
+        workspaces:
+          - name: source
+        results:
+          - name: commit-made
+            description: "true when a commit was created"
+          - name: commit-sha
+            description: "Commit SHA when a commit was created"
+        steps:
+          - name: commit
+            image: {{ $toolImage }}
+            workingDir: $(workspaces.source.path)
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              export HOME=/tekton/home
+              mkdir -p "$HOME"
+              git config --global --add safe.directory "$(workspaces.source.path)"
+
+              if git diff --quiet -- charts/bitiq-umbrella/Chart.yaml; then
+                echo "[commit] charts/bitiq-umbrella/Chart.yaml unchanged; skipping commit"
+                printf "false" > $(results.commit-made.path)
+                printf "" > $(results.commit-sha.path)
+                exit 0
+              fi
+
+              echo "[commit] Staging charts/bitiq-umbrella/Chart.yaml"
+              git config user.name "$(params.botName)"
+              git config user.email "$(params.botEmail)"
+              git add charts/bitiq-umbrella/Chart.yaml
+              if git diff --cached --quiet; then
+                echo "[commit] No staged changes after add; nothing to commit"
+                printf "false" > $(results.commit-made.path)
+                printf "" > $(results.commit-sha.path)
+                exit 0
+              fi
+              git commit -m "$(params.commitMessage)"
+              git rev-parse HEAD > $(results.commit-sha.path)
+              printf "true" > $(results.commit-made.path)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: push-commit
+      runAfter: [commit-changes]
+      when:
+        - input: "$(params.pushEnabled)"
+          operator: in
+          values: ["true", "True", "TRUE"]
+        - input: "$(tasks.commit-changes.results.commit-made)"
+          operator: in
+          values: ["true"]
+      params:
+        - name: gitUrl
+          value: $(params.gitUrl)
+        - name: gitRevision
+          value: $(params.gitRevision)
+        - name: botName
+          value: $(params.botName)
+        - name: botEmail
+          value: $(params.botEmail)
+        - name: gitUsernameKey
+          value: $(params.gitUsernameKey)
+        - name: gitPasswordKey
+          value: $(params.gitPasswordKey)
+      taskSpec:
+        params:
+          - name: gitUrl
+            type: string
+          - name: gitRevision
+            type: string
+          - name: botName
+            type: string
+          - name: botEmail
+            type: string
+          - name: gitUsernameKey
+            type: string
+          - name: gitPasswordKey
+            type: string
+        workspaces:
+          - name: source
+          - name: git-credentials
+        steps:
+          - name: push
+            image: {{ $toolImage }}
+            workingDir: $(workspaces.source.path)
+            env:
+              - name: HOME
+                value: /tekton/home
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              export HOME=/tekton/home
+              mkdir -p "$HOME"
+              git config --global --add safe.directory "$(workspaces.source.path)"
+
+              user_file="$(workspaces.git-credentials.path)/$(params.gitUsernameKey)"
+              pass_file="$(workspaces.git-credentials.path)/$(params.gitPasswordKey)"
+              if [ ! -f "$user_file" ] || [ ! -f "$pass_file" ]; then
+                echo "[push] Missing git credential files" >&2
+                exit 1
+              fi
+
+              username=$(cat "$user_file")
+              password=$(cat "$pass_file")
+
+              git config user.name "$(params.botName)"
+              git config user.email "$(params.botEmail)"
+              git config --global credential.helper store
+              printf 'https://%s:%s@github.com\n' "$username" "$password" > "$HOME/.git-credentials"
+              chmod 0600 "$HOME/.git-credentials"
+
+              git remote set-url origin "$(params.gitUrl)"
+              git push origin HEAD:$(params.gitRevision)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: git-credentials
+          workspace: git-credentials
+{{- end }}

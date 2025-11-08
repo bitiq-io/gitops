@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-static-sites-v10
+  namespace: bitiq-local
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE="/mnt"
+              mkdir -p "$BASE"
+              # If curated landing pages are provided via ConfigMaps, copy them in.
+              if [ -f /seed/cyphai/index.html ]; then
+                mkdir -p "$BASE/cyphai.com" && cp -f /seed/cyphai/index.html "$BASE/cyphai.com/index.html"
+              fi
+              if [ -f /seed/neuance/index.html ]; then
+                mkdir -p "$BASE/neuance.net" && cp -f /seed/neuance/index.html "$BASE/neuance.net/index.html"
+              fi
+              if [ -f /seed/signet/site.tar.gz ]; then
+                rm -rf "$BASE/signet.ing"
+                mkdir -p "$BASE/signet.ing"
+                tar -xzf /seed/signet/site.tar.gz -C "$BASE/signet.ing"
+              fi
+              seed() {
+                dir="$1"
+                title="$2"
+                mkdir -p "$BASE/$dir"
+                # Only write placeholder if curated file was not provided
+                if [ ! -f "$BASE/$dir/index.html" ]; then
+                  cat >"$BASE/$dir/index.html" <<EOF
+              <!doctype html>
+              <html lang="en">
+                <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <title>$title</title>
+                  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;margin:3rem;color:#111}code{background:#f3f3f3;padding:.2rem .4rem;border-radius:.25rem}</style>
+                </head>
+                <body>
+                  <h1>$title</h1>
+                  <p>Static site placeholder is live.</p>
+                  <p>Served by NGINX in OpenShift (<code>bitiq-local</code>).</p>
+                </body>
+              </html>
+              EOF
+                fi
+              }
+              # Sites served from these directories (apex redirects handled by NGINX where configured)
+              seed "cyphai.com"              "www.cyphai.com"
+              seed "didgo.com"               "didgo.com"
+              seed "paulcapestany.com"       "paulcapestany.com"
+              seed "bitiq.io"                "bitiq.io"
+              seed "noelcapestany.com"       "noelcapestany.com"
+              seed "beatricecapestany.com"   "beatricecapestany.com"
+              seed "ipiqi.com"               "ipiqi.com"
+              seed "neuance.net"             "neuance.net"
+              seed "signet.ing"              "signet.ing"
+          volumeMounts:
+            - name: static-files
+              mountPath: /mnt
+            - name: site-cyphai
+              mountPath: /seed/cyphai
+            - name: site-neuance
+              mountPath: /seed/neuance
+            - name: site-signet
+              mountPath: /seed/signet
+      volumes:
+        - name: static-files
+          persistentVolumeClaim:
+            claimName: static-sites-pvc
+        - name: site-cyphai
+          configMap:
+            name: site-cyphai
+            items:
+              - key: index.html
+                path: index.html
+        - name: site-neuance
+          configMap:
+            name: site-neuance
+            items:
+              - key: index.html
+                path: index.html
+        - name: site-signet
+          configMap:
+            name: site-signet
+            items:
+              - key: site.tar.gz
+                path: site.tar.gz

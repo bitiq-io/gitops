@@ -1,0 +1,77 @@
+name: validate
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENTS: "local sno prod"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.3/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+
+      - name: Install conftest
+        run: |
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin conftest
+
+      - name: Install yamllint
+        run: |
+          python3 -m pip install --user yamllint
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Install bats (bash tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Show tool versions
+        run: |
+          helm version
+          helm plugin list || true
+          kubeconform -v
+          conftest --version
+          yamllint --version
+          shellcheck --version
+          bats --version
+
+      - name: Helm unit tests
+        run: make hu
+
+      - name: Helm template sanity
+        run: make template
+
+      - name: Full validation
+        run: make validate
+
+      - name: Script sanity (DDNS)
+        run: make ddns-sanity
+
+      - name: Script tests (bats)
+        run: bats -r tests
+
+      - name: Verify release metadata
+        run: make verify-release

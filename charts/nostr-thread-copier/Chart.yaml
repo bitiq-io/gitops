@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nostr-thread-copier
+description: Lightweight copier that mirrors nostr threads via HTTP callbacks
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

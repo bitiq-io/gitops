@@ -1,0 +1,19 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nostr-site
+  {{- $issuer := .Values.route.clusterIssuerName | default "" }}
+  {{- if $issuer }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ $issuer | quote }}
+    haproxy.router.openshift.io/redirect-to-https: "true"
+  {{- end }}
+spec:
+  to:
+    kind: Service
+    name: nostr-site
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  host: {{ .Values.route.host | quote }}

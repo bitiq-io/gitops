@@ -1,0 +1,17 @@
+{{- if eq (include "ollama.mode" .) "external" }}
+{{- $host := include "ollama.externalHost" . }}
+{{- if and .Values.external.configMap.create $host }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.external.configMap.name | default "ollama-endpoint" | quote }}
+  labels:
+{{ include "ollama.labels" . | indent 4 }}
+data:
+  {{ .Values.external.configMap.hostKey | default "OLLAMA_HOST" }}: {{ $host | quote }}
+  {{ .Values.external.configMap.urlKey | default "OLLAMA_URL" }}: {{ include "ollama.externalURL" . | quote }}
+  {{- with .Values.external.configMap.extraData }}
+{{ toYaml . | indent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}

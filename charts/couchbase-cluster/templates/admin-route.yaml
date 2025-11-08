@@ -1,0 +1,21 @@
+{{- if and .Values.route.enabled .Values.route.serviceName }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: couchbase-admin
+  {{- $issuer := .Values.route.clusterIssuerName | default "" }}
+  {{- if $issuer }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ $issuer | quote }}
+    haproxy.router.openshift.io/redirect-to-https: "true"
+  {{- end }}
+spec:
+  to:
+    kind: Service
+    name: {{ .Values.route.serviceName }}
+  port:
+    targetPort: {{ .Values.route.targetPort }}
+  tls:
+    termination: edge
+  host: {{ include "cb.routeHost" . | quote }}
+{{- end }}

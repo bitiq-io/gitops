@@ -1,0 +1,47 @@
+# Local (CRC) defaults: single-node, hostpath classes via cluster default
+image: couchbase/server:7.6.6
+
+servers:
+  size: 1
+  storageClassRWO: ""
+  storageClassRWX: ""
+clusterQuotas:
+  data: 2048Mi
+  index: 256Mi
+  query: 256Mi
+  search: 256Mi
+  eventing: 256Mi
+  # analytics disabled by not enabling the service
+route:
+  enabled: false
+  host: "cb.cyphai.com"
+  serviceName: couchbase-cluster
+  targetPort: 8091
+  clusterIssuerName: letsencrypt-http01-local
+
+ingress:
+  enabled: true
+  host: cb.cyphai.com
+  tlsSecretName: cb-cyphai-com-tls
+  clusterIssuerName: letsencrypt-dns01-route53-cyphai
+  targetPort: 8091
+
+# Buckets aligned to prior manifests but sized for local CRC
+buckets:
+  - name: all-nostr-events
+    memory: 512Mi
+    storageBackend: couchstore
+    evictionPolicy: fullEviction
+    ioPriority: high
+  - name: dev-eventing-threads
+    memory: 256Mi
+    storageBackend: couchstore
+  - name: dev-threads
+    memory: 256Mi
+    storageBackend: couchstore
+  - name: dev-eventing-nostr-ai
+    memory: 256Mi
+    storageBackend: couchstore
+users:
+  admin:
+    enabled: true

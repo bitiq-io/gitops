@@ -1,0 +1,51 @@
+http01:
+  enabled: true
+  name: letsencrypt-http01-local
+  email: capestany@gmail.com
+  production: false
+
+dns01:
+  route53:
+    enabled: true
+    name: letsencrypt-dns01-route53-local
+    email: capestany@gmail.com
+    production: true
+    region: us-east-1
+    zones:
+      - zone: cyphai.com
+        hostedZoneID: Z02889471UKP31JE18HPE
+      - zone: didgo.com
+        hostedZoneID: ZPOF2JE05NGE4
+      - zone: paulcapestany.com
+        hostedZoneID: Z03183593TRC0TQ7HVQYU
+      - zone: bitiq.io
+        hostedZoneID: ZPCVSGRXCIK5E
+      - zone: noelcapestany.com
+        hostedZoneID: Z056483715JLINW841SV7
+      - zone: beatricecapestany.com
+        hostedZoneID: Z079077016RPVX58KHIKL
+      - zone: ipiqi.com
+        hostedZoneID: Z3PIMZQLSMODH8
+      - zone: neuance.net
+        hostedZoneID: Z0726808X55WJNUN7BTX
+      - zone: signet.ing
+        hostedZoneID: Z062821132J5XJBR00GCP
+    credentialsSecretRef:
+      name: route53-credentials
+      accessKeyIDKey: access-key-id
+      secretAccessKeyKey: secret-access-key
+operatorOverrides:
+  enabled: true
+  dns01:
+    recursiveNameservers:
+      - 1.1.1.1:53
+      - 8.8.8.8:53
+
+dns:
+  upstreamResolvers:
+    enabled: true
+    upstreams:
+      - address: 1.1.1.1
+        port: 53
+      - address: 8.8.8.8
+        port: 53

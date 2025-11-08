@@ -1,0 +1,19 @@
+extends: default
+
+rules:
+  # Many Helm-maintained YAML files (Chart.yaml, values.yaml, tests) intentionally
+  # omit the leading document marker. Treat missing '---' as acceptable.
+  document-start: disable
+
+  # Keep lines readable in CI logs, but do not fail on longer lines.
+  line-length:
+    max: 140
+    level: warning
+
+  # YAML "truthy" values like "yes/no" are sometimes used in vendor files; warn only.
+  truthy:
+    level: warning
+
+# Avoid linting raw Helm templates which are not valid YAML pre-render
+ignore: |
+  charts/**/templates/**

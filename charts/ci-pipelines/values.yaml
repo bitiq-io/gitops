@@ -1,0 +1,175 @@
+##
+## Values for the example Tekton pipeline + triggers
+##
+
+# Target environment (namespace etc.)
+env: local
+appNamespace: bitiq-local   # where sample app deploys; pipeline runs in openshift-pipelines
+
+# Default service account used by generated PipelineRuns
+serviceAccountName: ci-pipeline
+# Registry auth Secret to link to the service account (kubernetes.io/dockerconfigjson)
+registrySecretName: quay-auth
+# Optional fsGroup override; leave empty to use cluster SCC defaults
+fsGroup: 1000690000  # matches openshift-pipelines namespace supplemental group range
+
+# Control creation of Namespace resources that match pipeline imageNamespace values
+createImageNamespaces: false
+
+# Pipelines managed by this chart. Each entry renders:
+# - A tekton.dev/v1 Pipeline definition
+# - TriggerTemplate + TriggerBinding for GitHub webhook payloads
+# - EventListener trigger wiring (see triggers.* below)
+pipelines:
+  - name: bitiq-build-and-push
+    gitUrl: https://github.com/PaulCapestany/toy-service.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "false"
+    testImage: ""
+    testScript: ""
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-service
+    tlsVerify: "true"
+    # CEL filter applied inside the EventListener trigger
+    # Accept pushes from either personal or org repo
+    repoFullNames:
+      - PaulCapestany/toy-service
+      - bitiq-io/toy-service
+    # Optional override per pipeline; falls back to top-level defaults when empty
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+
+  - name: nostr-threads-build-and-push
+    gitUrl: https://github.com/PaulCapestany/nostr_threads.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: registry.access.redhat.com/ubi9/go-toolset:1.24.6
+    testScript: |
+      go test ./...
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: nostr_threads
+    tlsVerify: "true"
+    repoFullNames:
+      - PaulCapestany/nostr_threads
+      - bitiq-io/nostr_threads
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+  - name: nostouch-build-and-push
+    gitUrl: https://github.com/PaulCapestany/nostouch.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: registry.access.redhat.com/ubi9/go-toolset:1.24.6
+    testScript: |
+      go test ./...
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: nostouch
+    tlsVerify: "true"
+    repoFullNames:
+      - PaulCapestany/nostouch
+      - bitiq-io/nostouch
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+
+  - name: bitiq-web-build-and-push
+    gitUrl: https://github.com/PaulCapestany/toy-web.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "true"
+    testImage: registry.access.redhat.com/ubi9/nodejs-20:1-1758500456
+    testScript: |
+      if [ -f package-lock.json ]; then
+        npm ci
+      else
+        npm install
+      fi
+      if ! npm ls jest-environment-jsdom >/dev/null 2>&1; then
+        npm install --save-dev jest-environment-jsdom@^29
+      fi
+      if [ -f jest.config.js ]; then
+        npm pkg set scripts.test="jest --config=jest.config.js --watch=false"
+      else
+        npm pkg set scripts.test="jest --watch=false"
+      fi
+      npm test
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: toy-web
+    tlsVerify: "true"
+    repoFullNames:
+      - PaulCapestany/toy-web
+      - bitiq-io/toy-web
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+
+appVersionAutomation:
+  enabled: true
+  pipelineName: gitops-maintenance
+  gitUrl: https://github.com/bitiq-io/gitops.git
+  gitRevision: main
+  environments:
+    - local
+    - sno
+    - prod
+  toolImage: registry.access.redhat.com/ubi9/go-toolset:1.24.6
+  serviceAccountName: ""
+  fsGroup: ""
+  commitMessage: "chore(release): recompute umbrella appVersion"
+  botName: bitiq-gitops-bot
+  botEmail: gitops-bot@bitiq.io
+  push: true
+  credentials:
+    secretName: gitops-repo-creds
+    usernameKey: username
+    passwordKey: password
+  parity:
+    enabled: true
+    primaryEnv: local
+  trigger:
+    create: true
+    repoFullNames:
+      - bitiq-io/gitops
+    branches:
+      - refs/heads/main
+    skipCommitMessageRegex: '^chore\(release\): recompute umbrella appVersion'
+    skipAuthorLogins:
+      - bitiq-gitops-bot
+    eventTypes:
+      - push
+    sharedWorkspaceSize: 2Gi
+
+triggers:
+  create: true
+  # Control creation of the GitHub webhook Secret via chart (off by default).
+  # Under the Vault-first policy, this Secret is managed by VSO. Seed Vault at
+  # gitops/data/github/webhook (key: token), and let VSO reconcile the
+  # Kubernetes Secret in openshift-pipelines named below.
+  createSecret: false
+  eventListenerName: bitiq-listener
+  # Name of the Secret in openshift-pipelines with the webhook token.
+  githubSecretName: github-webhook-secret
+  # Key name inside the Secret referenced by the GitHub interceptor. The
+  # VSO-managed default is "token"; Tekton samples often use "secretToken".
+  # Set to match how your Secret stores the value.
+  secretKey: token
+  # Only used if createSecret=true; required in that case (not used with VSO)
+  secretToken: ""
+  # Expose an OpenShift Route for the EventListener
+  route: true
+  # Temporary: enable verbose zap logging on the EventListener sink to
+  # troubleshoot trigger matching. This injects K_LOGGING_CONFIG via the
+  # supported Pod overlay in Triggers v0.33 (OCP Pipelines 1.20).
+  debugLogging: false

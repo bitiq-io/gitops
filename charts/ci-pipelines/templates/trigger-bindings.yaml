@@ -1,0 +1,30 @@
+{{- if .Values.triggers.create }}
+{{- range $idx, $pipeline := .Values.pipelines }}
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: {{ $pipeline.name }}-binding
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-repo-url
+      value: $(body.repository.clone_url)
+    - name: git-revision
+      value: $(body.ref)
+{{- end }}
+
+{{- $app := .Values.appVersionAutomation -}}
+{{- if and .Values.triggers.create $app.enabled $app.trigger.create }}
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: {{ $app.pipelineName | default "gitops-maintenance" }}-binding
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: git-revision
+      value: $(body.ref)
+{{- end }}
+{{- end }}

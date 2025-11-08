@@ -1,0 +1,117 @@
+{{- $backend := default (dict) .Values.backend -}}
+{{- $backendEnv := default (list) $backend.env -}}
+{{- $backendSecret := default (dict) $backend.secret -}}
+{{- $backendSecretItems := default (list) $backendSecret.items -}}
+{{- $backendSecretEnabled := and $backendSecret.enabled (gt (len $backendSecretItems) 0) -}}
+{{- $renderBackendEnv := or (gt (len $backendEnv) 0) $backendSecretEnabled -}}
+{{- $backendSecretName := default "toy-service-config" $backendSecret.name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toy-service
+  labels:
+    app.kubernetes.io/name: toy-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: toy-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: toy-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      {{- $mount := .Values.backend.secretMount }}
+      {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+      volumes:
+        - name: backend-secret
+          secret:
+            secretName: {{ $backendSecretName | quote }}
+      {{- end }}
+      containers:
+        - name: toy-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--port"
+            - "{{ .Values.service.port }}"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthPath | default "/healthz" }}
+              port: http
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthPath | default "/healthz" }}
+              port: http
+            initialDelaySeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+          volumeMounts:
+            - name: backend-secret
+              mountPath: {{ default "/etc/backend-secret" $mount.mountPath | quote }}
+              readOnly: true
+          {{- end }}
+          {{- if $renderBackendEnv }}
+          env:
+            {{- range $entry := $backendEnv }}
+            - name: {{ required "backend.env entries must define name" $entry.name }}
+              {{- if hasKey $entry "valueFrom" }}
+              valueFrom:
+{{ toYaml $entry.valueFrom | indent 16 }}
+              {{- else }}
+              value: {{ default "" $entry.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $backendSecretEnabled }}
+            {{- range $item := $backendSecretItems }}
+            - name: {{ required "backend.secret.items entries must define name" $item.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default $backendSecretName $item.secretName | quote }}
+                  key: {{ required (printf "backend.secret.items entry %s must define key" (default "<missing>" $item.name)) $item.key | quote }}
+                  {{- $itemOptional := default $backendSecret.optional $item.optional }}
+                  {{- if $itemOptional }}
+                  optional: {{ $itemOptional }}
+                  {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- if and $mount.enabled (default false $mount.reloadSidecar.enabled) }}
+        - name: configmap-reload
+          image: {{ default "ghcr.io/jimmidyson/configmap-reload:v0.14.0" $mount.reloadSidecar.image }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --volume-dir={{ default "/etc/backend-secret" $mount.mountPath }}
+            {{- if $mount.reloadSidecar.webhookUrl }}
+            - --webhook-url={{ $mount.reloadSidecar.webhookUrl }}
+            - --webhook-method={{ default "POST" $mount.reloadSidecar.webhookMethod }}
+            {{- end }}
+          volumeMounts:
+            - name: backend-secret
+              mountPath: {{ default "/etc/backend-secret" $mount.mountPath | quote }}
+              readOnly: true
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

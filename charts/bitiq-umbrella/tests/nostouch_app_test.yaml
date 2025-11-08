@@ -1,0 +1,33 @@
+suite: Nostouch Application
+templates:
+  - templates/app-nostouch.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders Application when enabled
+    set:
+      env: local
+      nostouch:
+        enabled: true
+    asserts:
+      - equal:
+          path: kind
+          value: Application
+      - equal:
+          path: metadata.name
+          value: nostouch-local
+      - equal:
+          path: spec.source.path
+          value: charts/nostouch
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "nostouch=quay.io/paulcapestany/nostouch"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/nostouch.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/nostouch/values-local.yaml

@@ -1,0 +1,44 @@
+{{- $strfry := default (dict) .Values.strfry }}
+{{- $strfryEnabled := false }}
+{{- if hasKey $strfry "enabled" }}
+  {{- $strfryEnabled = eq (lower (printf "%v" (get $strfry "enabled"))) "true" }}
+{{- end }}
+{{- if $strfryEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: strfry-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/strfry
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

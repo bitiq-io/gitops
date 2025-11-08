@@ -1,0 +1,24 @@
+suite: Ollama Application
+templates:
+  - templates/app-ollama.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders Application when enabled
+    set:
+      ollama:
+        enabled: true
+      env: local
+    asserts:
+      - equal:
+          path: kind
+          value: Application
+      - equal:
+          path: metadata.name
+          value: ollama-local
+      - equal:
+          path: spec.source.path
+          value: charts/ollama

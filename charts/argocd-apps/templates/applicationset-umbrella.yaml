@@ -1,0 +1,180 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: bitiq-umbrella-by-env
+  namespace: {{ .Values.argocdNamespace }}
+  labels:
+    # Ensure the ApplicationSet controller for this Argo CD instance reconciles this resource
+    argocd.argoproj.io/instance: {{ .Values.argocdInstanceName | quote }}
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+{{- range $e := .Values.envs }}
+{{- if or (eq $.Values.envFilter "" ) (eq $.Values.envFilter $e.name) }}
+          - env: {{ $e.name }}
+            cluster: {{ $e.clusterServer | quote }}
+            baseDomain: {{ default $e.baseDomain $.Values.baseDomainOverride | quote }}
+            appNamespace: {{ $e.appNamespace | quote }}
+            platforms: {{ $e.platforms | quote }}
+            toyServiceUpdaterEnabled: {{ default true $e.toyServiceImageUpdater.enabled }}
+            toyServiceUpdaterPause: {{ default false $e.toyServiceImageUpdater.pause }}
+            toyWebUpdaterPause: {{ default false $e.toyWebImageUpdater.pause }}
+            tektonFsGroup: {{ $e.tektonFsGroup | quote }}
+            vaultRuntimeEnabled: {{ default false $e.vaultRuntimeEnabled }}
+            vaultRuntimeAddress: {{ $e.vaultRuntimeAddress | quote }}
+            vaultRuntimeKubernetesMount: {{ $e.vaultRuntimeKubernetesMount | default "kubernetes" | quote }}
+            vaultRuntimeRoleName: {{ $e.vaultRuntimeRoleName | quote }}
+            vaultConfigEnabled: {{ default false $e.vaultConfigEnabled }}
+            vaultConfigAddress: {{ $e.vaultConfigAddress | quote }}
+            vaultConfigKubernetesHost: {{ $e.vaultConfigKubernetesHost | default "https://kubernetes.default.svc" | quote }}
+            vaultConfigMountPath: {{ $e.vaultConfigMountPath | default "kubernetes" | quote }}
+            vaultConfigConnectionRole: {{ $e.vaultConfigConnectionRole | default "kube-auth" | quote }}
+            vaultConfigRoleName: {{ $e.vaultConfigRoleName | quote }}
+            vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
+            vaultServerEnabled: {{ default false $e.vaultServerEnabled }}
+            nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
+            nostrQueryEnabled: {{ default false $e.nostrQueryEnabled }}
+            nostrThreadsEnabled: {{ default false $e.nostrThreadsEnabled }}
+            nostrThreadCopierEnabled: {{ default false $e.nostrThreadCopierEnabled }}
+            nostouchEnabled: {{ default false $e.nostouchEnabled }}
+            ollamaEnabled: {{ default false $e.ollamaEnabled }}
+            ollamaMode: {{ $e.ollamaMode | default "disabled" | quote }}
+            # App enablement flags and CAO params per env
+            strfryEnabled: {{ default false $e.strfryEnabled }}
+            couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
+            couchbaseOperatorEnabled: {{ default false $e.couchbaseOperatorEnabled }}
+            certManagerEnabled: {{ default false $e.certManagerEnabled }}
+            nginxSitesEnabled: {{ default false $e.nginxSitesEnabled }}
+            bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
+            caoEnabled: {{ default false $e.caoEnabled }}
+            caoName: {{ $e.caoName | quote }}
+            caoSource: {{ $e.caoSource | quote }}
+            caoChannel: {{ $e.caoChannel | quote }}
+            caoSourceNamespace: {{ $e.caoSourceNamespace | default "openshift-marketplace" | quote }}
+            caoInstallNamespace: {{ $e.caoInstallNamespace | default "openshift-operators" | quote }}
+            caoStartingCSV: {{ $e.caoStartingCSV | quote }}
+            caoApproval: {{ $e.caoApproval | default "Automatic" | quote }}
+{{- end }}
+{{- end }}
+  template:
+    metadata:
+      name: 'bitiq-umbrella-{{ "{{ .env }}" }}'
+      labels:
+        bitiq.io/env: '{{ "{{ .env }}" }}'
+        app.kubernetes.io/name: bitiq-umbrella
+        app.kubernetes.io/managed-by: argocd
+    spec:
+      project: default
+      source:
+        repoURL: {{ .Values.repoUrl | quote }}
+        targetRevision: {{ .Values.targetRevision | quote }}
+        path: charts/bitiq-umbrella
+        helm:
+          parameters:
+            - name: env
+              value: '{{ "{{ .env }}" }}'
+            - name: baseDomain
+              value: '{{ "{{ .baseDomain }}" }}'
+            - name: appNamespace
+              value: '{{ "{{ .appNamespace }}" }}'
+            - name: repoUrl
+              value: {{ .Values.repoUrl | quote }}
+            - name: targetRevision
+              value: {{ .Values.targetRevision | quote }}
+            - name: imageUpdater.platforms
+              value: '{{ "{{ .platforms }}" }}'
+            - name: imageUpdater.toyService.enabled
+              value: '{{ "{{ .toyServiceUpdaterEnabled | default true }}" }}'
+            - name: imageUpdater.toyService.pause
+              value: '{{ "{{ .toyServiceUpdaterPause | default false }}" }}'
+            - name: imageUpdater.toyWeb.pause
+              value: '{{ "{{ .toyWebUpdaterPause | default false }}" }}'
+            - name: strfry.enabled
+              value: '{{ "{{ .strfryEnabled | default false }}" }}'
+            - name: couchbase.enabled
+              value: '{{ "{{ .couchbaseEnabled | default false }}" }}'
+            - name: couchbaseOperator.enabled
+              value: '{{ "{{ .couchbaseOperatorEnabled | default false }}" }}'
+            - name: ollama.enabled
+              value: '{{ "{{ .ollamaEnabled | default false }}" }}'
+            - name: ollama.mode
+              value: '{{ "{{ .ollamaMode | default \"disabled\" }}" }}'
+            - name: certManager.enabled
+              value: '{{ "{{ .certManagerEnabled | default false }}" }}'
+            - name: certManager.route53CredentialsEnabled
+              value: '{{ "{{ .certManagerRoute53CredentialsEnabled | default false }}" }}'
+            - name: certManager.route53CredentialsPath
+              value: '{{ "{{ .certManagerRoute53CredentialsPath | default \"cert-manager/route53\" }}" }}'
+            - name: certManager.route53SecretName
+              value: '{{ "{{ .certManagerRoute53SecretName | default \"route53-credentials\" }}" }}'
+            - name: certManager.route53SecretNamespace
+              value: '{{ "{{ .certManagerRoute53SecretNamespace | default \"cert-manager\" }}" }}'
+            - name: nginxSites.enabled
+              value: '{{ "{{ .nginxSitesEnabled | default false }}" }}'
+            - name: bootstrapOperators.enabled
+              value: '{{ "{{ .bootstrapOperatorsEnabled | default false }}" }}'
+            - name: bootstrapOperators.caoEnabled
+              value: '{{ "{{ .caoEnabled | default false }}" }}'
+            - name: bootstrapOperators.caoChannel
+              value: '{{ "{{ .caoChannel }}" }}'
+            - name: bootstrapOperators.caoName
+              value: '{{ "{{ .caoName }}" }}'
+            - name: bootstrapOperators.caoSource
+              value: '{{ "{{ .caoSource }}" }}'
+            - name: bootstrapOperators.caoSourceNamespace
+              value: '{{ "{{ .caoSourceNamespace | default \"openshift-marketplace\" }}" }}'
+            - name: bootstrapOperators.caoInstallNamespace
+              value: '{{ "{{ .caoInstallNamespace | default \"openshift-operators\" }}" }}'
+            - name: bootstrapOperators.caoStartingCSV
+              value: '{{ "{{ .caoStartingCSV }}" }}'
+            - name: bootstrapOperators.caoApproval
+              value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
+            - name: nostrSite.enabled
+              value: '{{ "{{ .nostrSiteEnabled | default false }}" }}'
+            - name: nostrQuery.enabled
+              value: '{{ "{{ .nostrQueryEnabled | default false }}" }}'
+            - name: nostrThreads.enabled
+              value: '{{ "{{ .nostrThreadsEnabled | default false }}" }}'
+            - name: nostrThreadCopier.enabled
+              value: '{{ "{{ .nostrThreadCopierEnabled | default false }}" }}'
+            - name: nostouch.enabled
+              value: '{{ "{{ .nostouchEnabled | default false }}" }}'
+            - name: ciPipelines.fsGroup
+              value: '{{ "{{ .tektonFsGroup }}" }}'
+            - name: ciPipelines.eventListener.debugLogging
+              value: '{{ "{{ false }}" }}'
+            - name: vault.runtime.enabled
+              value: '{{ "{{ .vaultRuntimeEnabled | default false }}" }}'
+            - name: vault.runtime.address
+              value: '{{ "{{ .vaultRuntimeAddress }}" }}'
+            - name: vault.runtime.kubernetesMount
+              value: '{{ "{{ .vaultRuntimeKubernetesMount }}" }}'
+            - name: vault.runtime.roleName
+              value: '{{ "{{ .vaultRuntimeRoleName }}" }}'
+            - name: vault.config.enabled
+              value: '{{ "{{ .vaultConfigEnabled | default false }}" }}'
+            - name: vault.config.address
+              value: '{{ "{{ .vaultConfigAddress }}" }}'
+            - name: vault.config.kubernetesHost
+              value: '{{ "{{ .vaultConfigKubernetesHost }}" }}'
+            - name: vault.config.mountPath
+              value: '{{ "{{ .vaultConfigMountPath }}" }}'
+            - name: vault.config.connectionRole
+              value: '{{ "{{ .vaultConfigConnectionRole }}" }}'
+            - name: vault.config.roleName
+              value: '{{ "{{ .vaultConfigRoleName }}" }}'
+            - name: vault.config.policyName
+              value: '{{ "{{ .vaultConfigPolicyName }}" }}'
+            - name: vault.server.enabled
+              value: '{{ "{{ .vaultServerEnabled | default false }}" }}'
+      destination:
+        server: '{{ "{{ .cluster }}" }}'
+        namespace: '{{ "{{ .appNamespace }}" }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

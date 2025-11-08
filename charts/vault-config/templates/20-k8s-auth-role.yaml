@@ -1,0 +1,42 @@
+{{- if .Values.enabled }}
+{{- $mp := .Values.vault.mountPath -}}
+{{- $role := .Values.vault.connectionRole -}}
+{{- $addr := .Values.vault.address -}}
+{{- range $r := .Values.roles }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: {{ $r.name }}
+  namespace: openshift-gitops
+  annotations:
+    # VCO webhook forbids updating immutable spec.path. Instruct Argo CD to
+    # delete/recreate this resource instead of patching when spec.path changes.
+    # See: vkubernetesauthenginerole.kb.io (VCO v0.8.34+) ValidateUpdate denies
+    # "spec.path cannot be updated".
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  authentication:
+    path: {{ $mp }}
+    role: {{ $role }}
+    serviceAccount:
+      name: {{ $.Values.vault.serviceAccountName | default "default" }}
+  # Explicit Vault path for the role (mount path)
+  path: {{ $mp }}
+  connection:
+    address: {{ $addr | quote }}
+  policies:
+{{- range $p := $r.policies }}
+    - {{ $p }}
+{{- end }}
+  targetServiceAccounts:
+{{- range $sa := $r.targetServiceAccounts }}
+    - {{ $sa }}
+{{- end }}
+  targetNamespaces:
+    targetNamespaces:
+{{- range $ns := $r.targetNamespaces }}
+      - {{ $ns }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,26 @@
+{{- if and (eq (include "ollama.mode" .) "gpu") .Values.gpu.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ollama
+  labels:
+{{ include "ollama.labels" . | indent 4 }}
+spec:
+  to:
+    kind: Service
+    name: ollama
+  port:
+    targetPort: http
+  host: {{ .Values.gpu.route.host | default (include "ollama.externalHost" .) | quote }}
+  tls:
+    termination: {{ .Values.gpu.route.tls.termination | default "edge" }}
+    insecureEdgeTerminationPolicy: {{ .Values.gpu.route.tls.insecureEdgeTerminationPolicy | default "Redirect" }}
+    {{- with .Values.gpu.route.tls.caCertificate }}
+    caCertificate: |
+{{ . | indent 6 }}
+    {{- end }}
+    {{- with .Values.gpu.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+{{ . | indent 6 }}
+    {{- end }}
+{{- end }}

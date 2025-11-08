@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cyphai — Search you can trust.</title>
+  <meta name="description" content="Find real voices—fast. Cyphai indexes public, signature‑verified conversations and uses AI to lift the signal above the noise." />
+  <meta property="og:title" content="Cyphai — Search you can trust." />
+  <meta property="og:description" content="Find real voices—fast. Cyphai indexes public, signature‑verified conversations and uses AI to lift the signal above the noise." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#14B8A6" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0F172A;        /* charcoal */
+      --panel: #111827;
+      --text: #E5E7EB;      /* slate-200 */
+      --muted: #94A3B8;     /* slate-400 */
+      --accent: #14B8A6;    /* teal-500 */
+      --accent-weak: rgba(20,184,166,0.15);
+      --card: #0B1220;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --maxw: 1080px;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji';
+      background: radial-gradient(1200px 800px at 10% -10%, var(--accent-weak), transparent 60%), var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+    header {
+      position: sticky; top: 0; backdrop-filter: saturate(150%) blur(8px);
+      background: linear-gradient(to bottom, rgba(15,23,42,0.9), rgba(15,23,42,0.65));
+      border-bottom: 1px solid rgba(148,163,184,0.08);
+      z-index: 10;
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between; padding: 16px 0;
+    }
+    .brand {
+      display: inline-flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px;
+    }
+    .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px var(--accent-weak); }
+    .nav a.btn { margin-left: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(148,163,184,0.25);
+      background: linear-gradient(180deg, rgba(20,184,166,0.08), rgba(20,184,166,0.02));
+      color: var(--text); font-weight: 600; text-decoration: none;
+      transition: transform .05s ease, border-color .2s ease, background .2s ease;
+      box-shadow: var(--shadow);
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+    .btn.primary {
+      background: linear-gradient(180deg, rgba(20,184,166,0.22), rgba(20,184,166,0.08));
+      border-color: rgba(20,184,166,0.7);
+    }
+    .hero {
+      padding: 72px 0 32px;
+    }
+    .hero h1 {
+      font-size: clamp(38px, 6vw, 64px); line-height: 1.05; margin: 0 0 16px; letter-spacing: -0.5px;
+    }
+    .hero p.sub {
+      font-size: clamp(18px, 2.2vw, 22px); color: var(--muted); margin: 0 0 28px;
+    }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px; 
+      border-radius: 999px; border: 1px solid rgba(148,163,184,0.25); color: var(--muted); font-size: 14px;
+      background: rgba(20,184,166,0.06);
+    }
+    section { padding: 48px 0; }
+    .grid {
+      display: grid; gap: 18px; grid-template-columns: repeat(12, 1fr);
+    }
+    .card {
+      grid-column: span 4; background: var(--card); border: 1px solid rgba(148,163,184,0.15);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    }
+    @media (max-width: 980px) { .card { grid-column: span 12; } }
+    h2 { font-size: clamp(24px, 3.6vw, 34px); margin: 0 0 18px; }
+    h3 { font-size: 18px; margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .kicker { font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-size: 12px; }
+    .list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .list li::before { content: "— "; color: var(--accent); }
+    .how { counter-reset: step; }
+    .how li { counter-increment: step; }
+    .how li::before {
+      content: counter(step);
+      display: inline-grid; place-content: center; width: 26px; height: 26px; border-radius: 50%;
+      margin-right: 10px; font-weight: 700; color: #0b1220;
+      background: var(--accent);
+    }
+    details { background: var(--panel); border: 1px solid rgba(148,163,184,0.2); border-radius: var(--radius); padding: 14px 16px; }
+    summary { cursor: pointer; font-weight: 600; }
+    footer { padding: 24px 0 60px; color: var(--muted); font-size: 14px; }
+    .cols-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+    @media (max-width: 980px) { .cols-2 { grid-template-columns: 1fr; } }
+    .tag { display: inline-block; border: 1px solid rgba(148,163,184,0.25); padding: 6px 10px; border-radius: 999px; margin-right: 8px; color: var(--muted); }
+    .hr { height: 1px; background: rgba(148,163,184,0.15); margin: 18px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand" aria-label="Cyphai">
+        <span class="dot" aria-hidden="true"></span>
+        <span>Cyphai</span>
+      </div>
+      <nav aria-label="Primary">
+        <a class="btn" href="#how">How it works</a>
+        <a class="btn" href="#developers">For developers</a>
+        <a class="btn primary" href="mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist" aria-label="Join the waitlist">Join the waitlist</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero" id="top">
+      <p class="pill">Trusted signal from public conversation</p>
+      <h1>Search you can trust.</h1>
+      <p class="sub">Find real voices—fast. Cyphai indexes public, <strong>signature‑verified</strong> conversations and uses AI to lift the <strong>signal</strong> above the noise.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist">Join the waitlist</a>
+        <a class="btn" href="#how">See how it works</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="value">
+      <h2 id="value">Why Cyphai</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Authenticated voices</h3>
+          <p class="muted">Every post we index is <strong>digitally signed</strong>, so you know it came from a real public key—not a bot farm.</p>
+        </div>
+        <div class="card">
+          <h3>Trust you control</h3>
+          <p class="muted">Tune your <strong>trust graph</strong> to highlight voices you value. Results explain <em>why</em> they rank.</p>
+        </div>
+        <div class="card">
+          <h3>Transparent & open‑source</h3>
+          <p class="muted">No hidden feeds or black boxes. Our ranking logic is <strong>auditable</strong>, our code is open.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="do">
+      <h2 id="do">What you can do</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Cut through spam & astroturf</h3>
+          <p class="muted">See fresh, relevant discussion without the sludge.</p>
+        </div>
+        <div class="card">
+          <h3>Find topical expertise</h3>
+          <p class="muted">Identify credible contributors by topic and history.</p>
+        </div>
+        <div class="card">
+          <h3>Explore the conversation graph</h3>
+          <p class="muted">Visualize connections and communities around a topic.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="how">
+      <h2 id="how">How it works</h2>
+      <ul class="list how">
+        <li><strong>Verify</strong> — We ingest publicly available, signature‑verified posts.</li>
+        <li><strong>Understand</strong> — AI <strong>embeddings</strong> and <strong>reasoning</strong> grasp meaning beyond keywords.</li>
+        <li><strong>Rank & explain</strong> — Your <strong>trust graph</strong> and relevance scores surface better results, with clear “Why this result” explanations.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="developers">
+      <h2 id="developers">For developers & reviewers</h2>
+      <details>
+        <summary>Open the technical notes</summary>
+        <div class="hr"></div>
+        <div class="cols-2">
+          <div>
+            <ul class="list">
+              <li><strong>Vector search</strong> with <strong>Couchbase 7.6</strong> FTS vector indexes (RAG‑ready).</li>
+              <li><strong>Trust/relevance scoring on GPUs</strong> using <strong>RAPIDS cuGraph</strong> / <strong>nx‑cuGraph</strong> (PageRank, Louvain, betweenness, etc.).</li>
+              <li><strong>Model serving</strong> via <strong>NVIDIA Triton Inference Server</strong> (PyTorch/ONNX/TensorRT backends). We keep Triton current (≥ <strong>25.07</strong>).</li>
+              <li><strong>Open weights</strong> LLMs (summaries, tagging, expertise inference) with optional <strong>TensorRT‑LLM</strong> optimizations.</li>
+              <li><strong>Deployed on OpenShift</strong> with GitOps & Pipelines (cloud‑agnostic).</li>
+            </ul>
+            <p class="muted" style="margin-top:12px;"><strong>Status</strong>: Alpha. <strong>Target latency</strong>: sub‑1s P50 for common queries. <strong>Security</strong>: public data only.</p>
+          </div>
+          <div>
+            <div class="tag">Docs</div>
+            <ul class="list">
+              <li><a href="https://docs.couchbase.com/server/current/vector-search/vector-search.html" target="_blank" rel="noopener">Couchbase Vector Search</a></li>
+              <li><a href="https://docs.rapids.ai/api/cugraph/stable/nx_cugraph/" target="_blank" rel="noopener">RAPIDS nx‑cuGraph</a></li>
+              <li><a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html" target="_blank" rel="noopener">NVIDIA Triton Inference Server</a></li>
+              <li><a href="https://docs.nvidia.com/tensorrt-llm/index.html" target="_blank" rel="noopener">TensorRT‑LLM</a></li>
+            </ul>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section aria-labelledby="team">
+      <h2 id="team">Team</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Paul Capestany</h3>
+          <p class="muted">Founder & Full‑Stack Engineer (ex‑SRE; systems + data)</p>
+        </div>
+        <div class="card">
+          <h3>Traun Leyden</h3>
+          <p class="muted">Senior Software & Deep Learning Engineer</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="cta">
+      <h2 id="cta">Stay in the loop</h2>
+      <p class="muted">Alpha is private while we stabilize ranking and explainability. Want early access?</p>
+      <div class="cta-row">
+        <a class="btn primary" href="mailto:contact@cyphai.com?subject=Join%20the%20Cyphai%20waitlist">Join the waitlist</a>
+        <a class="btn" href="mailto:contact@cyphai.com?subject=Press%20%2F%20Review%20access">Press & reviewers</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="hr"></div>
+      <div>© <span id="y"></span> Cyphai • Public data only • Open‑source components • <a href="mailto:contact@cyphai.com">contact@cyphai.com</a></div>
+    </div>
+    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  </footer>
+</body>
+</html>

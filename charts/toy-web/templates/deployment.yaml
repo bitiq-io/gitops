@@ -1,0 +1,107 @@
+{{- $frontend := default (dict) .Values.frontend -}}
+{{- $frontendEnv := default (list) $frontend.env -}}
+{{- $frontendSecret := default (dict) $frontend.secret -}}
+{{- $frontendSecretItems := default (list) $frontendSecret.items -}}
+{{- $frontendSecretEnabled := and $frontendSecret.enabled (gt (len $frontendSecretItems) 0) -}}
+{{- $renderFrontendEnv := or (gt (len $frontendEnv) 0) $frontendSecretEnabled -}}
+{{- $frontendSecretName := default "toy-web-config" $frontendSecret.name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toy-web
+  labels:
+    app.kubernetes.io/name: toy-web
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: toy-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: toy-web
+    spec:
+      {{- $mount := .Values.frontend.secretMount }}
+      {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+      volumes:
+        - name: frontend-secret
+          secret:
+            secretName: {{ $frontendSecretName | quote }}
+      {{- end }}
+      containers:
+        - name: toy-web
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthPath | default "/" }}
+              port: http
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthPath | default "/" }}
+              port: http
+            initialDelaySeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+          volumeMounts:
+            - name: frontend-secret
+              mountPath: {{ default "/etc/frontend-secret" $mount.mountPath | quote }}
+              readOnly: true
+          {{- end }}
+          {{- if $renderFrontendEnv }}
+          env:
+            {{- range $entry := $frontendEnv }}
+            - name: {{ required "frontend.env entries must define name" $entry.name }}
+              {{- if hasKey $entry "valueFrom" }}
+              valueFrom:
+{{ toYaml $entry.valueFrom | indent 16 }}
+              {{- else }}
+              value: {{ default "" $entry.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $frontendSecretEnabled }}
+            {{- range $item := $frontendSecretItems }}
+            - name: {{ required "frontend.secret.items entries must define name" $item.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default $frontendSecretName $item.secretName | quote }}
+                  key: {{ required (printf "frontend.secret.items entry %s must define key" (default "<missing>" $item.name)) $item.key | quote }}
+                  {{- $itemOptional := default $frontendSecret.optional $item.optional }}
+                  {{- if $itemOptional }}
+                  optional: {{ $itemOptional }}
+                  {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- if and $mount.enabled (default false $mount.reloadSidecar.enabled) }}
+      - name: configmap-reload
+        image: {{ default "ghcr.io/jimmidyson/configmap-reload:v0.14.0" $mount.reloadSidecar.image }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - --volume-dir={{ default "/etc/frontend-secret" $mount.mountPath }}
+          {{- if $mount.reloadSidecar.webhookUrl }}
+          - --webhook-url={{ $mount.reloadSidecar.webhookUrl }}
+          - --webhook-method={{ default "POST" $mount.reloadSidecar.webhookMethod }}
+          {{- end }}
+        volumeMounts:
+          - name: frontend-secret
+            mountPath: {{ default "/etc/frontend-secret" $mount.mountPath | quote }}
+            readOnly: true
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

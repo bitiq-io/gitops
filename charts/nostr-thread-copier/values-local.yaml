@@ -1,0 +1,3 @@
+image:
+  tag: 1d0998e
+  pullPolicy: Always

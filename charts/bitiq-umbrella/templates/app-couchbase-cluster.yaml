@@ -1,0 +1,56 @@
+{{- $cb := default (dict) .Values.couchbase }}
+{{- $cbEnabled := false }}
+{{- if hasKey $cb "enabled" }}
+  {{- $cbEnabled = eq (lower (printf "%v" (get $cb "enabled"))) "true" }}
+{{- end }}
+{{- if $cbEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: couchbase-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  ignoreDifferences:
+    # Keep this surgical: only ignore status on operator-managed CRs to avoid
+    # perpetual OutOfSync while still surfacing spec drift that matters.
+    - group: couchbase.com
+      kind: CouchbaseCluster
+      jsonPointers:
+        - /status
+    - group: couchbase.com
+      kind: CouchbaseBucket
+      jsonPointers:
+        - /status
+        - /spec/cluster
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/couchbase-cluster
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: baseDomain
+          value: {{ .Values.baseDomain | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

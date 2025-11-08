@@ -1,0 +1,14 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ .Values.operators.pipelines.name }}
+  namespace: {{ .Values.operators.pipelines.installNamespace }}
+spec:
+  channel: {{ .Values.operators.pipelines.channel }}
+  name: {{ .Values.operators.pipelines.name }}
+  source: {{ .Values.operators.pipelines.source }}
+  sourceNamespace: {{ .Values.operators.pipelines.sourceNamespace }}
+  installPlanApproval: {{ .Values.operators.pipelines.approval }}
+  {{- if .Values.operators.pipelines.startingCSV }}
+  startingCSV: {{ .Values.operators.pipelines.startingCSV | quote }}
+  {{- end }}

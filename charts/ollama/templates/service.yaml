@@ -1,0 +1,21 @@
+{{- if eq (include "ollama.mode" .) "gpu" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  labels:
+{{ include "ollama.labels" . | indent 4 }}
+  {{- with .Values.gpu.service.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.gpu.service.type }}
+  selector:
+    app.kubernetes.io/name: ollama
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.gpu.service.port }}
+      targetPort: http
+{{- end }}

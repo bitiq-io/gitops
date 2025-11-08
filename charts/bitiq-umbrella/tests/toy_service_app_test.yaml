@@ -1,0 +1,48 @@
+suite: Toy service Application annotations
+templates:
+  - templates/app-toy-service.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image updater annotations when enabled
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "toy-service=quay.io/paulcapestany/toy-service"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-service.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/toy-service/values-local.yaml
+  - it: omits annotations when paused
+    set:
+      imageUpdater:
+        toyService:
+          pause: true
+    asserts:
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-service.helm.image-name"]
+      - notExists:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+  - it: includes env value file layering and ignoreMissingValueFiles
+    set:
+      env: sno
+    asserts:
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-common.yaml
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-sno.yaml
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-sno-local.yaml
+      - equal:
+          path: spec.source.helm.ignoreMissingValueFiles
+          value: true

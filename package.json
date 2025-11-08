@@ -1,0 +1,14 @@
+{
+  "name": "bitiq-gitops",
+  "private": true,
+  "version": "0.0.0",
+  "description": "GitOps repo tooling (commit hooks, linters)",
+  "devDependencies": {
+    "@commitlint/cli": "^18.0.0",
+    "@commitlint/config-conventional": "^18.0.0"
+  },
+  "scripts": {
+    "commitlint": "commitlint --config commitlint.config.mjs --from=HEAD~1 --to=HEAD"
+  }
+}
+

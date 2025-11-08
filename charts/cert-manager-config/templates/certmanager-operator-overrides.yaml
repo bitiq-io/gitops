@@ -1,0 +1,16 @@
+{{- $op := .Values.operatorOverrides | default (dict) }}
+{{- if and ($op.enabled) ($op.dns01) }}
+apiVersion: operator.openshift.io/v1alpha1
+kind: CertManager
+metadata:
+  name: cluster
+spec:
+  unsupportedConfigOverrides:
+    controller:
+      args:
+        - --dns01-recursive-nameservers-only
+{{- $list := $op.dns01.recursiveNameservers | default (list "1.1.1.1:53" "8.8.8.8:53") }}
+{{- range $ns := $list }}
+        - --dns01-recursive-nameservers={{ $ns | quote }}
+{{- end }}
+{{- end }}

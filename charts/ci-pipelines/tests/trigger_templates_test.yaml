@@ -1,0 +1,65 @@
+suite: TriggerTemplates per pipeline
+templates:
+  - templates/triggers.yaml
+release:
+  name: ci-pipelines
+  namespace: openshift-pipelines
+tests:
+  - it: renders TriggerTemplate for backend pipeline (toy-service)
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: bitiq-build-and-push-template
+      - equal:
+          path: spec.resourcetemplates[0].spec.taskRunTemplate.podTemplate.securityContext.fsGroup
+          value: 1.00069e+09
+  - it: renders TriggerTemplate for nostr_threads pipeline
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: nostr-threads-build-and-push-template
+      - equal:
+          path: spec.resourcetemplates[0].spec.taskRunTemplate.podTemplate.securityContext.fsGroup
+          value: 1.00069e+09
+  - it: renders TriggerTemplate for nostouch pipeline
+    documentIndex: 2
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: nostouch-build-and-push-template
+      - equal:
+          path: spec.resourcetemplates[0].spec.taskRunTemplate.podTemplate.securityContext.fsGroup
+          value: 1.00069e+09
+  - it: renders TriggerTemplate for frontend pipeline (toy-web)
+    documentIndex: 3
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: bitiq-web-build-and-push-template
+      - equal:
+          path: spec.resourcetemplates[0].spec.taskRunTemplate.podTemplate.securityContext.fsGroup
+          value: 1.00069e+09
+  - it: renders TriggerTemplate for gitops maintenance pipeline
+    documentIndex: 4
+    asserts:
+      - isKind:
+          of: TriggerTemplate
+      - equal:
+          path: metadata.name
+          value: gitops-maintenance-template
+      - equal:
+          path: spec.resourcetemplates[0].spec.taskRunTemplate.podTemplate.securityContext.fsGroup
+          value: 1.00069e+09
+      - equal:
+          path: spec.resourcetemplates[0].spec.workspaces[1].secret.secretName
+          value: gitops-repo-creds

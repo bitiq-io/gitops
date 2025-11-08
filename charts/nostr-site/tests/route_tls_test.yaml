@@ -1,0 +1,15 @@
+suite: Route TLS configuration
+templates:
+  - templates/route.yaml
+release:
+  name: nostr-site
+  namespace: bitiq-local
+tests:
+  - it: sets TLS termination to edge
+    set:
+      route:
+        host: relay.example.test
+    asserts:
+      - equal:
+          path: spec.tls.termination
+          value: edge

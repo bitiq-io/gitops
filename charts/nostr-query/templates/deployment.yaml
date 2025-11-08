@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nostr-query.fullname" . }}
+  labels:
+{{ include "nostr-query.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "nostr-query.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "nostr-query.selectorLabels" . | indent 8 }}
+{{- with .Values.podAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{- range .Values.imagePullSecrets }}
+        - name: {{ . }}
+{{- end }}
+{{- end }}
+      serviceAccountName: {{ include "nostr-query.serviceAccountName" . }}
+{{- with .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- with .Values.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+          env:
+{{- if .Values.env.envPrefix }}
+            - name: ENV_PREFIX
+              value: {{ .Values.env.envPrefix | quote }}
+{{- end }}
+{{- if .Values.env.gitCommitHash }}
+            - name: GIT_COMMIT_HASH
+              value: {{ .Values.env.gitCommitHash | quote }}
+{{- end }}
+{{- if .Values.env.ollamaHost }}
+            - name: OLLAMA_HOST
+              value: {{ .Values.env.ollamaHost | quote }}
+{{- end }}
+            - name: OPENAI_HIGHLIGHT_MODEL
+              value: {{ .Values.env.openaiHighlightModel | quote }}
+            - name: OPENAI_HELPER_MODEL
+              value: {{ .Values.env.openaiHelperModel | quote }}
+{{- if and .Values.secrets.couchbase.enabled .Values.secrets.couchbase.secretName }}
+            - name: COUCHBASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.couchbase.secretName | quote }}
+                  key: {{ .Values.secrets.couchbase.usernameKey | default "username" | quote }}
+            - name: COUCHBASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.couchbase.secretName | quote }}
+                  key: {{ .Values.secrets.couchbase.passwordKey | default "password" | quote }}
+{{- end }}
+{{- if and .Values.secrets.openai.enabled .Values.secrets.openai.secretName }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.openai.secretName | quote }}
+                  key: {{ .Values.secrets.openai.apiKeyKey | default "OPENAI_API_KEY" | quote }}
+{{- end }}
+{{- range .Values.env.extra }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+{{- end }}
+{{- if .Values.envFrom }}
+          envFrom:
+{{- range .Values.envFrom }}
+            - {{- if .configMapRef }}
+              configMapRef:
+{{ toYaml .configMapRef | indent 16 }}
+              {{- else if .secretRef }}
+              secretRef:
+{{ toYaml .secretRef | indent 16 }}
+              {{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+{{ toYaml (omit .Values.livenessProbe "enabled") | indent 12 }}
+{{- end }}
+{{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+{{ toYaml (omit .Values.readinessProbe "enabled") | indent 12 }}
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      restartPolicy: Always
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}

@@ -1,0 +1,45 @@
+{{- $r53 := .Values.dns01.route53 | default (dict) }}
+{{- $enabled := (and (hasKey .Values "dns01") (hasKey .Values.dns01 "route53") (eq (lower (printf "%v" $r53.enabled)) "true")) }}
+{{- if $enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ $r53.name | default "letsencrypt-dns01-route53-local" | quote }}
+spec:
+  acme:
+    email: {{ $r53.email | default "you@example.com" | quote }}
+    server: {{ ternary "https://acme-v02.api.letsencrypt.org/directory" "https://acme-staging-v02.api.letsencrypt.org/directory" $r53.production | quote }}
+    privateKeySecretRef:
+      name: {{ printf "%s-key" ($r53.name | default "letsencrypt-dns01-route53-local") | quote }}
+    solvers:
+{{- if $r53.zones }}
+{{- range $z := $r53.zones }}
+      - selector:
+          dnsZones:
+            - {{ $z.zone | quote }}
+        dns01:
+          route53:
+            region: {{ $r53.region | default "us-east-1" | quote }}
+            hostedZoneID: {{ $z.hostedZoneID | quote }}
+            accessKeyIDSecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.accessKeyIDKey | default "access-key-id" | quote }}
+            secretAccessKeySecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.secretAccessKeyKey | default "secret-access-key" | quote }}
+{{- end }}
+{{- else }}
+      - dns01:
+          route53:
+            region: {{ $r53.region | default "us-east-1" | quote }}
+            {{- if $r53.hostedZoneID }}
+            hostedZoneID: {{ $r53.hostedZoneID | quote }}
+            {{- end }}
+            accessKeyIDSecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.accessKeyIDKey | default "access-key-id" | quote }}
+            secretAccessKeySecretRef:
+              name: {{ $r53.credentialsSecretRef.name | default "route53-credentials" | quote }}
+              key: {{ $r53.credentialsSecretRef.secretAccessKeyKey | default "secret-access-key" | quote }}
+{{- end }}
+{{- end }}

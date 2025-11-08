@@ -1,0 +1,37 @@
+apiVersion: couchbase.com/v2
+kind: CouchbaseCluster
+metadata:
+  name: couchbase-cluster
+spec:
+  image: {{ .Values.image | default "couchbase/server:7.6.6" | quote }}
+  security:
+    adminSecret: {{ .Values.adminSecretName | quote }}
+  buckets:
+    managed: {{ ternary "true" "false" (.Values.bucketsManaged | default true) }}
+  # Define a default volume claim template named "default" and mount it
+  volumeClaimTemplates:
+    - metadata:
+        name: default
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.defaultSize | default "20Gi" | quote }}
+        {{- if .Values.servers.storageClassRWO }}
+        storageClassName: {{ .Values.servers.storageClassRWO | quote }}
+        {{- end }}
+  servers:
+    - name: all-services
+      size: {{ .Values.servers.size }}
+      services:
+{{- range .Values.servers.services }}
+        - {{ . | quote }}
+{{- end }}
+      volumeMounts:
+        default: default
+  cluster:
+    dataServiceMemoryQuota: {{ .Values.clusterQuotas.data | default "512Mi" | quote }}
+    indexServiceMemoryQuota: {{ .Values.clusterQuotas.index | default "256Mi" | quote }}
+    queryServiceMemoryQuota: {{ .Values.clusterQuotas.query | default "256Mi" | quote }}
+    searchServiceMemoryQuota: {{ .Values.clusterQuotas.search | default "256Mi" | quote }}
+    eventingServiceMemoryQuota: {{ .Values.clusterQuotas.eventing | default "256Mi" | quote }}

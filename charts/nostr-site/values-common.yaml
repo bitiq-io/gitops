@@ -1,0 +1,14 @@
+baseDomain: ""
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: 1.25-alpine
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+service:
+  port: 8080
+  type: ClusterIP
+
+route:
+  host: ""  # explicit FQDN
+  clusterIssuerName: ""

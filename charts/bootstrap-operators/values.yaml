@@ -1,0 +1,80 @@
+operators:
+  gitops:
+    channel: gitops-1.18        # Compatible with OCP 4.19 (see GitOps 1.18 release notes)
+    name: openshift-gitops-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""             # typically omitted
+    approval: Automatic         # or Manual
+    disableDefaultInstance: false  # set true if you want to create your own ArgoCD instance
+
+  pipelines:
+    channel: pipelines-1.20     # Compatible with OCP 4.19 (see Pipelines 1.20 release notes)
+    name: openshift-pipelines-operator-rh
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
+
+  vso:
+    channel: stable
+    name: vault-secrets-operator
+    source: certified-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: hashicorp-vault-secrets-operator
+    startingCSV: ""
+    approval: Automatic
+    createNamespace: true
+
+  vco:
+    channel: alpha
+    name: vault-config-operator
+    source: community-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: vault-config-operator
+    startingCSV: ""
+    approval: Automatic
+    createNamespace: true
+
+  certManager:
+    channel: stable-v1
+    name: openshift-cert-manager-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
+  # Couchbase Autonomous Operator (disabled by default). Provide the correct
+  # catalog source and package name for your environment, then set enabled=true.
+  cao:
+    enabled: false
+    channel: ""               # e.g., stable
+    name: ""                  # e.g., couchbase-operator-certified
+    source: ""                # e.g., redhat-operators or certified-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
+argoInstance:
+  create: true                  # Manage the cluster ArgoCD instance declaratively
+  name: openshift-gitops
+  namespace: openshift-gitops
+  spec:
+    server:
+      route:
+        enabled: true
+    extraConfig:
+      timeout.reconciliation: 30s
+    controller:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi

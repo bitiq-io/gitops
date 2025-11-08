@@ -1,0 +1,55 @@
+{{- $saName := .Values.serviceAccountName | default "pipeline" -}}
+{{- $registrySecret := .Values.registrySecretName | default "" -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $saName }}
+  namespace: openshift-pipelines
+{{- if $registrySecret }}
+imagePullSecrets:
+  - name: {{ $registrySecret }}
+secrets:
+  - name: {{ $registrySecret }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-edit" $saName }}
+  namespace: openshift-pipelines
+subjects:
+  - kind: ServiceAccount
+    name: {{ $saName }}
+    namespace: openshift-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-scc" $saName }}
+  namespace: openshift-pipelines
+subjects:
+  - kind: ServiceAccount
+    name: {{ $saName }}
+    namespace: openshift-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:pipelines-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-privileged-scc" $saName }}
+  namespace: openshift-pipelines
+subjects:
+  - kind: ServiceAccount
+    name: {{ $saName }}
+    namespace: openshift-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:privileged

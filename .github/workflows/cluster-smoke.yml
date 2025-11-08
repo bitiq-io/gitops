@@ -1,0 +1,68 @@
+---
+name: Cluster Smoke (optional)
+
+"on":
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment (local|sno|prod)"
+        required: true
+        default: "local"
+      bootstrap:
+        description: "Run bootstrap.sh before checks (dangerous on shared clusters)"
+        required: false
+        default: "false"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools (oc, helm, jq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+          curl -sSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz \
+            | sudo tar -xz -C /usr/local/bin oc kubectl
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup kubeconfig / login
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+          OC_URL: ${{ secrets.OC_URL }}
+          OC_TOKEN: ${{ secrets.OC_TOKEN }}
+          OC_USER: ${{ secrets.OC_USER }}
+          OC_PASSWORD: ${{ secrets.OC_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KUBECONFIG_B64}" ]; then
+            mkdir -p ~/.kube
+            echo "$KUBECONFIG_B64" | base64 -d > ~/.kube/config
+            echo "Configured kubeconfig from secret."
+            oc whoami
+            exit 0
+          fi
+          if [ -n "${OC_URL}" ] && [ -n "${OC_TOKEN}" ]; then
+            oc login --token="$OC_TOKEN" --server="$OC_URL" --insecure-skip-tls-verify=true
+            exit 0
+          fi
+          if [ -n "${OC_URL}" ] && [ -n "${OC_USER}" ] && [ -n "${OC_PASSWORD}" ]; then
+            oc login -u "$OC_USER" -p "$OC_PASSWORD" "$OC_URL" --insecure-skip-tls-verify=true
+            exit 0
+          fi
+          echo "No cluster credentials provided." >&2
+          echo "Set KUBECONFIG_B64 or OC_URL + OC_TOKEN/OC_USER+OC_PASSWORD in repo/organization secrets." >&2
+          exit 1
+
+      - name: Run smoke checks
+        env:
+          ENV: ${{ github.event.inputs.env }}
+          BOOTSTRAP: ${{ github.event.inputs.bootstrap }}
+          BASE_DOMAIN: apps-crc.testing
+        run: |
+          bash scripts/smoke.sh "$ENV"

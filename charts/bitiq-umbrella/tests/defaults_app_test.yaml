@@ -1,0 +1,64 @@
+suite: Defaults emit updater annotations (service)
+templates:
+  - templates/app-toy-service.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image-list and write-back with chart defaults
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "toy-service=quay.io/paulcapestany/toy-service"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-service.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/toy-service/values-local.yaml
+
+---
+suite: Defaults emit updater annotations (web)
+templates:
+  - templates/app-toy-web.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image-list and write-back with chart defaults
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "toy-web=quay.io/paulcapestany/toy-web"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-web.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/toy-web/values-local.yaml
+
+---
+suite: Defaults emit updater annotations (nostr-threads)
+templates:
+  - templates/app-nostr-threads.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders image-list and write-back with chart defaults
+    set:
+      env: local
+      nostrThreads:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
+          value: "nostr-threads=quay.io/paulcapestany/nostr_threads"
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/nostr-threads.helm.image-name"]
+          value: image.repository
+      - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
+          value: helmvalues:/charts/nostr-threads/values-local.yaml

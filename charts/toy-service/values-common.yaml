@@ -1,0 +1,42 @@
+baseDomain: ""
+
+replicaCount: 1
+hostPrefix: "svc-api"
+healthPath: "/"
+image:
+  repository: quay.io/paulcapestany/toy-service
+  tag: "v0.2.21-commit.b7791f1"
+  pullPolicy: IfNotPresent
+service:
+  port: 8080
+  type: ClusterIP
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+backend:
+  env: []
+  secret:
+    enabled: true
+    name: toy-service-config
+    optional: false
+    items:
+      - name: FAKE_SECRET
+        key: FAKE_SECRET
+  # Optional: mount Secret keys as files for hot-reload patterns.
+  secretMount:
+    enabled: true
+    mainContainerMount: true
+    mountPath: /etc/backend-secret
+    reloadSidecar:
+      enabled: false
+      image: ghcr.io/jimmidyson/configmap-reload:v0.14.0
+      webhookUrl: ""       # e.g., http://127.0.0.1:8080/-/reload
+      webhookMethod: POST

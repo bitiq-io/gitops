@@ -1,0 +1,28 @@
+enabled: false
+
+vault:
+  address: https://vault.vault-dev.svc:8200
+  kubernetesHost: https://kubernetes.default.svc
+  mountPath: kubernetes
+  connectionRole: kube-auth
+  # KV mount used by apps (VSO) for static secrets, used to build policy HCL
+  kvMountPath: gitops
+  # ServiceAccount used by VCO to authenticate to Vault (namespace is this chart's target namespace, openshift-gitops)
+  serviceAccountName: default
+
+policies:
+  - gitops-local
+
+# Default capabilities granted to app policy over the KV mount
+policyCapabilities:
+  - read
+  - list
+
+roles:
+  - name: gitops-local
+    targetNamespaces:
+      - bitiq-local
+    targetServiceAccounts:
+      - default
+    policies:
+      - gitops-local

@@ -1,0 +1,82 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/paulcapestany/nostr_threads
+  tag: v0.1.1-commit.55dcef3
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: null
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 8081
+  targetPort: 8081
+  annotations: {}
+
+env:
+  envPrefix: ""
+  gitCommitHash: ""
+  extra: []
+
+envFrom: []
+
+secrets:
+  couchbase:
+    enabled: true
+    secretName: couchbase-cluster-auth
+    usernameKey: username
+    passwordKey: password
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 1Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  failureThreshold: 5
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 45
+  periodSeconds: 10
+  failureThreshold: 5
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowSameNamespace: true
+    allowOpenShiftIngress: false
+    additional: []
+  egress:
+    allowDNS: true
+    allowSameNamespace: true
+    additional: []

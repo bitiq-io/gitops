@@ -1,0 +1,100 @@
+{{- if .Values.vault.runtime.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-runtime-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/vault-runtime
+    helm:
+      values: |
+        enabled: true
+        vault:
+          address: {{ .Values.vault.runtime.address | quote }}
+          kubernetesMount: {{ .Values.vault.runtime.kubernetesMount | default "kubernetes" | quote }}
+          roleName: {{ .Values.vault.runtime.roleName | default (printf "gitops-%s" .Values.env) | quote }}
+        namespaces:
+          gitops: {{ .Values.gitopsNamespace }}
+          pipelines: {{ .Values.pipelinesNamespace }}
+          app: {{ .Values.appNamespace }}
+        secrets:
+          route53Credentials:
+            enabled: {{ default false .Values.certManager.route53CredentialsEnabled }}
+            path: {{ .Values.certManager.route53CredentialsPath | default "cert-manager/route53" | quote }}
+            destinationName: {{ .Values.certManager.route53SecretName | default "route53-credentials" | quote }}
+            namespace: {{ .Values.certManager.route53SecretNamespace | default "cert-manager" | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
+
+{{- if .Values.vault.config.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-config-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/vault-config
+    helm:
+      values: |
+        enabled: true
+        vault:
+          address: {{ .Values.vault.config.address | quote }}
+          kubernetesHost: {{ .Values.vault.config.kubernetesHost | default "https://kubernetes.default.svc" | quote }}
+          mountPath: {{ .Values.vault.config.mountPath | default "kubernetes" | quote }}
+          connectionRole: {{ .Values.vault.config.connectionRole | default "kube-auth" | quote }}
+        roles:
+          - name: {{ .Values.vault.config.roleName | default (printf "gitops-%s" .Values.env) | quote }}
+            targetNamespaces:
+              - {{ .Values.gitopsNamespace }}
+              - {{ .Values.pipelinesNamespace }}
+              - {{ .Values.appNamespace }}
+            targetServiceAccounts:
+              - default
+            policies:
+              - {{ .Values.vault.config.policyName | default (printf "gitops-%s" .Values.env) | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.gitopsNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

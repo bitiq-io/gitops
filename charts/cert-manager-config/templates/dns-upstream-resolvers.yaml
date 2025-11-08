@@ -1,0 +1,26 @@
+{{- $dns := .Values.dns | default (dict) -}}
+{{- $up := $dns.upstreamResolvers | default (dict) -}}
+{{- if and ($up.enabled) ($up.upstreams) }}
+apiVersion: operator.openshift.io/v1
+kind: DNS
+metadata:
+  name: default
+spec:
+  upstreamResolvers:
+    policy: {{ $up.policy | default "Sequential" | quote }}
+    {{- if and (hasKey $up "protocolStrategy") (ne (printf "%v" $up.protocolStrategy) "") }}
+    protocolStrategy: {{ $up.protocolStrategy | default "" | quote }}
+    {{- end }}
+    {{- if and (hasKey $up "transportConfig") (not (empty $up.transportConfig)) }}
+    transportConfig:
+{{ toYaml $up.transportConfig | indent 6 }}
+    {{- end }}
+    upstreams:
+{{- range $upstream := $up.upstreams }}
+      - type: {{ $upstream.type | default "Network" | quote }}
+        address: {{ $upstream.address | quote }}
+        {{- if hasKey $upstream "port" }}
+        port: {{ $upstream.port }}
+        {{- end }}
+{{- end }}
+{{- end }}

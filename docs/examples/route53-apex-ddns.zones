@@ -1,0 +1,12 @@
+# Sample zones file for route53-apex-ddns.sh
+# Copy to /etc/route53-apex-ddns.zones and adjust as needed.
+
+cyphai.com=Z02889471UKP31JE18HPE
+neuance.net=Z0726808X55WJNUN7BTX
+paulcapestany.com=Z03183593TRC0TQ7HVQYU
+didgo.com=ZPOF2JE05NGE4
+bitiq.io=ZPCVSGRXCIK5E
+noelcapestany.com=Z056483715JLINW841SV7
+beatricecapestany.com=Z079077016RPVX58KHIKL
+ipiqi.com=Z3PIMZQLSMODH8
+signet.ing=Z062821132J5XJBR00GCP

@@ -1,0 +1,43 @@
+{{- $pipelines := .Values.pipelines -}}
+{{- range $idx, $pipeline := $pipelines }}
+{{- if $idx }}
+---
+{{- end }}
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: {{ $pipeline.name }}-manual
+  namespace: openshift-pipelines
+  annotations:
+    pipelinesascode.tekton.dev/on-target-branch: main
+spec:
+  taskRunTemplate:
+    serviceAccountName: {{ $pipeline.serviceAccountName | default $.Values.serviceAccountName }}
+{{- $exampleFsGroup := coalesce $pipeline.fsGroup $.Values.fsGroup }}
+{{- if $exampleFsGroup }}
+    podTemplate:
+      securityContext:
+        fsGroup: {{ $exampleFsGroup }}
+{{- end }}
+  pipelineRef:
+    name: {{ $pipeline.name }}
+  params:
+    - name: git-url
+      value: {{ $pipeline.gitUrl }}
+    - name: git-revision
+      value: {{ $pipeline.gitRevision }}
+    - name: runTests
+      value: {{ $pipeline.runTests | default "false" | quote }}
+    - name: testImage
+      value: {{ $pipeline.testImage | default "" | quote }}
+    - name: testScript
+      value: {{ $pipeline.testScript | default "" | quote }}
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 2Gi
+{{- end }}
