@@ -28,6 +28,8 @@ dns01:
         hostedZoneID: Z3PIMZQLSMODH8
       - zone: neuance.net
         hostedZoneID: Z0726808X55WJNUN7BTX
+      - zone: signet.ing
+        hostedZoneID: Z062821132J5XJBR00GCP
     credentialsSecretRef:
       name: route53-credentials
       accessKeyIDKey: access-key-id
