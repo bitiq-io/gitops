@@ -3,4 +3,4 @@ baseDomain: apps.sno.example
 # Override image per env to ensure deterministic tag shape
 image:
   repository: quay.io/paulcapestany/toy-service
-  tag: v0.3.32-commit.241bb2c
+  tag: v0.3.38-commit.c709549
