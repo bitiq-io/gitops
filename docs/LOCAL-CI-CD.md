@@ -157,6 +157,8 @@ oc -n openshift-gitops logs deploy/argocd-image-updater -f
 
 - It updates `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` with the new tags → Argo syncs the apps → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
 
+> **Note:** As of 2025-11-08 the toy-service automation is paused (`imageUpdater.toyService.pause=true`) because the sample image is still single-architecture. Use `scripts/pin-images.sh --svc-tag <tag>` (or edit `charts/toy-service/values-<env>.yaml` manually) to move the backend image until we ship multi-arch builds.
+
 ## AppVersion automation (gitops-maintenance)
 
 The umbrella chart’s `appVersion` now stays in lockstep with annotated chart tags via the `gitops-maintenance` Tekton pipeline.
