@@ -23,7 +23,7 @@ envs:
     platforms: linux/amd64
     toyServiceImageUpdater:
       enabled: true
-      pause: false
+      pause: true
     toyWebImageUpdater:
       pause: false
     # Enable selected services for local env
@@ -78,7 +78,7 @@ envs:
     platforms: linux/amd64
     toyServiceImageUpdater:
       enabled: true
-      pause: false
+      pause: true
     toyWebImageUpdater:
       pause: false
     strfryEnabled: false
@@ -114,7 +114,7 @@ envs:
     platforms: linux/amd64
     toyServiceImageUpdater:
       enabled: true
-      pause: false
+      pause: true
     toyWebImageUpdater:
       pause: false
     strfryEnabled: false
