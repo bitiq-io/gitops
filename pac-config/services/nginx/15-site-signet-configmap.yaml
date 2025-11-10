@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: site-signet
   namespace: bitiq-local
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
 binaryData:
   site.tar.gz: |
     H4sIALpyEmkAA+z9BVzUS/cHji+d0l3S3Q0C0iVSkgpILSENS7c0iAqCiIISSkhKKQ1Ko4hICSIo
