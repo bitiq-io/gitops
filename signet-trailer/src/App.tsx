@@ -223,13 +223,13 @@ export default function App() {
             className="h-1 bg-gradient-to-r from-transparent via-black to-transparent mt-16 mb-12 mx-auto max-w-3xl"
           />
           
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto flex flex-col items-center space-y-4 text-center">
             {isMobile || prefersReducedMotion ? (
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 3.2, duration: 1 }}
-                className="text-black inline-block relative"
+                className="text-black inline-block relative text-center"
                 style={{ fontFamily: 'Urbanist, sans-serif !important', fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)', lineHeight: '1.4' }}
               >
                 <span className="relative z-10 px-2 py-1">
@@ -250,7 +250,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 3.2, duration: 1 }}
-                className="text-black inline-block relative"
+                className="text-black inline-block relative text-center"
                 style={{ fontFamily: 'Urbanist, sans-serif !important', fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)', lineHeight: '1.4' }}
               >
                 <span className="relative z-10 px-2 py-1">
@@ -400,7 +400,7 @@ export default function App() {
                 Signal vs. Noise
               </h2>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '18px', lineHeight: '1.7' }} className="text-gray-700">
-                Oftentimes, the most helpful comment sits buried 7 levels deep. Quality contributors get overshadowed by 5-minute-old spambot accounts that bought 10k followers and posted provocative pics. Valuable perspectives drown in noise while nonsense posted by influencers goes viral. You waste hours scrolling through trash or miss what actually matters.
+                Feeds are flooded with ragebait, AI slop, and brainrot designed to maximize engagement (and advertising revenue)—not quality. Oftentimes, the most helpful comment sits buried 7 levels deep in nested replies. Great contributors get overshadowed by 5-minute-old spambot accounts that bought 10k followers and posted provocative pics. Valuable perspectives drown in noise while nonsense posted by clout-chasing influencers goes viral. You waste hours scrolling through sludge or miss what actually matters.
               </p>
             </div>
             <div className="flex items-center">
@@ -418,10 +418,10 @@ export default function App() {
       <section id="what-signet-does" className="py-32 px-6 bg-black text-white">
         <div className="max-w-5xl mx-auto">
           <h2 style={{ fontFamily: 'Urbanist, sans-serif', fontWeight: '700', fontSize: '48px' }} className="text-white mb-3">
-            <span style={{ fontFamily: 'Urbanist, sans-serif', fontWeight: '700', letterSpacing: '-0.025em' }}>Signet</span> Highlights What Matters
+            <span style={{ fontFamily: 'Urbanist, sans-serif', fontWeight: '700', letterSpacing: '-0.025em' }}>Signet</span> Is An App That Highlights What Matters
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '20px' }} className="text-gray-400 mb-12">
-            A mix of AI and human judgement separate signal from noise
+            We're using a combination of AI and human judgement to help separate signal from noise
           </p>
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             <div className="bg-white/5 p-8 border border-white/10">
@@ -430,7 +430,7 @@ export default function App() {
                 Convergent Patterns
               </h3>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '16px', lineHeight: '1.6' }} className="text-gray-300">
-                Multiple signals suggesting high value. When experts, sustained contributors, and community references align, we highlight it in yellow.
+                Multiple signals suggesting high value. When contributors have demonstrated sustained significant competence and proficiency, and community references align, we highlight it in yellow.
               </p>
             </div>
             <div className="bg-white/5 p-8 border border-white/10">
@@ -489,7 +489,7 @@ export default function App() {
                 Foundation
               </h3>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '16px', lineHeight: '1.7' }} className="text-gray-700">
-                Like ancient signet rings that proved authorship by unforgeably stamping wax seals, digital signatures create persistent identity online. When someone's been helpful about nutrition for three years, those contributions carry their unique digital "stamp"—the same identity over time. No sockpuppets claiming instant expertise. No platform employees manipulating databases. For the first time, a mix of AI and human judgement at scale can analyze contribution patterns that actually mean something because identity persists.
+                Like ancient signet rings that proved authorship by unforgeably stamping wax seals on documents, digital signatures allow for persistently verifiable identity online. We're building Signet on top of an open protocol with millions of existing users that allows us to verify who's said what network-wide. When someone's been continuously helpful on a topic throughout their posting history, those contributions carry their unique digital "stamp"—the same identity over time. No sockpuppets claiming instant expertise. No corporate platform employees who could silently manipulate what it seems you say (or see). For the first time, a mix of AI and human judgement at scale can analyze contribution patterns that actually mean something because identity persists.
               </p>
             </div>
             
@@ -518,7 +518,7 @@ export default function App() {
             What Makes <span style={{ fontFamily: 'Urbanist, sans-serif', fontWeight: '700', letterSpacing: '-0.025em' }}>Signet</span> Different
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '18px' }} className="text-gray-600 mb-16">
-            We're not another engagement-driven platform.
+            We’re not another engagement‑maximization machine.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -643,7 +643,7 @@ export default function App() {
                 Technology
               </div>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '18px', lineHeight: '1.7' }} className="text-gray-100">
-                GPU-accelerated ML analyzes millions of contributions, identifying convergent/divergent patterns at scale.
+                GPU-accelerated ML and graph analysis techniques (using cuGraph) process millions of contributions, identifying convergent/divergent patterns at scale.
               </p>
             </div>
             
@@ -652,7 +652,7 @@ export default function App() {
                 Open Source
               </div>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '18px', lineHeight: '1.7' }} className="text-gray-100 mb-4">
-                All code and calculations will be made public at
+                All code will be made public at
               </p>
               <a 
                 href="https://github.com/signeting" 
@@ -676,8 +676,8 @@ export default function App() {
           <div className="space-y-8">
             {[
               {
-                q: "How is this different from upvotes?",
-                a: "Upvotes reward popularity and can be bought. We detect patterns that are expensive to fake—years of quality contributions can't be fabricated retroactively."
+                q: "How is this different from upvotes/likes/reposts/etc?",
+                a: "Traditional platforms reward perceived popularity, which can easily be bought. We detect patterns that are difficult to fake—years of quality contributions can't be fabricated retroactively."
               },
               {
                 q: "What about echo chambers?",
@@ -697,11 +697,11 @@ export default function App() {
               },
               {
                 q: "Why should non-technical people care?",
-                a: "Every decision—health, money, careers—is influenced by online discussions where quality is invisible. We make the valuable stuff you're missing actually visible."
+                a: "Every decision—health, money, careers—could be influenced by online discussions where quality is essentially invisible. We make the valuable stuff you're missing actually visible."
               },
               {
                 q: "What exactly gets highlighted?",
-                a: "About 15% yellow (convergent valuable), 10% purple (divergent valuable). The rest stays unhighlighted. By default we hide obvious spam."
+                a: "It depends on the context, but about 15% yellow (convergent valuable), and 10% purple (divergent valuable). The rest stays unhighlighted. By default we hide obvious spam."
               }
             ].map((faq, i) => (
               <div key={i} className="border-b border-gray-200 pb-8 last:border-0">
@@ -725,7 +725,7 @@ export default function App() {
             {' '}you've been missing?
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '20px' }} className="text-gray-300 mb-12">
-            Join early access. See for yourself.
+            Ask for early access. See for yourself.
           </p>
           
           <a 
