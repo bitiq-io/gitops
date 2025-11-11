@@ -489,7 +489,7 @@ export default function App() {
                 Foundation
               </h3>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '16px', lineHeight: '1.7' }} className="text-gray-700">
-                Like ancient signet rings that proved authorship by unforgeably stamping wax seals on documents, digital signatures allow for persistently verifiable identity online. We're building Signet on top of an open protocol with millions of existing users that allows us to verify who's said what network-wide. When someone's been continuously helpful on a topic throughout their posting history, those contributions carry their unique digital "stamp"—the same identity over time. No sockpuppets claiming instant expertise. No corporate platform employees who could silently manipulate what it seems you say (or see). For the first time, a mix of AI and human judgement at scale can analyze contribution patterns that actually mean something because identity persists.
+                Like ancient signet rings that proved authorship by unforgeably stamping wax seals on documents, digital signatures allow for persistently verifiable identity online. We're building Signet on top of an <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline decoration-purple-400 underline-offset-2">open protocol</a> with millions of existing users that allows us to verify who's said what network-wide. When someone's been continuously helpful on a topic throughout their posting history, those contributions carry their unique digital "stamp"—the same identity over time. No sockpuppets claiming instant expertise. No corporate platform employees who could silently manipulate what it seems you say (or see). For the first time, a mix of AI and human judgement at scale can analyze contribution patterns that actually mean something because identity persists.
               </p>
             </div>
             
@@ -614,7 +614,7 @@ export default function App() {
                 What we analyze
               </h3>
               <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: '16px', lineHeight: '1.7' }} className="text-gray-700">
-                Public messages from open protocols with digital signatures. Network relationships. Engagement patterns. No external sites. No private data. No popularity metrics. We analyze contribution patterns, not claimed credentials.
+                Public messages from <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline decoration-purple-400 underline-offset-2">open protocols</a> with digital signatures. Network relationships. Engagement patterns. No external sites. No private data. No popularity metrics. We analyze contribution patterns, not claimed credentials.
               </p>
             </div>
             
