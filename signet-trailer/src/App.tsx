@@ -2,6 +2,9 @@ import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import DemoThread from './components/DemoThread';
 
+const SPEED_MULTIPLIER = 0.5;
+const speed = (value: number) => value * SPEED_MULTIPLIER;
+
 export default function App() {
   const letters = "UNBREAK".split("");
   const [isMobile, setIsMobile] = useState(false);
@@ -49,8 +52,8 @@ export default function App() {
           scale: 1,
         },
         transition: {
-          duration: 1.5,
-          delay: index * 0.15,
+          duration: speed(1.5),
+          delay: index * 0.15 * SPEED_MULTIPLIER,
           ease: [0.22, 1, 0.36, 1],
         }
       };
@@ -85,13 +88,13 @@ export default function App() {
         ]
       },
       transition: {
-        duration: 1.8,
-        delay: index * 0.15,
+        duration: speed(1.8),
+        delay: index * 0.15 * SPEED_MULTIPLIER,
         ease: [0.22, 1, 0.36, 1],
         filter: {
           times: [0, 0.25, 0.5, 0.6, 0.65, 0.7, 0.75, 0.85, 0.95, 1],
-          duration: 1.8,
-          delay: index * 0.15
+          duration: speed(1.8),
+          delay: index * 0.15 * SPEED_MULTIPLIER
         }
       }
     };
@@ -117,7 +120,7 @@ export default function App() {
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 9, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ delay: speed(9), duration: speed(0.6), ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -158,7 +161,7 @@ export default function App() {
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 2, opacity: 0.015 }}
-          transition={{ duration: 2, delay: 0.5 }}
+          transition={{ duration: speed(2), delay: speed(0.5) }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
         >
           <div 
@@ -199,8 +202,8 @@ export default function App() {
             initial={{ opacity: 0, y: 100, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
-              duration: 1.5,
-              delay: 1.8,
+              duration: speed(1.5),
+              delay: speed(1.8),
               ease: [0.22, 1, 0.36, 1]
             }}
             className="text-black"
@@ -219,7 +222,7 @@ export default function App() {
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ delay: 2.5, duration: 1.2, ease: "easeInOut" }}
+            transition={{ delay: speed(2.5), duration: speed(1.2), ease: "easeInOut" }}
             className="h-1 bg-gradient-to-r from-transparent via-black to-transparent mt-16 mb-12 mx-auto max-w-3xl"
           />
           
@@ -228,7 +231,7 @@ export default function App() {
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 3.2, duration: 1 }}
+                transition={{ delay: speed(3.2), duration: speed(1) }}
                 className="text-black inline-block relative text-center"
                 style={{ fontFamily: 'Urbanist, sans-serif !important', fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)', lineHeight: '1.4' }}
               >
@@ -240,7 +243,7 @@ export default function App() {
                 <motion.span
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ delay: 4.2, duration: 0.6, ease: "easeOut" }}
+                  transition={{ delay: speed(4.2), duration: speed(0.6), ease: "easeOut" }}
                   className="absolute inset-0"
                   style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(255, 255, 0, 1)' }}
                 />
@@ -249,7 +252,7 @@ export default function App() {
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 3.2, duration: 1 }}
+                transition={{ delay: speed(3.2), duration: speed(1) }}
                 className="text-black inline-block relative text-center"
                 style={{ fontFamily: 'Urbanist, sans-serif !important', fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)', lineHeight: '1.4' }}
               >
@@ -261,7 +264,7 @@ export default function App() {
                 <motion.span
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ delay: 4.2, duration: 0.6, ease: "easeOut" }}
+                  transition={{ delay: speed(4.2), duration: speed(0.6), ease: "easeOut" }}
                   className="absolute inset-0"
                   style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(255, 255, 0, 1)' }}
                 />
@@ -273,7 +276,7 @@ export default function App() {
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 5.2, duration: 1 }}
+                  transition={{ delay: speed(5.2), duration: speed(1) }}
                   className="text-black inline-block relative"
                   style={{ fontFamily: 'Urbanist, sans-serif', fontSize: 'clamp(1.3rem, 3vw, 2.25rem)', fontWeight: '700', lineHeight: '1.3' }}
                 >
@@ -284,7 +287,7 @@ export default function App() {
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 6.2, duration: 0.6, ease: "easeOut" }}
+                    transition={{ delay: speed(6.2), duration: speed(0.6), ease: "easeOut" }}
                     className="absolute inset-0"
                     style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(168, 85, 247, 1)' }}
                   />
@@ -293,7 +296,7 @@ export default function App() {
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 5.2, duration: 1 }}
+                  transition={{ delay: speed(5.2), duration: speed(1) }}
                   className="text-black inline-block relative"
                   style={{ fontFamily: 'Urbanist, sans-serif', fontSize: 'clamp(1.3rem, 3vw, 2.25rem)', fontWeight: '700', lineHeight: '1.3' }}
                 >
@@ -304,7 +307,7 @@ export default function App() {
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 6.2, duration: 0.6, ease: "easeOut" }}
+                    transition={{ delay: speed(6.2), duration: speed(0.6), ease: "easeOut" }}
                     className="absolute inset-0"
                     style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(168, 85, 247, 1)' }}
                   />
@@ -318,8 +321,8 @@ export default function App() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ 
-                    delay: 7.7, 
-                    duration: 1, 
+                    delay: speed(7.7), 
+                    duration: speed(1), 
                     ease: [0.22, 1, 0.36, 1]
                   }}
                   className="text-black inline-block relative"
@@ -335,7 +338,7 @@ export default function App() {
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 8.2, duration: 0.6, ease: "easeOut" }}
+                    transition={{ delay: speed(8.2), duration: speed(0.6), ease: "easeOut" }}
                     className="absolute inset-0"
                     style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(168, 85, 247, 1)' }}
                   />
@@ -357,7 +360,7 @@ export default function App() {
                         key={index}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 7.7 + (index * 0.05), duration: 0.1 }}
+                        transition={{ delay: speed(7.7 + (index * 0.05)), duration: speed(0.1) }}
                       >
                         {char}
                       </motion.span>
@@ -366,7 +369,7 @@ export default function App() {
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 8.35, duration: 0.6, ease: "easeOut" }}
+                    transition={{ delay: speed(8.35), duration: speed(0.6), ease: "easeOut" }}
                     className="absolute inset-0"
                     style={{ transformOrigin: 'left', zIndex: 0, backgroundColor: 'rgba(168, 85, 247, 1)' }}
                   />
@@ -382,8 +385,8 @@ export default function App() {
             initial={{ y: '-100%', opacity: 0.8 }}
             animate={{ y: '200%', opacity: 0 }}
             transition={{
-              duration: 3,
-              delay: 0.5,
+              duration: speed(3),
+              delay: speed(0.5),
               ease: "easeInOut"
             }}
             className="absolute inset-x-0 h-32 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none"
