@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.1](https://github.com/bitiq-io/gitops/compare/v0.3.0...v0.3.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* **cert-manager-config:** prefer crc resolver ([d30f612](https://github.com/bitiq-io/gitops/commit/d30f6129ca2495398d5947009f20f30af385d141))
+* **charts:** align toy-service tag parity ([71773c8](https://github.com/bitiq-io/gitops/commit/71773c8e626ea83e7222cb257d2f7da202c42abc))
+* **nginx:** enable SSA for signet bundle ([cd3375f](https://github.com/bitiq-io/gitops/commit/cd3375ffa01cbb9fd2e89a7ad651d3327abf8ac2))
+* **nginx:** refresh signet site payload ([b28f854](https://github.com/bitiq-io/gitops/commit/b28f854b2a6dbb8d3f6126c0544e2cc3f91074c7))
+* **nginx:** ship refreshed signet assets ([e181f6a](https://github.com/bitiq-io/gitops/commit/e181f6ac432bcffdbb6daa37af381fe04b7998b9))
+* **signet-trailer:** ship refreshed og image assets ([94efc2b](https://github.com/bitiq-io/gitops/commit/94efc2be71e5985ef2459e9af1b867659ea41439))
+* **signet:** copy, layout, and deploy ([ad1b561](https://github.com/bitiq-io/gitops/commit/ad1b561cc74b29c7ab918c7787706432b1d925cc))
+* **signet:** link to nostr protocol ([83f4c22](https://github.com/bitiq-io/gitops/commit/83f4c221c21816ec955e4c69fbb04ae69dc2ef6d))
+* **signet:** speed up hero animations ([6cd4976](https://github.com/bitiq-io/gitops/commit/6cd4976a14de545c502dbf8781d3c1dfae1911bb))
+* **signet:** sync seo metadata to deployed html ([ad2875a](https://github.com/bitiq-io/gitops/commit/ad2875a8be467cb706832bfffc34b46483bf3bbf))
+* **umbrella:** pause toy-service image updater loop ([9668b7f](https://github.com/bitiq-io/gitops/commit/9668b7fcd65045ecc158c4a9ec1d32c67a5971cc))
+
 ## [0.3.0](https://github.com/bitiq-io/gitops/compare/v0.2.0...v0.3.0) (2025-09-16)
 
 
