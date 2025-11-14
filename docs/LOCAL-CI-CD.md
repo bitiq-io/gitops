@@ -196,6 +196,7 @@ The umbrella chart’s `appVersion` now stays in lockstep with annotated chart t
 
 Troubleshooting
 
+- **OpenShift console shows “Application is not available”** – CRC Routes depend on the host resolver for `*.apps-crc.testing`. If the DNS operator forwards everything straight to 1.1.1.1/8.8.8.8 the console pod cannot reach OAuth and the route health checks fail. Keep `charts/cert-manager-config/values-local.yaml` > `dns.upstreamResolvers.upstreams[0]` pointed at the CRC host (currently `192.168.127.1`). Leave public resolvers as fallbacks only if you still need them for general DNS lookups.
 - EventListener keeps rolling and port-forward is flaky:
   - Symptom: `oc -n openshift-pipelines describe deploy/el-bitiq-listener` shows frequent new ReplicaSets and the systemd port-forward logs drop with "error: lost connection to pod" and `PodSandbox ... not found`.
   - Cause: multiple envs (local/sno/prod) were rendered on the same cluster and are fighting over shared Tekton resource names in `openshift-pipelines` (labels like `app.kubernetes.io/instance` differ per Helm release, triggering rollouts).
