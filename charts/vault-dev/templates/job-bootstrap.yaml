@@ -36,6 +36,7 @@ spec:
               NAMESPACE="{{ .Release.Namespace }}"
               SECRET_PATH="/bootstrap-secret"
               SECRET_NAME='{{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}'
+              HEALTH_ENDPOINT="${VAULT_ADDR}/v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204"
 
               ROOT_TOKEN=""
               UNSEAL_KEY=""
@@ -50,7 +51,7 @@ spec:
               wait_for_vault() {
                 log "waiting for Vault HTTP endpoint…"
                 for i in $(seq 1 120); do
-                  if wget -qO- "${VAULT_ADDR}/v1/sys/health" >/dev/null 2>&1; then
+                  if wget -qO- "${HEALTH_ENDPOINT}" >/dev/null 2>&1; then
                     return 0
                   fi
                   sleep 2
@@ -62,14 +63,14 @@ spec:
               json_get_bool() {
                 key="$1"
                 data="$2"
-                printf '%s' "$data" | tr -d '\n' | sed -n "s/.*\"${key}\":\s*\(true\|false\).*/\1/p"
+                printf '%s' "$data" | tr -d '\r\n' | sed -n "s/.*\"${key}\":\s*\(true\|false\).*/\1/p"
               }
 
-              parse_init_json() {
-                init_json="$1"
-                flat=$(printf '%s' "$init_json" | tr -d '\n')
-                ROOT_TOKEN=$(printf '%s' "$flat" | sed -n 's/.*"root_token":"\([^"]*\)".*/\1/p')
-                UNSEAL_KEY=$(printf '%s' "$flat" | sed -n 's/.*"unseal_keys_b64":\["\([^"]*\)".*/\1/p')
+              parse_init_output() {
+                init_text="$1"
+                clean=$(printf '%s' "$init_text" | tr -d '\r')
+                ROOT_TOKEN=$(printf '%s\n' "$clean" | awk -F': ' '/Initial Root Token/ {print $2}')
+                UNSEAL_KEY=$(printf '%s\n' "$clean" | awk -F': ' '/Unseal Key 1/ {print $2}')
               }
 
               ensure_secret() {
@@ -100,15 +101,21 @@ spec:
 
               wait_for_vault
 
-              status_json=$(vault status -format=json 2>/dev/null || true)
-              status_flat=$(printf '%s' "$status_json" | tr -d '\n')
-              initialized=$(json_get_bool initialized "$status_flat")
-              sealed=$(json_get_bool sealed "$status_flat")
-
-              if [ "$initialized" != "true" ]; then
+              if [ -z "$ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
                 log "initializing Vault (single-share dev setup)"
-                init_out=$(vault operator init -key-shares=1 -key-threshold=1 -format=json)
-                parse_init_json "$init_out"
+                init_rc=0
+                init_out=$(vault operator init -key-shares=1 -key-threshold=1 2>&1) || init_rc=$?
+                if [ "$init_rc" -ne 0 ]; then
+                  if printf '%s' "$init_out" | grep -q "Vault is already initialized"; then
+                    log "ERROR: Vault already initialized but bootstrap Secret lacks tokens"
+                    printf '%s\n' "$init_out"
+                  else
+                    log "ERROR: vault operator init failed:"
+                    printf '%s\n' "$init_out"
+                  fi
+                  exit 1
+                fi
+                parse_init_output "$init_out"
                 if [ -z "$ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
                   log "ERROR: failed to parse init response"
                   exit 1
@@ -116,25 +123,30 @@ spec:
                 log "unsealing newly initialized Vault"
                 vault operator unseal "$UNSEAL_KEY"
                 ensure_secret
-              else
-                if [ "$sealed" = "true" ]; then
-                  if [ -z "$UNSEAL_KEY" ]; then
-                    log "ERROR: Vault sealed and no unseal key provided (mount Secret '{{ .Values.bootstrap.secretName }}')"
-                    exit 1
-                  fi
-                  log "unsealing existing Vault"
-                  vault operator unseal "$UNSEAL_KEY"
+              fi
+
+              status_json=$(vault status -format=json 2>/dev/null || true)
+              status_flat=$(printf '%s' "$status_json" | tr -d '\r\n')
+              sealed=$(json_get_bool sealed "$status_flat")
+
+              if [ "$sealed" = "true" ]; then
+                if [ -z "$UNSEAL_KEY" ]; then
+                  log "ERROR: Vault sealed and no unseal key provided (mount Secret '{{ .Values.bootstrap.secretName }}')"
+                  exit 1
                 fi
-                if [ -z "$ROOT_TOKEN" ]; then
-                  log "WARNING: root token not available; policy/bootstrap steps may be skipped"
-                fi
+                log "unsealing existing Vault"
+                vault operator unseal "$UNSEAL_KEY"
+              fi
+
+              if [ -z "$ROOT_TOKEN" ]; then
+                log "WARNING: root token not available; policy/bootstrap steps may be skipped"
               fi
 
               if [ -n "$ROOT_TOKEN" ]; then
                 export VAULT_TOKEN="$ROOT_TOKEN"
 
                 log "ensuring KV v2 mount 'gitops' exists"
-                if ! vault secrets list -format=json 2>/dev/null | tr -d '\n' | grep -q '"gitops/"'; then
+                if ! vault secrets list -format=json 2>/dev/null | tr -d '\r\n' | grep -q '"gitops/"'; then
                   vault secrets enable -path=gitops -version=2 kv >/dev/null
                 fi
 
