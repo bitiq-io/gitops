@@ -86,6 +86,7 @@ helm template charts/bitiq-umbrella -f charts/bitiq-umbrella/values-common.yaml 
 - Branch names: `docs/...`, `feat(charts): ...`, `fix(umbrella): ...`, `chore(pipelines): ...`
 - Use Conventional Commits with scopes where useful.
 - Include env impact in the PR description (e.g., affects local|sno|prod values).
+- After merging, delete local feature branches and their remote counterparts to keep the tree tidy (`git branch -d <branch>`, `git push origin --delete <branch>`).
 - Creating PRs via GitHub CLI:
   - Prefer `gh pr create --fill` to use the PR template and commit body
   - If providing a custom body, use `--body-file <file>` to avoid literal `\n`
