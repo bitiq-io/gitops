@@ -27,7 +27,7 @@ spec:
         - name: vault
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: ["server"]
+          args: ["server", "-config=/vault/config/vault.hcl"]
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
