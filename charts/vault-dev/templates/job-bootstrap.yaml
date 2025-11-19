@@ -48,10 +48,24 @@ spec:
                 UNSEAL_KEY=$(cat "$SECRET_PATH/unseal_key")
               fi
 
+              ensure_curl() {
+                if command -v curl >/dev/null 2>&1; then
+                  return 0
+                fi
+                if command -v apk >/dev/null 2>&1; then
+                  log "installing curl (apk add curl)"
+                  apk add --no-cache curl >/dev/null
+                  return 0
+                fi
+                log "ERROR: curl is required but not available"
+                return 1
+              }
+
               wait_for_vault() {
+                ensure_curl
                 log "waiting for Vault HTTP endpoint…"
                 for i in $(seq 1 120); do
-                  if wget -qO- "${HEALTH_ENDPOINT}" >/dev/null 2>&1; then
+                  if curl -fsS "${HEALTH_ENDPOINT}" >/dev/null 2>&1; then
                     return 0
                   fi
                   sleep 2
@@ -74,6 +88,7 @@ spec:
               }
 
               ensure_secret() {
+                ensure_curl
                 if [ -z "$ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
                   log "WARNING: skipping secret creation (missing tokens)"
                   return 0
@@ -95,8 +110,8 @@ spec:
                   '}' \
                   > /tmp/secret.json
                 log "storing credentials in Secret ${SECRET_NAME}"
-                wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --method=DELETE "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}" || true
-                wget --quiet --output-document=/dev/null --ca-certificate="$CA_CERT" --header "$AUTH_HEADER" --header "Content-Type: application/json" --post-file=/tmp/secret.json "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets"
+                curl -fsS --cacert "$CA_CERT" --header "$AUTH_HEADER" -X DELETE "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}" >/dev/null 2>&1 || true
+                curl -fsS --cacert "$CA_CERT" --header "$AUTH_HEADER" --header "Content-Type: application/json" --data-binary @/tmp/secret.json "${KUBERNETES_HOST}/api/v1/namespaces/${NAMESPACE}/secrets" >/dev/null
               }
 
               wait_for_vault
