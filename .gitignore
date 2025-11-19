@@ -26,3 +26,6 @@ pac-config/*
 pac-config/services/*
 !pac-config/services/nginx/
 !pac-config/services/nginx/**
+
+# Local testing repos
+nostr_threads/
