@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swan-like "S" Font Comparison for Signet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Yeseva+One&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Marcellus&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;0,6..96,800;0,6..96,900;1,6..96,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 3rem 2rem;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .intro {
+      max-width: 800px;
+      margin-bottom: 3rem;
+      color: #a1a1aa;
+      font-size: 1.1rem;
+    }
+    
+    .intro h2 {
+      color: #d8b4fe;
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .intro ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .intro li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .font-grid {
+      display: grid;
+      gap: 3rem;
+      max-width: 1400px;
+    }
+    
+    .font-card {
+      background: #1a1a1a;
+      border: 2px solid #27272a;
+      border-radius: 1rem;
+      padding: 2rem;
+      transition: border-color 0.3s;
+    }
+    
+    .font-card:hover {
+      border-color: #7c3aed;
+    }
+    
+    .font-name {
+      font-size: 1.25rem;
+      color: #d8b4fe;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .font-description {
+      color: #71717a;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    
+    .font-display {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .letter-s {
+      font-size: 8rem;
+      line-height: 1;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .word-signet {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    
+    .characteristics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .tag {
+      background: #27272a;
+      color: #a1a1aa;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+    }
+    
+    .tag.highlight {
+      background: #7c3aed33;
+      color: #d8b4fe;
+      border: 1px solid #7c3aed;
+    }
+    
+    @media (max-width: 768px) {
+      .letter-s {
+        font-size: 5rem;
+      }
+      .word-signet {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Swan-like "S" Fonts for Signet</h1>
+  
+  <div class="intro">
+    <p><strong>Context:</strong> Since "Signet" sounds like "Cygnet" (a baby swan), we're looking for fonts with swan-like qualities.</p>
+    
+    <h2>🦢 Swan Characteristics to Look For:</h2>
+    <ul>
+      <li><strong>Elongated, graceful curves</strong> - like a swan's long, elegant neck</li>
+      <li><strong>Smooth, flowing lines</strong> - organic movement, no harsh angles</li>
+      <li><strong>Stroke contrast (thin to thick)</strong> - mimics the tapering of a swan's neck</li>
+      <li><strong>Elegant terminals</strong> - refined, tapered ends (like feather tips)</li>
+      <li><strong>Balanced proportions</strong> - symmetrical beauty and poise</li>
+      <li><strong>Classical refinement</strong> - timeless elegance and purity</li>
+      <li><strong>Vertical emphasis</strong> - proud, regal posture</li>
+    </ul>
+  </div>
+  
+  <div class="font-grid">
+    
+    <!-- Playfair Display -->
+    <div class="font-card">
+      <div class="font-name">Playfair Display</div>
+      <div class="font-description">
+        High contrast transitional serif with extremely elegant curves. The "S" has beautiful flowing strokes with dramatic thick-to-thin variation, perfect swan-neck quality.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Playfair Display', serif;">S</div>
+        <div class="word-signet" style="font-family: 'Playfair Display', serif;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">High Contrast</span>
+        <span class="tag highlight">Elegant Curves</span>
+        <span class="tag highlight">Graceful</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Cormorant -->
+    <div class="font-card">
+      <div class="font-name">Cormorant</div>
+      <div class="font-description">
+        Named after a water bird! Designed with elegance in mind. The "S" has beautiful organic curves with refined stroke modulation - very swan-like.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Cormorant', serif; font-weight: 500;">S</div>
+        <div class="word-signet" style="font-family: 'Cormorant', serif; font-weight: 500;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Bird-Inspired</span>
+        <span class="tag highlight">Organic Curves</span>
+        <span class="tag highlight">Refined</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Cinzel -->
+    <div class="font-card">
+      <div class="font-name">Cinzel</div>
+      <div class="font-description">
+        Classical Roman-inspired with regal bearing. The "S" is tall and proud with elegant curves - evokes purity and timelessness.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Cinzel', serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Cinzel', serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Regal</span>
+        <span class="tag highlight">Classical</span>
+        <span class="tag">Vertical Emphasis</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Bodoni Moda -->
+    <div class="font-card">
+      <div class="font-name">Bodoni Moda</div>
+      <div class="font-description">
+        Modern interpretation of classic Bodoni. Extreme contrast between thick and thin strokes creates an incredibly graceful "S" - quintessential swan-neck aesthetic.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Bodoni Moda', serif; font-weight: 700;">S</div>
+        <div class="word-signet" style="font-family: 'Bodoni Moda', serif; font-weight: 700;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Extreme Contrast</span>
+        <span class="tag highlight">Swan-neck Curves</span>
+        <span class="tag highlight">Sophisticated</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Yeseva One -->
+    <div class="font-card">
+      <div class="font-name">Yeseva One</div>
+      <div class="font-description">
+        Ornate display serif with flowing, calligraphic qualities. The "S" has beautiful organic movement - very elegant and slightly baroque.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Yeseva One', serif;">S</div>
+        <div class="word-signet" style="font-family: 'Yeseva One', serif;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Flowing</span>
+        <span class="tag highlight">Ornate</span>
+        <span class="tag">Calligraphic</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Marcellus -->
+    <div class="font-card">
+      <div class="font-name">Marcellus</div>
+      <div class="font-description">
+        Classical serif with pure, clean lines. The "S" is refined and balanced - evokes purity and elegance without being overly ornate.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Marcellus', serif;">S</div>
+        <div class="word-signet" style="font-family: 'Marcellus', serif;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Pure</span>
+        <span class="tag highlight">Balanced</span>
+        <span class="tag">Classical</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- EB Garamond -->
+    <div class="font-card">
+      <div class="font-name">EB Garamond</div>
+      <div class="font-description">
+        Revival of classic Garamond with refined proportions. The "S" has gentle, organic curves with subtle contrast - timeless elegance.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'EB Garamond', serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'EB Garamond', serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Organic</span>
+        <span class="tag highlight">Timeless</span>
+        <span class="tag">Subtle Contrast</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Libre Baskerville -->
+    <div class="font-card">
+      <div class="font-name">Libre Baskerville</div>
+      <div class="font-description">
+        Transitional serif with graceful proportions. The "S" has smooth curves and elegant stroke variation - sophisticated and refined.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Libre Baskerville', serif; font-weight: 700;">S</div>
+        <div class="word-signet" style="font-family: 'Libre Baskerville', serif; font-weight: 700;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Graceful</span>
+        <span class="tag highlight">Refined</span>
+        <span class="tag">Traditional</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Lora -->
+    <div class="font-card">
+      <div class="font-name">Lora</div>
+      <div class="font-description">
+        Contemporary serif with calligraphic roots. The "S" has beautiful flowing curves with moderate contrast - elegant and modern.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Lora', serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Lora', serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Flowing</span>
+        <span class="tag">Modern</span>
+        <span class="tag">Calligraphic</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Crimson Text -->
+    <div class="font-card">
+      <div class="font-name">Crimson Text</div>
+      <div class="font-description">
+        Old-style serif inspired by classical typefaces. The "S" has gentle, organic curves with traditional proportions - warmth and elegance.
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Crimson Text', serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Crimson Text', serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag highlight">Organic</span>
+        <span class="tag">Traditional</span>
+        <span class="tag">Warm</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+  </div>
+  
+  <div class="intro" style="margin-top: 4rem;">
+    <h2>🎯 Top Recommendations:</h2>
+    <ul>
+      <li><strong>Playfair Display</strong> - Best overall swan-like "S" with dramatic curves and high contrast</li>
+      <li><strong>Cormorant</strong> - Literally named after a water bird, very elegant and refined</li>
+      <li><strong>Bodoni Moda</strong> - Most extreme swan-neck quality with its contrast</li>
+      <li><strong>Cinzel</strong> - Best for regal, pure aesthetic</li>
+    </ul>
+    
+    <h2>💡 Usage Notes:</h2>
+    <p>All fonts shown are free via Google Fonts. You can test them by opening this HTML file in your browser. The fonts with "highlight" tags match the most swan-like criteria.</p>
+    
+    <p style="margin-top: 1rem;"><strong>For the favicon:</strong> Consider using a bolder weight (700-900) to ensure crisp rendering at small sizes, while maintaining those elegant curves.</p>
+  </div>
+  
+</body>
+</html>

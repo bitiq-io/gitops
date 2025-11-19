@@ -19,7 +19,8 @@ Usage
 1) Ensure DNS CNAMEs for each domain point to your cluster/router host.
 2) Allow Argo CD to sync this folder (umbrella app `nginx-sites-local`).
 3) The Job `init-static-sites` runs once to seed placeholders. To re-run, delete the Job and let Argo recreate it, or bump the Job name.
-4) Place real content by writing into the PVC path matching each domain, for example:
+4) `paulcapestany.com/` is synced straight from this repo (see `paulcapestany.com/` at the repo root). After updating the files, delete the Job (or bump its name) so Argo reruns it and refreshes the PVC content.
+5) Place/override the rest of the real content by writing into the PVC path matching each domain, for example:
    - `/usr/share/nginx/html/cyphai.com/index.html`
    - `/usr/share/nginx/html/didgo.com/index.html`
 

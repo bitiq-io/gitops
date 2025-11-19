@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Signet Icons</title>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #111;
+            color: white;
+        }
+        .instructions {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            background: #222;
+            border: 1px solid #444;
+        }
+        .canvas-container {
+            text-align: center;
+            margin: 30px auto;
+        }
+        canvas {
+            display: inline-block;
+            margin: 10px;
+            border: 2px solid #a855f7;
+        }
+        .label {
+            display: block;
+            margin-top: 5px;
+            color: #a855f7;
+            font-weight: 600;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 40px;
+            background: #a855f7;
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        .download-links {
+            text-align: center;
+            margin: 20px;
+        }
+        .download-link {
+            display: inline-block;
+            margin: 10px 15px;
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        code {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #a855f7;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>Signet Icons Generator</h1>
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Open this HTML file in your browser</li>
+            <li>Click "Generate All Icons" button below</li>
+            <li>Right-click each canvas and "Save Image As..." with the correct filename</li>
+            <li>Save all icons to your <code>/public</code> folder</li>
+        </ol>
+        <p><strong>Files to create:</strong></p>
+        <ul>
+            <li><code>favicon.png</code> - 32×32 pixels</li>
+            <li><code>apple-touch-icon.png</code> - 180×180 pixels</li>
+            <li><code>apple-touch-icon-152x152.png</code> - 152×152 pixels</li>
+        </ul>
+        <p><em>Note: For favicon.ico, you'll need to use an online converter or ImageMagick after creating favicon.png</em></p>
+    </div>
+
+    <div class="canvas-container">
+        <div>
+            <canvas id="favicon" width="32" height="32"></canvas>
+            <span class="label">favicon.png (32×32)</span>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div>
+            <canvas id="appleTouchIcon" width="180" height="180"></canvas>
+            <span class="label">apple-touch-icon.png (180×180)</span>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div>
+            <canvas id="appleTouchIcon152" width="152" height="152"></canvas>
+            <span class="label">apple-touch-icon-152x152.png (152×152)</span>
+        </div>
+    </div>
+
+    <button onclick="generateIcons()">Generate All Icons</button>
+    <div id="downloadContainer" class="download-links"></div>
+
+    <script>
+        function drawIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Yellow background circle
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw black S in Urbanist 800
+            ctx.fillStyle = '#000000';
+            ctx.font = `800 ${size * 0.7}px Urbanist, system-ui, -apple-system, Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('S', size/2, size/2);
+            
+            return canvas;
+        }
+
+        function generateIcons() {
+            // Generate all sizes
+            const favicon = drawIcon('favicon', 32);
+            const appleIcon180 = drawIcon('appleTouchIcon', 180);
+            const appleIcon152 = drawIcon('appleTouchIcon152', 152);
+            
+            // Create download links
+            const downloadContainer = document.getElementById('downloadContainer');
+            downloadContainer.innerHTML = `
+                <h3>Download Links:</h3>
+                <a href="${favicon.toDataURL('image/png')}" download="favicon.png" class="download-link">
+                    📥 Download favicon.png
+                </a>
+                <br>
+                <a href="${appleIcon180.toDataURL('image/png')}" download="apple-touch-icon.png" class="download-link">
+                    📥 Download apple-touch-icon.png
+                </a>
+                <br>
+                <a href="${appleIcon152.toDataURL('image/png')}" download="apple-touch-icon-152x152.png" class="download-link">
+                    📥 Download apple-touch-icon-152x152.png
+                </a>
+            `;
+            
+            alert('✅ Icons generated! Right-click each canvas above and "Save Image As..." with the filename shown below it.\n\nOr use the download links below the canvases.');
+        }
+        
+        // Generate on load
+        window.addEventListener('load', generateIcons);
+    </script>
+</body>
+</html>

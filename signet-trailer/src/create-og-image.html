@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Signet OG Image</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #111;
+            color: white;
+        }
+        .instructions {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            background: #222;
+            border: 1px solid #444;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #a855f7;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 40px;
+            background: #a855f7;
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        .download-link {
+            display: block;
+            text-align: center;
+            margin: 20px;
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>Signet OG Image Generator</h1>
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Open this HTML file in your browser</li>
+            <li>Click "Generate OG Image" button below</li>
+            <li>Right-click the canvas and "Save Image As..."</li>
+            <li>Save as <code>og-image.png</code> in your <code>/public</code> folder</li>
+        </ol>
+        <p><strong>Canvas will be 1200×630 pixels (perfect for social media)</strong></p>
+    </div>
+
+    <canvas id="ogCanvas" width="1200" height="630"></canvas>
+    <button onclick="generateImage()">Generate OG Image</button>
+    <div id="downloadContainer"></div>
+
+    <script>
+        function generateImage() {
+            const canvas = document.getElementById('ogCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Black background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // Radial gradient glow
+            const gradient = ctx.createRadialGradient(600, 315, 0, 600, 315, 400);
+            gradient.addColorStop(0, 'rgba(124, 58, 237, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // UNBREAK text with glow
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 20;
+            ctx.font = '900 140px system-ui, -apple-system, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.letterSpacing = '-2px';
+            ctx.fillText('UNBREAK', 600, 280);
+            
+            // THE INTERNET text
+            ctx.font = '900 80px system-ui, -apple-system, Arial, sans-serif';
+            ctx.fillText('THE INTERNET', 600, 380);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Decorative line
+            ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(300, 440);
+            ctx.lineTo(900, 440);
+            ctx.stroke();
+            
+            // Tagline
+            ctx.fillStyle = '#d8b4fe';
+            ctx.font = '600 32px system-ui, -apple-system, Arial, sans-serif';
+            ctx.globalAlpha = 0.9;
+            ctx.fillText('See what matters and why. With receipts.', 600, 500);
+            ctx.globalAlpha = 1;
+            
+            // Create download link
+            const downloadContainer = document.getElementById('downloadContainer');
+            const dataUrl = canvas.toDataURL('image/png');
+            downloadContainer.innerHTML = `
+                <a href="${dataUrl}" download="og-image.png" class="download-link">
+                    📥 Or Click Here to Download og-image.png
+                </a>
+            `;
+            
+            alert('✅ Image generated! Right-click the canvas above and "Save Image As..." or use the download link below.\n\nSave as: og-image.png\nLocation: /public folder');
+        }
+        
+        // Generate on load
+        window.addEventListener('load', generateImage);
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: init-static-sites-v10
+  name: init-static-sites-v11
   namespace: bitiq-local
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -13,13 +13,15 @@ spec:
       restartPolicy: Never
       containers:
         - name: seeder
-          image: busybox:1.36
+          image: curlimages/curl:8.10.1
           command: ["sh", "-c"]
           args:
             - |
               set -eu
               BASE="/mnt"
               mkdir -p "$BASE"
+              ARCHIVE_URL="${STATIC_SITES_ARCHIVE_URL:-https://codeload.github.com/bitiq-io/gitops/tar.gz/refs/heads/main}"
+
               # If curated landing pages are provided via ConfigMaps, copy them in.
               if [ -f /seed/cyphai/index.html ]; then
                 mkdir -p "$BASE/cyphai.com" && cp -f /seed/cyphai/index.html "$BASE/cyphai.com/index.html"
@@ -66,6 +68,26 @@ spec:
               seed "ipiqi.com"               "ipiqi.com"
               seed "neuance.net"             "neuance.net"
               seed "signet.ing"              "signet.ing"
+
+              # Sync paulcapestany.com directly from this repo (large asset set does not fit ConfigMaps)
+              TMPDIR="$(mktemp -d)"
+              cleanup() {
+                rm -rf "$TMPDIR"
+              }
+              trap cleanup EXIT
+              echo "Downloading static site sources from $ARCHIVE_URL"
+              curl -fsSL "$ARCHIVE_URL" -o "$TMPDIR/src.tgz"
+              ROOT_DIR="$(tar -tzf "$TMPDIR/src.tgz" | head -n1 | cut -d/ -f1)"
+              tar -xzf "$TMPDIR/src.tgz" -C "$TMPDIR"
+              SRC="$TMPDIR/$ROOT_DIR/paulcapestany.com"
+              if [ -d "$SRC" ]; then
+                echo "Syncing paulcapestany.com from repo snapshot"
+                rm -rf "$BASE/paulcapestany.com"
+                mkdir -p "$BASE/paulcapestany.com"
+                cp -a "$SRC/." "$BASE/paulcapestany.com/"
+              else
+                echo "WARN: $SRC is missing, skipping paulcapestany.com sync" >&2
+              fi
           volumeMounts:
             - name: static-files
               mountPath: /mnt

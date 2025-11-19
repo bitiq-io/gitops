@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swan-like Fonts with Single-Story "g" for Signet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Jost:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Outfit:wght@100;200;300;400;500;600;700;800;900&family=Urbanist:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Lexend:wght@100;200;300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Work+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Sora:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 3rem 2rem;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .intro {
+      max-width: 800px;
+      margin-bottom: 3rem;
+      color: #a1a1aa;
+      font-size: 1.1rem;
+    }
+    
+    .intro h2 {
+      color: #d8b4fe;
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .intro ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .intro li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .font-grid {
+      display: grid;
+      gap: 3rem;
+      max-width: 1400px;
+    }
+    
+    .font-card {
+      background: #1a1a1a;
+      border: 2px solid #27272a;
+      border-radius: 1rem;
+      padding: 2rem;
+      transition: border-color 0.3s;
+    }
+    
+    .font-card:hover {
+      border-color: #7c3aed;
+    }
+    
+    .font-name {
+      font-size: 1.25rem;
+      color: #d8b4fe;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .font-description {
+      color: #71717a;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    
+    .font-display {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .letter-s {
+      font-size: 8rem;
+      line-height: 1;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .word-signet {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    
+    .g-comparison {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      align-items: baseline;
+    }
+    
+    .g-letter {
+      font-size: 5rem;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    
+    .g-label {
+      color: #71717a;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    
+    .characteristics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .tag {
+      background: #27272a;
+      color: #a1a1aa;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+    }
+    
+    .tag.highlight {
+      background: #7c3aed33;
+      color: #d8b4fe;
+      border: 1px solid #7c3aed;
+    }
+    
+    .tag.green {
+      background: #10b98133;
+      color: #86efac;
+      border: 1px solid #10b981;
+    }
+    
+    @media (max-width: 768px) {
+      .letter-s {
+        font-size: 5rem;
+      }
+      .word-signet {
+        font-size: 2rem;
+      }
+      .g-letter {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Elegant Fonts with Single-Story "g"</h1>
+  
+  <div class="intro">
+    <p><strong>Requirement:</strong> Swan-like elegance for "S" + single-story "g" (no bottom loop, like Menlo)</p>
+    
+    <h2>📝 Single-Story vs Double-Story "g":</h2>
+    <p style="margin-bottom: 1rem;">Most elegant serif fonts use double-story "g" (with the closed loop). Single-story "g" is more common in geometric sans-serifs and modern fonts. Here are the best elegant options with clean, single-story "g"s:</p>
+  </div>
+  
+  <div class="font-grid">
+    
+    <!-- Montserrat -->
+    <div class="font-card">
+      <div class="font-name">Montserrat</div>
+      <div class="font-description">
+        Geometric sans inspired by Buenos Aires signage. The "S" has beautiful flowing curves despite being a sans-serif. Single-story "g" is clean and modern. Very elegant at heavier weights.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Montserrat', sans-serif; font-weight: 600;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Montserrat', sans-serif; font-weight: 600;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Montserrat', sans-serif; font-weight: 700;">S</div>
+        <div class="word-signet" style="font-family: 'Montserrat', sans-serif; font-weight: 700;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Elegant Curves</span>
+        <span class="tag highlight">Refined</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Raleway -->
+    <div class="font-card">
+      <div class="font-name">Raleway</div>
+      <div class="font-description">
+        Elegant geometric sans with thin, graceful strokes. The "S" has swan-like curves with beautiful flow. Single-story "g" is simple and clean. Particularly elegant at lighter weights.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Raleway', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Raleway', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Raleway', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Raleway', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Graceful</span>
+        <span class="tag highlight">Swan-like S</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Jost -->
+    <div class="font-card">
+      <div class="font-name">Jost</div>
+      <div class="font-description">
+        Based on Futura but more refined. Geometric perfection with subtle warmth. The "S" has smooth, elegant curves. Single-story "g" is beautifully simple.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Jost', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Jost', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Jost', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Jost', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Geometric</span>
+        <span class="tag highlight">Pure</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Outfit -->
+    <div class="font-card">
+      <div class="font-name">Outfit</div>
+      <div class="font-description">
+        Modern geometric with rounded terminals. The "S" has beautiful organic flow. Single-story "g" with a friendly, clean appearance. Very versatile.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Outfit', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Outfit', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Outfit', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Outfit', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Organic Flow</span>
+        <span class="tag">Modern</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Urbanist -->
+    <div class="font-card">
+      <div class="font-name">Urbanist</div>
+      <div class="font-description">
+        Contemporary geometric with elegant proportions. The "S" has refined curves with good flow. Single-story "g" is clean and sophisticated.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Urbanist', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Urbanist', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Urbanist', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Urbanist', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Sophisticated</span>
+        <span class="tag">Contemporary</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Lexend -->
+    <div class="font-card">
+      <div class="font-name">Lexend</div>
+      <div class="font-description">
+        Designed for reading ease with balanced proportions. The "S" has smooth, gentle curves. Single-story "g" is perfectly clean. Very legible at all sizes.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Lexend', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Lexend', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Lexend', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Lexend', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Balanced</span>
+        <span class="tag">High Legibility</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Manrope -->
+    <div class="font-card">
+      <div class="font-name">Manrope</div>
+      <div class="font-description">
+        Modern geometric with open apertures. The "S" has elegant, flowing curves. Single-story "g" is clean and modern. Great readability.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Manrope', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Manrope', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Manrope', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Manrope', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Flowing S</span>
+        <span class="tag">Open Apertures</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Space Grotesk -->
+    <div class="font-card">
+      <div class="font-name">Space Grotesk</div>
+      <div class="font-description">
+        Modified version of Space Mono with proportional spacing. The "S" has distinctive character with elegant curves. Single-story "g" is unique and modern.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Space Grotesk', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Space Grotesk', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Distinctive</span>
+        <span class="tag">Tech-Forward</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Work Sans -->
+    <div class="font-card">
+      <div class="font-name">Work Sans</div>
+      <div class="font-description">
+        Optimized for screen display with balanced proportions. The "S" has smooth, professional curves. Single-story "g" is clean and straightforward.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Work Sans', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Work Sans', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Work Sans', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Work Sans', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag">Professional</span>
+        <span class="tag">Clean</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+    <!-- Sora -->
+    <div class="font-card">
+      <div class="font-name">Sora</div>
+      <div class="font-description">
+        Contemporary geometric with subtle personality. The "S" has refined curves with good flow. Single-story "g" is simple and modern.
+      </div>
+      <div class="g-comparison">
+        <div>
+          <div class="g-letter" style="font-family: 'Sora', sans-serif; font-weight: 500;">g</div>
+          <div class="g-label">Single-story ✓</div>
+        </div>
+        <div>
+          <div class="g-letter" style="font-family: 'Sora', sans-serif; font-weight: 500;">signet</div>
+        </div>
+      </div>
+      <div class="font-display">
+        <div class="letter-s" style="font-family: 'Sora', sans-serif; font-weight: 600;">S</div>
+        <div class="word-signet" style="font-family: 'Sora', sans-serif; font-weight: 600;">SIGNET</div>
+      </div>
+      <div class="characteristics">
+        <span class="tag green">Single-Story g</span>
+        <span class="tag highlight">Refined</span>
+        <span class="tag">Contemporary</span>
+        <span class="tag">Free (Google Fonts)</span>
+      </div>
+    </div>
+    
+  </div>
+  
+  <div class="intro" style="margin-top: 4rem;">
+    <h2>🎯 Top Recommendations for Signet:</h2>
+    <ul>
+      <li><strong>Raleway</strong> ⭐ - Most swan-like "S" among single-story g fonts, very elegant and graceful</li>
+      <li><strong>Montserrat</strong> ⭐ - Perfect balance of elegance and modernity, excellent at bold weights</li>
+      <li><strong>Jost</strong> ⭐ - Geometric purity with warmth, beautiful curves</li>
+      <li><strong>Outfit</strong> - Great organic flow, friendly but sophisticated</li>
+    </ul>
+    
+    <h2>⚖️ Trade-offs to Consider:</h2>
+    <p><strong>Serif fonts (double-story g):</strong> More traditional elegance, higher stroke contrast, more swan-like curves</p>
+    <p><strong>Sans-serif fonts (single-story g):</strong> More modern, cleaner at small sizes, better screen rendering, but less dramatic swan-neck aesthetic</p>
+    
+    <h2>💡 Recommendation:</h2>
+    <p>For the <strong>favicon</strong>, consider using <strong>Raleway</strong> or <strong>Montserrat</strong> at weight 700-800. They maintain elegance while the single-story "g" keeps things clean and legible at tiny sizes.</p>
+    
+    <p style="margin-top: 1rem;">For the main landing page animation, you could still use a serif font like <strong>Playfair Display</strong> for maximum drama, and reserve the single-story g font for body text or secondary uses.</p>
+  </div>
+  
+</body>
+</html>

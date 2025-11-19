@@ -54,7 +54,7 @@ dist/
 │   ├── index-[hash].css
 │   └── ...
 ├── favicon.svg
-├── og-image.png
+├── og-image.svg
 ├── manifest.json
 ├── robots.txt
 ├── sitemap.xml
@@ -64,6 +64,35 @@ dist/
 These are the files you'll deploy to nginx.
 
 ## Deploying to Nginx on OpenShift
+
+### 0. Create Social Media Assets (IMPORTANT!)
+
+Before deploying, you need to create PNG versions of the icons and OG image for proper social media previews (Slack, iMessage, Twitter, etc. don't support SVG):
+
+**Quick Method:**
+1. Open `create-og-image.html` in your browser
+2. Right-click the canvas and save as `og-image.png` 
+3. Open `create-icons.html` in your browser
+4. Save each canvas with the filename shown below it:
+   - `favicon.png` (32×32)
+   - `apple-touch-icon.png` (180×180)  
+   - `apple-touch-icon-152x152.png` (152×152)
+5. Move all PNG files to the `/public` folder
+6. Run `npm run build` to include them in your deployment
+
+**Alternative Method (if you have ImageMagick):**
+```bash
+# Convert OG image
+convert -density 300 public/og-image.svg -resize 1200x630 public/og-image.png
+
+# Convert favicons
+convert -density 300 public/favicon.svg -resize 32x32 public/favicon.png
+convert -density 300 public/favicon.svg -resize 180x180 public/apple-touch-icon.png
+convert -density 300 public/favicon.svg -resize 152x152 public/apple-touch-icon-152x152.png
+convert public/favicon.svg -define icon:auto-resize=16,32,48 public/favicon.ico
+```
+
+See `SOCIAL-MEDIA-SETUP.md` for detailed instructions and testing.
 
 ### 1. Copy Built Files
 Copy everything from the `dist/` folder to your nginx web root:
@@ -141,7 +170,7 @@ This starts a development server (usually at `http://localhost:5173`) with hot-r
 │   └── main.tsx            # React app bootstrapper
 ├── public/                  # Static assets (copied to dist/)
 │   ├── favicon.svg         # Site icon
-│   ├── og-image.png        # Social media preview image
+│   ├── og-image.svg        # Social media preview image
 │   ├── manifest.json       # PWA manifest
 │   ├── robots.txt          # Search engine crawler instructions
 │   ├── sitemap.xml         # Site structure for SEO
