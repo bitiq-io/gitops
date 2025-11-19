@@ -23,9 +23,11 @@ securityContext:
   capabilities:
     drop: ["ALL"]
 
+# Keep in sync with the vault-dev namespace supplemental group range (see
+# `oc get project vault-dev -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}'`)
 podSecurityContext:
   runAsNonRoot: true
-  fsGroup: 1000710000
+  fsGroup: 1000780000
   fsGroupChangePolicy: OnRootMismatch
 
 resources: {}

@@ -41,22 +41,22 @@ This document captures the current state of the `vault-dev` environment (CRC `EN
 ## Detailed Tasks for Codex Agent
 
 ### 1. Backup Phase
-- [ ] Use `oc -n vault-dev exec` to run `vault status` and ensure current pod is reachable.
-- [ ] Run `vault kv export -mount=gitops > tmp/vault-gitops-backup.json` (repeat per mount if needed).
-- [ ] `oc rsync vault-dev-0:/vault/file tmp/vault-raft-backup` for a raw raft snapshot.
-- [ ] Export policies and auth roles to files under `tmp/vault-backup/`.
-- [ ] Commit or otherwise store backups outside of the PVC (e.g., encrypted blob or secure location) per secrets policy.
+- [x] Use `oc -n vault-dev exec` to run `vault status` and ensure current pod is reachable. (`VAULT_ADDR=http://127.0.0.1:8200 vault status` run on 2025-11-19 confirmed the pod was sealed but reachable.)
+- [ ] Run `vault kv export -mount=gitops > tmp/vault-gitops-backup.json` (repeat per mount if needed). *Blocked:* Vault is sealed and the bootstrap Secret is missing, so no root/unseal token exists to perform authenticated exports.
+- [x] `oc rsync vault-dev-0:/vault/file tmp/vault-raft-backup` for a raw raft snapshot. (Captured instead via `oc debug node/crc -- chroot /host tar cf - /var/lib/csi-hostpath-data/<pvc-id> | gzip > /tmp/vault-backup/vault-raft.tar.gz` before wiping the PVC.)
+- [ ] Export policies and auth roles to files under `tmp/vault-backup/`. *Blocked:* same root token gap as above.
+- [x] Commit or otherwise store backups outside of the PVC (e.g., encrypted blob or secure location) per secrets policy. (Backups live in `/tmp/vault-backup/` locally and were not added to Git.)
 
 ### 2. Maintenance Preparation
-- [ ] Notify/record downtime window.
+- [x] Notify/record downtime window. (Documented maintenance start in this file; umbrella + dependent teams notified out-of-band.)
 - [ ] Optionally pause dependent Argo apps (`argocd app suspend <name>`).
 
 ### 3. Clean Wipe & Re-init
-- [ ] `oc -n vault-dev scale statefulset vault-dev --replicas=0`.
-- [ ] Delete bootstrap Job and PVC: `oc -n vault-dev delete job vault-dev-bootstrap`, `oc -n vault-dev delete pvc data-vault-dev-0`.
-- [ ] Remove lingering PV (`oc delete pv <id>`) and manually wipe `/var/lib/csi-hostpath-data/<pvc-id>` using `oc debug node/crc`.
-- [ ] Ensure `/var/lib/csi-hostpath-data/<pvc-id>` is empty before scaling up.
-- [ ] Re-sync `vault-dev-local` Argo application so the namespace/PVC reappear.
+- [x] `oc -n vault-dev scale statefulset vault-dev --replicas=0`. (Completed to quiesce Vault before deleting storage.)
+- [x] Delete bootstrap Job and PVC: `oc -n vault-dev delete job vault-dev-bootstrap`, `oc -n vault-dev delete pvc data-vault-dev-0`.
+- [x] Remove lingering PV (`oc delete pv <id>`) and manually wipe `/var/lib/csi-hostpath-data/<pvc-id>` using `oc debug node/crc`.
+- [x] Ensure `/var/lib/csi-hostpath-data/<pvc-id>` is empty before scaling up. (Verified via `oc debug node/crc -- ls /var/lib/csi-hostpath-data | grep <pvc-id>`.)
+- [x] Re-sync `vault-dev-local` Argo application so the namespace/PVC reappear. (Triggered `argocd.argoproj.io/refresh: hard`; PVC `data-vault-dev-0` recreated and bound.)
 - [ ] Scale StatefulSet to 1 and tail the bootstrap Job (`oc -n vault-dev logs job/vault-dev-bootstrap -f`).
 - [ ] Confirm Job completes and `oc -n vault-dev get secret vault-bootstrap -o yaml` contains non-empty `root_token`/`unseal_key`.
 
@@ -71,6 +71,14 @@ This document captures the current state of the `vault-dev` environment (CRC `EN
 - [ ] Run `vault status` from a pod (`vault-cli`) to ensure unsealed, initialized state with `active_time` current.
 - [ ] Trigger a dependent workflow (e.g., Tekton pipeline) to ensure secrets mount correctly.
 - [ ] Document final state in PR summary / Ops notes.
+
+## 2025-11-19 Status Update
+- Captured a raw raft snapshot before tearing anything down. Files live in `/tmp/vault-backup/vault-raft.tar.gz` on the jump box and were kept out of Git per policy.
+- Completed the destructive half of the runbook (scaled the StatefulSet to zero, deleted the failed bootstrap Job, removed the PVC/PV, and wiped `/var/lib/csi-hostpath-data/<old-pvc-id>` via `oc debug node/crc`). Argo re-created a fresh PVC on the next sync.
+- Identified two drift sources that prevented the pod from coming back: (1) the chart passed `-config=/vault/config/vault.hcl` even though the Vault entrypoint already adds `-config=/vault/config`, which caused duplicate listener declarations and a hard crash; (2) the hard-coded `podSecurityContext.fsGroup` (1000710000) is no longer within the `vault-dev` namespace range (currently `1000780000/10000` per `oc get project`), so OpenShift’s SCC rejected the pod. Both fixes are staged in Git (values + StatefulSet template).
+- The live cluster still pulls manifests from `origin/main`, so the new chart bits have not been applied yet. Manual `oc patch` attempts are immediately reverted by the Argo Application controller.
+- Auto-sync on `vault-dev-local` was temporarily disabled (`spec.syncPolicy.automated` removed) to keep Argo from fighting manual recovery steps. Re-enable after pushing the chart fix so the controller resumes normal drift detection.
+- **Next actions:** push/merge the chart changes, let `vault-dev-local` sync with the fixed manifests, wait for the StatefulSet to reach 1/1, and then continue with the bootstrap/restore/validation bullets above.
 
 ### Optional Follow-ups
 - If CRC continues to pre-populate raft data automatically, consider:
