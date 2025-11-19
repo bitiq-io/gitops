@@ -48,7 +48,7 @@ spec:
                 UNSEAL_KEY=$(cat "$SECRET_PATH/unseal_key")
               fi
 
-              CURL_URL="https://github.com/moparisthebest/static-curl/releases/download/v7.86.0/curl-linux-amd64"
+              CURL_URL="https://github.com/moparisthebest/static-curl/releases/latest/download/curl-amd64"
 
               ensure_curl() {
                 if command -v curl >/dev/null 2>&1; then
