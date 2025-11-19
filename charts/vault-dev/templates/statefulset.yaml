@@ -44,7 +44,8 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /v1/sys/health
+              # treat sealed/uninitialized states as success so bootstrap Job can reach the Service
+              path: /v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204
               port: {{ .Values.service.port }}
             initialDelaySeconds: 3
             periodSeconds: 5
