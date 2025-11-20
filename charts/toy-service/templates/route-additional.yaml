@@ -1,0 +1,42 @@
+{{- $additionalRoutes := .Values.additionalRoutes | default (list) -}}
+{{- if gt (len $additionalRoutes) 0 -}}
+{{- range $index, $route := $additionalRoutes }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ default (printf "toy-service-extra-%d" (add $index 1)) $route.name }}
+  labels:
+    app.kubernetes.io/name: toy-service
+{{- with $route.labels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $route.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  host: {{ required "additionalRoutes entries require host" $route.host | quote }}
+{{- if $route.path }}
+  path: {{ $route.path | quote }}
+{{- end }}
+  to:
+    kind: Service
+    name: toy-service
+  port:
+    targetPort: {{ default "http" $route.port }}
+{{- $wildcard := default "None" $route.wildcardPolicy }}
+{{- if $wildcard }}
+  wildcardPolicy: {{ $wildcard }}
+{{- end }}
+{{- $routeTls := $route.tls | default (dict) -}}
+{{- $tls := dict -}}
+{{- $termination := default "edge" (index $routeTls "termination") -}}
+{{- $_ := set $tls "termination" $termination -}}
+{{- range $key, $value := $routeTls }}
+{{- $_ := set $tls $key $value }}
+{{- end }}
+  tls:
+{{ toYaml $tls | indent 4 }}
+{{- end }}
+{{- end }}

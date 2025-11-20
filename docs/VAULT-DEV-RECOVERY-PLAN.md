@@ -86,11 +86,11 @@ This document captures the current state of the `vault-dev` environment (CRC `EN
   - Adding a guard job that asserts the absence of `/vault/file/vault.db` before the bootstrap Job starts.
 
 ## 2025-11-20 Update
-- `scripts/dev-vault.sh` now detects when the `vault-dev` Helm chart is managing the StatefulSet, reuses the `vault-bootstrap` secret for root access, and auto-detects the CRC ingress domain so it can seed `gitops/services/toy-web/config` with the public Route (`https://svc-api.<domain>`). This keeps toy-web from pointing at the in-cluster `.svc` host that browsers can’t resolve.
+- `scripts/dev-vault.sh` now detects when the `vault-dev` Helm chart is managing the StatefulSet, reuses the `vault-bootstrap` secret for root access, and auto-detects the CRC ingress domain so it can seed `gitops/services/toy-web/config` with the shared frontend Route (`https://svc-web.<domain>`). This keeps toy-web from pointing at the in-cluster `.svc` host that browsers can’t resolve and means accepting a single TLS exception is enough for both the UI and API.
 - The same run refreshes Kubernetes auth using a `vault-dev` service account token (bound to `system:auth-delegator`), which clears the `403 permission denied` loops that were blocking the Vault Secrets Operator. `vaultstaticsecret/toy-web-config` (and friends) now report `SecretSynced=True` and the projected Secrets match Vault again.
 - `gitops/argocd/image-updater` now stores both `token` and `argocd.token` so the Image Updater Deployment gets the key it expects; if VSO recreates the Kubernetes Secret it will contain both keys and stay Healthy.
 - Anytime the CRC domain changes or Vault data is wiped, rerun `DEV_VAULT_OVERWRITE=always ./scripts/dev-vault.sh up` so Argo/VSO/local routes stay consistent.
-- Verified after the script run that `oc -n bitiq-local exec deploy/toy-web -- env | grep API_BASE_URL` returns `https://svc-api.apps-crc.testing` and the frontend no longer logs “Failed to get echo response: Load failed”.
+- Verified after the script run that `oc -n bitiq-local exec deploy/toy-web -- env | grep API_BASE_URL` returns `https://svc-web.apps-crc.testing` and the frontend no longer logs “Failed to get echo response: Load failed”.
 
 ## References
 - `docs/LOCAL-CI-CD.md` and `docs/LOCAL-RUNBOOK-UBUNTU.md` for local bootstrap flows.

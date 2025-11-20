@@ -135,7 +135,7 @@ oc whoami >/dev/null 2>&1 || fatal "oc not logged in"
 
 KUBE_HOST=$(oc whoami --show-server)
 INGRESS_BASE_DOMAIN=$(detect_ingress_domain)
-FRONTEND_API_BASE_URL=${DEV_VAULT_FRONTEND_API_BASE_URL:-"https://svc-api.${INGRESS_BASE_DOMAIN}"}
+FRONTEND_API_BASE_URL=${DEV_VAULT_FRONTEND_API_BASE_URL:-"https://svc-web.${INGRESS_BASE_DOMAIN}"}
 log "Frontend API base URL set to ${FRONTEND_API_BASE_URL}"
 
 render_manifests() {

@@ -1,4 +1,8 @@
 baseDomain: apps.sno.example
+additionalRoutes:
+  - name: toy-service-echo-via-web
+    host: svc-web.apps.sno.example
+    path: /echo
 
 # Override image per env to ensure deterministic tag shape
 image:

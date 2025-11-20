@@ -392,9 +392,12 @@ curl -k https://svc-api.apps-crc.testing/healthz
 
   ```bash
   # On your laptop
-  ssh -L 8443:svc-api.apps-crc.testing:443 ubuntu@your-server
-  curl -k https://localhost:8443/healthz
+  ssh -L 8443:svc-web.apps-crc.testing:443 ubuntu@your-server
+  # toy-web proxies /echo through the same host, so forwarding svc-web covers UI + API
+  curl -k https://localhost:8443/
   ```
+
+- Keep a second tunnel (e.g., `-L 9443:svc-api.apps-crc.testing:443`) only if you need to hit the backend Route directly for debugging.
 
 - Alternatively, run a reverse proxy on the server (e.g., Caddy or Nginx) bound to the public interface. Keep this off by default; only enable if you control firewall access.
 

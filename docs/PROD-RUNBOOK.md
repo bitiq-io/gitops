@@ -154,7 +154,7 @@ vault kv put gitops/data/github/webhook token='<random-string>'
 
 # Optional runtime configs for sample apps
 vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
-vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-api.apps.<cluster-domain>'
+vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-web.apps.<cluster-domain>'
 ```
 
 3) Link Quay secret to the Tekton SA (idempotent):

@@ -27,7 +27,7 @@ Defaults worth knowing
 
 Remote server notes
 
-- CRC Routes resolve only on the host; to test them from elsewhere use SSH port forwarding (e.g., `ssh -L 8443:svc-api.apps-crc.testing:443`).
+- CRC Routes resolve only on the host; to test them from elsewhere use SSH port forwarding (e.g., `ssh -L 8443:svc-web.apps-crc.testing:443`). Because toy-web now proxies `/echo` through the same host, forwarding `svc-web` is enough for the UI + API combo; keep a second tunnel (`svc-api`) only if you want to hit the backend Route directly.
 - Run the port-forward directly on the server so GitHub can reach the Tekton EventListener. With dynamic DNS, bind to `0.0.0.0` and open port `8080/tcp`; otherwise use a tunnel (ngrok/cloudflared).
 - The Ubuntu-specific runbook (`docs/LOCAL-RUNBOOK-UBUNTU.md`) covers CLI installs and remote webhook tips in more detail.
 
@@ -155,7 +155,7 @@ tkn pr logs -L -f -n openshift-pipelines
 oc -n openshift-gitops logs deploy/argocd-image-updater -f
 ```
 
-- It updates `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` with the new tags → Argo syncs the apps → Routes (`svc-api.*` and `svc-web.*`) should serve the refreshed images.
+- It updates `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` with the new tags → Argo syncs the apps → Routes (`svc-web.*` for the combined UI/API path and `svc-api.*` for direct backend access) should serve the refreshed images.
 
 > **Note:** As of 2025-11-08 the toy-service automation is paused (`imageUpdater.toyService.pause=true`) because the sample image is still single-architecture. Use `scripts/pin-images.sh --svc-tag <tag>` (or edit `charts/toy-service/values-<env>.yaml` manually) to move the backend image until we ship multi-arch builds.
 

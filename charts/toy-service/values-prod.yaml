@@ -1,4 +1,8 @@
 baseDomain: apps.prod.example
+additionalRoutes:
+  - name: toy-service-echo-via-web
+    host: svc-web.apps.prod.example
+    path: /echo
 
 # Override image per env to ensure deterministic tag shape
 image:

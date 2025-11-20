@@ -427,7 +427,7 @@ export BASE_DOMAIN=apps-crc.testing   # local default; required for sno/prod
    Grab the Route URL named `bitiq-listener` in `openshift-pipelines` (it targets service `el-bitiq-listener`) and add it as a GitHub webhook for your microservice repo (content type: JSON; secret = the value you set in `triggers.githubSecretName`). ([Red Hat][11], [Tekton][15])
 
 4. **Access the app**
-   The sample Route host is `svc-api.${BASE_DOMAIN}`. For OpenShift Local that’s `svc-api.apps-crc.testing`. ([crc.dev][5])
+   The frontend lives at `svc-web.${BASE_DOMAIN}` (for OpenShift Local that’s `svc-web.apps-crc.testing`). The `/echo` calls are proxied through the same host, though the backend route `svc-api.${BASE_DOMAIN}` stays available for direct API testing. ([crc.dev][5])
 
 ---
 

@@ -21,6 +21,7 @@ CRC domains & TLS
 - Application wildcard: `*.apps-crc.testing` resolves inside the CRC VM. The sample stack uses:
   - Backend Route host prefix `svc-api` → `https://svc-api.apps-crc.testing`
   - Frontend Route host prefix `svc-web` → `https://svc-web.apps-crc.testing`
+  - The frontend Route also proxies `/echo` to the backend so browsers only need to trust the `svc-web` certificate once.
 - Changing `BASE_DOMAIN`? Update `charts/toy-service/values-local.yaml` and `charts/toy-web/values-local.yaml` (and other env files) and rerun `make compute-appversion ENV=local` so Routes and appVersion remain consistent.
 - Browsers may warn about TLS; accept the cert for local testing or import the CRC CA if desired.
 

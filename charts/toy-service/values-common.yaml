@@ -10,6 +10,7 @@ image:
 service:
   port: 8080
   type: ClusterIP
+additionalRoutes: []
 resources:
   limits:
     cpu: 250m

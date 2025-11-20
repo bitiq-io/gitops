@@ -95,7 +95,7 @@ vault kv put gitops/data/github/gitops-repo \
 
 # Optional runtime overrides for sample apps
 vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
-vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-api.apps.<cluster-domain>'
+vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-web.apps.<cluster-domain>'
 vault kv put gitops/data/services/nostr-query/credentials OPENAI_API_KEY='<openai-pat>'
 ```
 
