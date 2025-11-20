@@ -2,4 +2,4 @@ baseDomain: apps.prod.example
 # Override image per env to ensure deterministic tag shape
 image:
   repository: quay.io/paulcapestany/toy-web
-  tag: v0.1.8-commit.a064058
+  tag: v0.1.39-commit.355c83c
