@@ -30,6 +30,13 @@ frontend:
     items:
       - name: API_BASE_URL
         key: API_BASE_URL
+  scriptRewrite:
+    enabled: true
+    workDir: /workdir
+    sourcePath: /usr/share/nginx/html
+    targetPath: /usr/share/nginx/html
+    placeholder: http://localhost:8080/echo
+    fallbackBaseUrl: http://localhost:8080
   # Optional: mount Secret keys as files for hot-reload patterns.
   secretMount:
     enabled: true

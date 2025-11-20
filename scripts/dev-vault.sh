@@ -8,6 +8,119 @@ require() {
   command -v "$1" >/dev/null 2>&1 || fatal "'$1' not found in PATH"
 }
 
+detect_ingress_domain() {
+  local candidate
+  candidate="${DEV_VAULT_BASE_DOMAIN:-${BASE_DOMAIN:-}}"
+  if [[ -z "${candidate}" ]]; then
+    candidate=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}' 2>/dev/null || true)
+  fi
+  if [[ -z "${candidate}" ]]; then
+    candidate="apps-crc.testing"
+    log "WARNING: Unable to detect ingress domain; defaulting to ${candidate}"
+  else
+    log "Using ingress domain ${candidate}"
+  fi
+  printf '%s' "${candidate}"
+}
+
+VAULT_TARGET_RESOURCE=""
+VAULT_ROOT_TOKEN="root"
+VAULT_BOOTSTRAP_SECRET_FOUND=false
+
+set_vault_target() {
+  if oc -n "${DEV_NAMESPACE}" get statefulset "${VAULT_RELEASE_NAME}" >/dev/null 2>&1; then
+    VAULT_TARGET_RESOURCE="sts/${VAULT_RELEASE_NAME}"
+    return 0
+  fi
+  if oc -n "${DEV_NAMESPACE}" get deploy "${VAULT_RELEASE_NAME}" >/dev/null 2>&1; then
+    VAULT_TARGET_RESOURCE="deploy/${VAULT_RELEASE_NAME}"
+    return 0
+  fi
+  return 1
+}
+
+ensure_vault_target() {
+  if [[ -z "${VAULT_TARGET_RESOURCE}" ]]; then
+    if ! set_vault_target; then
+      fatal "No Vault StatefulSet or Deployment named ${VAULT_RELEASE_NAME} found in namespace ${DEV_NAMESPACE}"
+    fi
+  fi
+}
+
+vault_exec() {
+  ensure_vault_target
+  oc -n "${DEV_NAMESPACE}" exec "${VAULT_TARGET_RESOURCE}" -- "$@"
+}
+
+ensure_namespace() {
+  if ! oc get ns "${DEV_NAMESPACE}" >/dev/null 2>&1; then
+    log "Creating namespace ${DEV_NAMESPACE}"
+    oc create ns "${DEV_NAMESPACE}" >/dev/null 2>&1 || true
+  fi
+}
+
+ensure_tokenreview_rbac() {
+  cat <<EOF | oc apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ${VAULT_RELEASE_NAME}
+  namespace: ${DEV_NAMESPACE}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ${VAULT_RELEASE_NAME}-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: ${VAULT_RELEASE_NAME}
+    namespace: ${DEV_NAMESPACE}
+EOF
+}
+
+get_token_reviewer_jwt() {
+  if [[ -n "${DEV_VAULT_TOKEN_REVIEWER_JWT:-}" ]]; then
+    printf '%s' "${DEV_VAULT_TOKEN_REVIEWER_JWT}"
+    return 0
+  fi
+  if oc -n "${DEV_NAMESPACE}" get sa "${VAULT_RELEASE_NAME}" >/dev/null 2>&1; then
+    local token
+    if token=$(oc -n "${DEV_NAMESPACE}" create token "${VAULT_RELEASE_NAME}" 2>/dev/null); then
+      printf '%s' "${token}"
+      return 0
+    fi
+  fi
+  printf ''
+}
+
+detect_root_token() {
+  if [[ -n "${DEV_VAULT_ROOT_TOKEN:-}" ]]; then
+    VAULT_ROOT_TOKEN="${DEV_VAULT_ROOT_TOKEN}"
+    VAULT_BOOTSTRAP_SECRET_FOUND=false
+    log "Using DEV_VAULT_ROOT_TOKEN override for Vault access"
+    return 0
+  fi
+  local bootstrap_secret="${DEV_VAULT_BOOTSTRAP_SECRET:-vault-bootstrap}"
+  local encoded_token
+  encoded_token=$(oc -n "${DEV_NAMESPACE}" get secret "${bootstrap_secret}" -o jsonpath='{.data.root_token}' 2>/dev/null || true)
+  if [[ -n "${encoded_token}" ]]; then
+    local decoded
+    if decoded=$(printf '%s' "${encoded_token}" | base64 -d 2>/dev/null); then
+      VAULT_ROOT_TOKEN="${decoded}"
+      VAULT_BOOTSTRAP_SECRET_FOUND=true
+      log "Using root token from ${DEV_NAMESPACE}/${bootstrap_secret}"
+      return 0
+    fi
+  fi
+  VAULT_ROOT_TOKEN="root"
+  VAULT_BOOTSTRAP_SECRET_FOUND=false
+  log "Using default dev root token"
+}
+
 ACTION=${1:-up}
 DEV_NAMESPACE=${DEV_VAULT_NAMESPACE:-vault-dev}
 VAULT_RELEASE_NAME=${VAULT_RELEASE_NAME:-vault-dev}
@@ -21,6 +134,9 @@ require helm
 oc whoami >/dev/null 2>&1 || fatal "oc not logged in"
 
 KUBE_HOST=$(oc whoami --show-server)
+INGRESS_BASE_DOMAIN=$(detect_ingress_domain)
+FRONTEND_API_BASE_URL=${DEV_VAULT_FRONTEND_API_BASE_URL:-"https://svc-api.${INGRESS_BASE_DOMAIN}"}
+log "Frontend API base URL set to ${FRONTEND_API_BASE_URL}"
 
 render_manifests() {
   cat <<'YAML'
@@ -110,6 +226,18 @@ YAML
 }
 
 apply_manifests() {
+  ensure_namespace
+  ensure_tokenreview_rbac
+  if oc -n "${DEV_NAMESPACE}" get statefulset "${VAULT_RELEASE_NAME}" >/dev/null 2>&1; then
+    log "Detected existing StatefulSet ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}; reusing it"
+    VAULT_TARGET_RESOURCE="sts/${VAULT_RELEASE_NAME}"
+    return 0
+  fi
+  if oc -n "${DEV_NAMESPACE}" get deploy "${VAULT_RELEASE_NAME}" >/dev/null 2>&1; then
+    log "Detected existing Deployment ${DEV_NAMESPACE}/${VAULT_RELEASE_NAME}; reusing it"
+    VAULT_TARGET_RESOURCE="deploy/${VAULT_RELEASE_NAME}"
+    return 0
+  fi
   log "Deploying dev Vault in namespace ${DEV_NAMESPACE}"
   # Import image into an ImageStream to avoid node-side registry mirror rewrites.
   # This step can hang on airgapped/proxied networks; guard with a timeout and allow opt-out.
@@ -173,16 +301,17 @@ EOF
     -e "s/{{VAULT_RELEASE_NAME}}/${VAULT_RELEASE_NAME}/g" \
     -e "s#{{VAULT_IMAGE}}#${image_for_deploy}#g" \
     | oc apply -f -
+  VAULT_TARGET_RESOURCE="deploy/${VAULT_RELEASE_NAME}"
 }
 
 ensure_kv_mount() {
   # Ensure a KV v2 mount exists at path "gitops"
   log "Ensuring KV v2 mount exists at path 'gitops'"
-  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
+  vault_exec env \
+    VAULT_ADDR="http://127.0.0.1:8200" \
+    VAULT_TOKEN="${VAULT_ROOT_TOKEN}" \
     sh -c "
-      set -xeuo pipefail
-      export VAULT_ADDR=\"http://127.0.0.1:8200\"
-      export VAULT_TOKEN=\"root\"
+      set -euo pipefail
       if ! vault secrets list -format=json | grep -q '"gitops/"'; then
         vault secrets enable -path=gitops -version=2 kv >/dev/null
       fi
@@ -193,6 +322,17 @@ wait_for_deployment() {
   local dep=$1 ns=$2
   log "Waiting for deployment/${dep} in ${ns} to become available…"
   oc -n "${ns}" rollout status deploy/"${dep}" --timeout=180s
+}
+
+wait_for_vault_controller() {
+  ensure_vault_target
+  local target="${VAULT_TARGET_RESOURCE}"
+  if [[ "${target}" == deploy/* ]]; then
+    wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+  else
+    log "Waiting for statefulset/${VAULT_RELEASE_NAME} in ${DEV_NAMESPACE} to become available…"
+    oc -n "${DEV_NAMESPACE}" rollout status statefulset/"${VAULT_RELEASE_NAME}" --timeout=180s
+  fi
 }
 
 rescue_image_pull() {
@@ -217,14 +357,21 @@ rescue_image_pull() {
 
 configure_kubernetes_auth() {
   log "Configuring Vault Kubernetes auth + policies"
-  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- \
+  local reviewer_jwt
+  reviewer_jwt=$(get_token_reviewer_jwt)
+  vault_exec env \
+    VAULT_ADDR="http://127.0.0.1:8200" \
+    VAULT_TOKEN="${VAULT_ROOT_TOKEN}" \
+    DEV_VAULT_TOKEN_REVIEWER_JWT="${reviewer_jwt}" \
     sh -c "
       set -euo pipefail
-      export VAULT_ADDR=\"http://127.0.0.1:8200\"
-      export VAULT_TOKEN=\"root\"
+      token_reviewer=\"\${DEV_VAULT_TOKEN_REVIEWER_JWT:-}\"
+      if [ -z \"\$token_reviewer\" ]; then
+        token_reviewer=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      fi
       vault auth enable kubernetes >/dev/null 2>&1 || true
       vault write auth/kubernetes/config \
-        token_reviewer_jwt=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" \
+        token_reviewer_jwt=\"\$token_reviewer\" \
         kubernetes_host=\"${KUBE_HOST}\" \
         kubernetes_ca_cert=\"\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt)\" >/dev/null
       vault policy write gitops-local - <<'HCL'
@@ -309,7 +456,7 @@ seed_secrets() {
   r53_sk="${AWS_ROUTE53_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-}}"
 
   log "Seeding secrets into Vault KV (mode=${overwrite_mode}; env overrides respected)"
-  oc -n "${DEV_NAMESPACE}" exec deploy/"${VAULT_RELEASE_NAME}" -- env \
+  vault_exec env \
     DEV_VAULT_MODE="${overwrite_mode}" \
     DEV_VAULT_ARGOCD_TOKEN="${argocd_token}" \
     DEV_VAULT_DOCKER_JSON_ESC="${docker_json_esc}" \
@@ -322,10 +469,11 @@ seed_secrets() {
     DEV_VAULT_NOSTR_QUERY_KEY="${nostr_query_api_key}" \
     DEV_VAULT_R53_ACCESS_KEY="${r53_ak}" \
     DEV_VAULT_R53_SECRET_KEY="${r53_sk}" \
+    DEV_VAULT_FRONTEND_API_BASE_URL="${FRONTEND_API_BASE_URL}" \
+    VAULT_ADDR="http://127.0.0.1:8200" \
+    VAULT_TOKEN="${VAULT_ROOT_TOKEN}" \
     sh <<'SCRIPT'
 set -euo pipefail
-export VAULT_ADDR="http://127.0.0.1:8200"
-export VAULT_TOKEN="root"
 
 ensure_put() {
   # ensure_put <path> key=value [key=value...]
@@ -380,7 +528,7 @@ ensure_put gitops/registry/quay dockerconfigjson="${DEV_VAULT_DOCKER_JSON_ESC}" 
 ensure_put gitops/github/webhook token="${DEV_VAULT_WEBHOOK_SECRET}" secretToken="${DEV_VAULT_WEBHOOK_SECRET}"
 ensure_put gitops/github/gitops-repo url="${DEV_VAULT_REPO_URL}" username="${DEV_VAULT_REPO_USERNAME}" password="${DEV_VAULT_REPO_PASSWORD}"
 ensure_put gitops/services/toy-service/config FAKE_SECRET="LOCAL_FAKE_SECRET"
-ensure_put gitops/services/toy-web/config API_BASE_URL="https://toy-service.bitiq-local.svc.cluster.local"
+ensure_put gitops/services/toy-web/config API_BASE_URL="${DEV_VAULT_FRONTEND_API_BASE_URL}"
 ensure_put gitops/services/nostr-query/credentials OPENAI_API_KEY="${DEV_VAULT_NOSTR_QUERY_KEY}"
 ensure_put gitops/couchbase/admin username="${DEV_VAULT_CB_USERNAME}" password="${DEV_VAULT_CB_PASSWORD}"
 
@@ -458,13 +606,14 @@ wait_for_secret() {
 case "${ACTION}" in
   up)
     apply_manifests
-    if ! wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"; then
-      if rescue_image_pull; then
-        wait_for_deployment "${VAULT_RELEASE_NAME}" "${DEV_NAMESPACE}"
+    if ! wait_for_vault_controller; then
+      if [[ "${VAULT_TARGET_RESOURCE}" == deploy/* ]] && rescue_image_pull; then
+        wait_for_vault_controller
       else
         fatal "Dev Vault failed to deploy; check events in namespace ${DEV_NAMESPACE}"
       fi
     fi
+    detect_root_token
     ensure_kv_mount
     configure_kubernetes_auth
     seed_secrets

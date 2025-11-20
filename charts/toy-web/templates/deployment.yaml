@@ -5,6 +5,17 @@
 {{- $frontendSecretEnabled := and $frontendSecret.enabled (gt (len $frontendSecretItems) 0) -}}
 {{- $renderFrontendEnv := or (gt (len $frontendEnv) 0) $frontendSecretEnabled -}}
 {{- $frontendSecretName := default "toy-web-config" $frontendSecret.name -}}
+{{- $secretMount := $frontend.secretMount | default (dict) -}}
+{{- $scriptRewrite := default (dict) $frontend.scriptRewrite -}}
+{{- $scriptRewriteEnabled := default true $scriptRewrite.enabled -}}
+{{- $webContentVolumeName := default "frontend-web-content" $scriptRewrite.volumeName -}}
+{{- $webContentWorkDir := default "/workdir" $scriptRewrite.workDir -}}
+{{- $webContentSourcePath := default "/usr/share/nginx/html" $scriptRewrite.sourcePath -}}
+{{- $webContentTargetPath := default "/usr/share/nginx/html" $scriptRewrite.targetPath -}}
+{{- $webContentPlaceholder := default "http://localhost:8080/echo" $scriptRewrite.placeholder -}}
+{{- $webContentFallback := default "http://localhost:8080" $scriptRewrite.fallbackBaseUrl -}}
+{{- $hasSecretVolume := and $secretMount.enabled (default true $secretMount.mainContainerMount) -}}
+{{- $hasWebContentVolume := and $scriptRewriteEnabled (ne $webContentVolumeName "") -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,12 +32,61 @@ spec:
       labels:
         app.kubernetes.io/name: toy-web
     spec:
-      {{- $mount := .Values.frontend.secretMount }}
-      {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+      {{- if or $hasSecretVolume $hasWebContentVolume }}
       volumes:
+        {{- if $hasSecretVolume }}
         - name: frontend-secret
           secret:
             secretName: {{ $frontendSecretName | quote }}
+        {{- end }}
+        {{- if $hasWebContentVolume }}
+        - name: {{ $webContentVolumeName }}
+          emptyDir: {}
+        {{- end }}
+      {{- end }}
+      {{- if $scriptRewriteEnabled }}
+      initContainers:
+        - name: frontend-assets-prepare
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: FALLBACK_API_BASE
+              value: {{ $webContentFallback | quote }}
+            {{- if $frontendSecretEnabled }}
+            - name: SECRET_API_BASE_FILE
+              value: {{ printf "%s/%s" (default "/etc/frontend-secret" $secretMount.mountPath) "API_BASE_URL" | quote }}
+            {{- end }}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -euo pipefail
+              mkdir -p {{ $webContentWorkDir }}
+              cp -R {{ $webContentSourcePath }}/. {{ $webContentWorkDir }}/
+              api="${FALLBACK_API_BASE}"
+              {{- if $frontendSecretEnabled }}
+              if [ -n "${SECRET_API_BASE_FILE:-}" ] && [ -f "${SECRET_API_BASE_FILE}" ] && [ -s "${SECRET_API_BASE_FILE}" ]; then
+                api="$(cat "${SECRET_API_BASE_FILE}")"
+              fi
+              {{- end }}
+              api="${api%/}"
+              script="{{ $webContentWorkDir }}/script.js"
+              if [ -f "${script}" ]; then
+                if grep -q '{{ $webContentPlaceholder }}' "${script}"; then
+                  sed -i "s|{{ $webContentPlaceholder }}|${api}/echo|g" "${script}"
+                else
+                  echo "WARNING: placeholder {{ $webContentPlaceholder }} not found in ${script}" >&2
+                fi
+              else
+                echo "WARNING: script.js not found at ${script}" >&2
+              fi
+          volumeMounts:
+            - name: {{ $webContentVolumeName }}
+              mountPath: {{ $webContentWorkDir | quote }}
+            {{- if $hasSecretVolume }}
+            - name: frontend-secret
+              mountPath: {{ default "/etc/frontend-secret" $secretMount.mountPath | quote }}
+              readOnly: true
+            {{- end }}
       {{- end }}
       containers:
         - name: toy-web
@@ -47,11 +107,18 @@ spec:
             initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if and $mount.enabled (default true $mount.mainContainerMount) }}
+          {{- if or $hasSecretVolume $hasWebContentVolume }}
           volumeMounts:
+            {{- if $hasSecretVolume }}
             - name: frontend-secret
-              mountPath: {{ default "/etc/frontend-secret" $mount.mountPath | quote }}
+              mountPath: {{ default "/etc/frontend-secret" $secretMount.mountPath | quote }}
               readOnly: true
+            {{- end }}
+            {{- if $hasWebContentVolume }}
+            - name: {{ $webContentVolumeName }}
+              mountPath: {{ $webContentTargetPath | quote }}
+              readOnly: false
+            {{- end }}
           {{- end }}
           {{- if $renderFrontendEnv }}
           env:
@@ -78,19 +145,19 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
-      {{- if and $mount.enabled (default false $mount.reloadSidecar.enabled) }}
+      {{- if and $secretMount.enabled (default false $secretMount.reloadSidecar.enabled) }}
       - name: configmap-reload
-        image: {{ default "ghcr.io/jimmidyson/configmap-reload:v0.14.0" $mount.reloadSidecar.image }}
+        image: {{ default "ghcr.io/jimmidyson/configmap-reload:v0.14.0" $secretMount.reloadSidecar.image }}
         imagePullPolicy: IfNotPresent
         args:
-          - --volume-dir={{ default "/etc/frontend-secret" $mount.mountPath }}
-          {{- if $mount.reloadSidecar.webhookUrl }}
-          - --webhook-url={{ $mount.reloadSidecar.webhookUrl }}
-          - --webhook-method={{ default "POST" $mount.reloadSidecar.webhookMethod }}
+          - --volume-dir={{ default "/etc/frontend-secret" $secretMount.mountPath }}
+          {{- if $secretMount.reloadSidecar.webhookUrl }}
+          - --webhook-url={{ $secretMount.reloadSidecar.webhookUrl }}
+          - --webhook-method={{ default "POST" $secretMount.reloadSidecar.webhookMethod }}
           {{- end }}
         volumeMounts:
           - name: frontend-secret
-            mountPath: {{ default "/etc/frontend-secret" $mount.mountPath | quote }}
+            mountPath: {{ default "/etc/frontend-secret" $secretMount.mountPath | quote }}
             readOnly: true
       {{- end }}
       {{- with .Values.nodeSelector }}

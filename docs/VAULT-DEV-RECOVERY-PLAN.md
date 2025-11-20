@@ -42,10 +42,10 @@ This document captures the current state of the `vault-dev` environment (CRC `EN
 
 ### 1. Backup Phase
 - [x] Use `oc -n vault-dev exec` to run `vault status` and ensure current pod is reachable. (`VAULT_ADDR=http://127.0.0.1:8200 vault status` run on 2025-11-19 confirmed the pod was sealed but reachable.)
-- [ ] Run `vault kv export -mount=gitops > tmp/vault-gitops-backup.json` (repeat per mount if needed). *Blocked:* Vault is sealed and the bootstrap Secret is missing, so no root/unseal token exists to perform authenticated exports.
+- [x] Run `vault kv export` (per path) and capture a JSON snapshot. Final bundle lives at `/Users/pac/vault-dev-backups/gitops-20251119-203918Z.json` (contains argocd token, quay creds, repo creds, webhook secret, toy configs, couchbase admin, nostr-query). Guard this file per secrets policy.
 - [x] `oc rsync vault-dev-0:/vault/file tmp/vault-raft-backup` for a raw raft snapshot. (Captured instead via `oc debug node/crc -- chroot /host tar cf - /var/lib/csi-hostpath-data/<pvc-id> | gzip > /tmp/vault-backup/vault-raft.tar.gz` before wiping the PVC.)
-- [ ] Export policies and auth roles to files under `tmp/vault-backup/`. *Blocked:* same root token gap as above.
-- [x] Commit or otherwise store backups outside of the PVC (e.g., encrypted blob or secure location) per secrets policy. (Backups live in `/tmp/vault-backup/` locally and were not added to Git.)
+- [x] Export policies and auth roles to files under `tmp/vault-backup/`. *Superseded:* bootstrap job now recreates the gitops/kube-auth policies as part of initialization; no additional manual exports required.
+- [x] Commit or otherwise store backups outside of the PVC (e.g., encrypted blob or secure location) per secrets policy. (`/Users/pac/vault-dev-backups/` is the canonical local stash; nothing was added to Git.)
 
 ### 2. Maintenance Preparation
 - [x] Notify/record downtime window. (Documented maintenance start in this file; umbrella + dependent teams notified out-of-band.)
@@ -84,6 +84,13 @@ This document captures the current state of the `vault-dev` environment (CRC `EN
   - Switching dev storage from `raft` to `file` temporarily.
   - Adjusting hostpath provisioner settings or cleaning the CRC VM disk entirely.
   - Adding a guard job that asserts the absence of `/vault/file/vault.db` before the bootstrap Job starts.
+
+## 2025-11-20 Update
+- `scripts/dev-vault.sh` now detects when the `vault-dev` Helm chart is managing the StatefulSet, reuses the `vault-bootstrap` secret for root access, and auto-detects the CRC ingress domain so it can seed `gitops/services/toy-web/config` with the public Route (`https://svc-api.<domain>`). This keeps toy-web from pointing at the in-cluster `.svc` host that browsers can’t resolve.
+- The same run refreshes Kubernetes auth using a `vault-dev` service account token (bound to `system:auth-delegator`), which clears the `403 permission denied` loops that were blocking the Vault Secrets Operator. `vaultstaticsecret/toy-web-config` (and friends) now report `SecretSynced=True` and the projected Secrets match Vault again.
+- `gitops/argocd/image-updater` now stores both `token` and `argocd.token` so the Image Updater Deployment gets the key it expects; if VSO recreates the Kubernetes Secret it will contain both keys and stay Healthy.
+- Anytime the CRC domain changes or Vault data is wiped, rerun `DEV_VAULT_OVERWRITE=always ./scripts/dev-vault.sh up` so Argo/VSO/local routes stay consistent.
+- Verified after the script run that `oc -n bitiq-local exec deploy/toy-web -- env | grep API_BASE_URL` returns `https://svc-api.apps-crc.testing` and the frontend no longer logs “Failed to get echo response: Load failed”.
 
 ## References
 - `docs/LOCAL-CI-CD.md` and `docs/LOCAL-RUNBOOK-UBUNTU.md` for local bootstrap flows.
