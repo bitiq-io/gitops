@@ -1,0 +1,29 @@
+# /etc/hosts sample for the CRC host (silver)
+127.0.0.1        localhost
+127.0.1.1        silver
+
+# The following lines are desirable for IPv6 capable hosts
+::1              ip6-localhost ip6-loopback
+fe00::           ip6-localnet
+ff00::           ip6-mcastprefix
+ff02::1          ip6-allnodes
+ff02::2          ip6-allrouters
+
+# Added by CRC (keep these loopbacks so the host can reach *.apps-crc.testing)
+127.0.0.1        openshift-gitops-server-openshift-gitops.apps-crc.testing \
+                 tkn-cli-serve-openshift-pipelines.apps-crc.testing \
+                 api.crc.testing \
+                 canary-openshift-ingress-canary.apps-crc.testing \
+                 console-openshift-console.apps-crc.testing \
+                 default-route-openshift-image-registry.apps-crc.testing \
+                 downloads-openshift-console.apps-crc.testing \
+                 host.crc.testing \
+                 oauth-openshift.apps-crc.testing
+127.0.0.1        pipelines-as-code-controller-openshift-pipelines.apps-crc.testing \
+                 bitiq-listener-openshift-pipelines.apps-crc.testing \
+                 svc-api.apps-crc.testing \
+                 svc-web.apps-crc.testing
+# End of CRC section
+
+# Do NOT add cyphai.com, didgo.com, etc. here. Those public domains must resolve via Route 53
+# so the cluster and cert-manager can see the WAN IP (98.169.20.123 via k7501450.eero.online).
