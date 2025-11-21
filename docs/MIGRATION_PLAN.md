@@ -4,9 +4,9 @@ Owner: Paul / bitiq platform
 Last updated: 2025-10-28 (status updated; CI/CD E2E verified for nostr_* subset)
 
 Next Actions (quick scan)
-- Persistent dev Vault (PVC‑backed, GitOps‑managed) — verify the new StatefulSet + bootstrap Job landed cleanly (PVC bound, Job succeeded, `vault-bootstrap` Secret present) and update runbooks with recovery steps.
-- Local certs verify (Who: Codex/Human). What: apply HTTP‑01 ClusterIssuer and confirm issuance end-to-end. Where: `charts/cert-manager-config/`; cluster. Acceptance: `oc get certificate` Ready; HTTPS on Routes.
-- Inventory doc (Who: Codex). What: produce `docs/bitiq-inventory.md` from current GitOps state. Acceptance: strfry, Couchbase, nostr services, nginx, GPU prerequisites documented.
+- Persistent dev Vault (PVC-backed, GitOps-managed) — Completed 2025-11-21; `oc -n vault-dev get sts/pvc/job/secret` show Ready 1/1, `data-vault-dev-0` Bound, `vault-dev-bootstrap` Complete, and `vault-bootstrap` Secret present. Runbook: `docs/VAULT-DEV-RECOVERY-PLAN.md`.
+- Local certs verify (Who: Codex/Human) — In progress. HTTP‑01 ClusterIssuer (`letsencrypt-http01-local`) already Ready; nostr-site chart now renders an Ingress with TLS secret `nostr-site-tls` and annotations for that issuer. Next validation step: let Argo sync the change, watch `oc -n bitiq-local get certificate nostr-site-tls` flip to Ready, then `curl https://alpha.cyphai.com` without `--insecure`.
+- Inventory doc (Who: Codex) — Completed 2025-11-21 with `docs/bitiq-inventory.md` capturing strfry, Couchbase, nostr services, nginx, and GPU prerequisites from current GitOps state.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
 AppVersion Automation (on‑cluster) — Plan
@@ -95,12 +95,12 @@ Environment Model
 Status Summary
 - Completed: Final plan (this file); Dev-Vault safety (non-destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS-01 issuer with per-zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS-01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`; Ollama chart scaffolded with external + GPU modes and umbrella toggles; nostr workloads (query, threads, thread-copier, nostouch) migrated to Helm with Vault-managed secrets and network policies, and nostouch streaming validated on CRC (DNS egress requires TCP/UDP 53 and 5353).
 - In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout), Ollama GPU deployment validation & secret wiring.
-- Pending: Inventory doc, Validation & cutover in a live cluster.
+- Pending: Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
 
-M0. Inventory and verification
-- Status: Pending
+- M0. Inventory and verification
+- Status: Completed (docs/bitiq-inventory.md published 2025-11-21; continue to snapshot pac-config out of band before prod cutover)
 - Snapshot current pac-config usage (do not commit it). Produce `docs/bitiq-inventory.md` listing: strfry, Couchbase (cluster/buckets), Ollama, nostr_* services, nginx, cert-manager bits, GPU prerequisites.
 
 M1. Bootstrap operators via GitOps (OLM)
@@ -183,6 +183,7 @@ M7. cert-manager and Routes (local enabled by default)
   - Run `crc tunnel` as a systemd service to expose router 80/443 to the host
   - cert-manager issues real certs for Route hosts under your FQDN
 - DNS‑01 alternative: Use your DNS provider API creds (e.g., Route 53) to avoid port 80 ingress.
+- Progress: `letsencrypt-http01-local` ClusterIssuer shows `READY=True`, and nostr-site chart now renders an HTTP‑01-backed Ingress (`nostr-site-tls` Secret). Waiting for Argo sync/validation before enabling HTTP-01 on the remaining services.
 - Acceptance: `oc get certificate` Ready; Routes terminate TLS with managed certs.
 
 M8. Cleanups and deprecation

@@ -10,5 +10,13 @@ service:
   type: ClusterIP
 
 route:
+  enabled: true
   host: ""  # explicit FQDN
+  clusterIssuerName: ""
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  tlsSecretName: ""
   clusterIssuerName: ""

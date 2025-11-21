@@ -1,8 +1,14 @@
+{{- $route := default (dict) .Values.route }}
+{{- $routeEnabled := true }}
+{{- if hasKey $route "enabled" }}
+  {{- $routeEnabled = eq (lower (printf "%v" (get $route "enabled"))) "true" }}
+{{- end }}
+{{- if $routeEnabled }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nostr-site
-  {{- $issuer := .Values.route.clusterIssuerName | default "" }}
+  {{- $issuer := default "" (get $route "clusterIssuerName") }}
   {{- if $issuer }}
   annotations:
     cert-manager.io/cluster-issuer: {{ $issuer | quote }}
@@ -16,4 +22,5 @@ spec:
     targetPort: http
   tls:
     termination: edge
-  host: {{ .Values.route.host | quote }}
+  host: {{ (get $route "host") | default "" | quote }}
+{{- end }}
