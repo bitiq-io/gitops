@@ -92,6 +92,32 @@ Notes
 - DNS‑01 issuance is API-driven and does not require the apex A to be correct, but end-user HTTPS does. Keeping the apex updated avoids browser warnings when IPs change.
 - For TLS issuance across multiple domains/zones, prefer a single cert-manager ClusterIssuer with per‑zone Route 53 solvers (zone selectors). See charts/cert-manager-config/templates/clusterissuer-dns01-route53.yaml:1 and charts/cert-manager-config/values-local.yaml:1.
 
+OpenShift DNS stub (bypass host `/etc/hosts`)
+- If the CRC host machine has entries like `alpha.cyphai.com -> 127.0.0.1`, every pod inherits the same answer because the cluster DNS forwards to the host (192.168.127.1) first.
+- To force Kubernetes/Argo/cert-manager to resolve through public resolvers, add a zonal forwarder via the DNS Operator:
+
+  ```bash
+  oc patch dns.operator/default --type=merge -p '{
+    "spec": {
+      "servers": [
+        {
+          "name": "public-cyphai",
+          "zones": ["cyphai.com"],
+          "forwardPlugin": {
+            "upstreams": [
+              {"type": "Network", "address": "1.1.1.1", "port": 53},
+              {"type": "Network", "address": "8.8.8.8", "port": 53}
+            ]
+          }
+        }
+      ]
+    }
+  }'
+  ```
+
+- Delete the `dns-default` pod so it reloads the Corefile: `oc -n openshift-dns delete pod -l dns.operator.openshift.io/daemonset-dns=default`.
+- After the new pod starts, `oc run ... -- dig +short alpha.cyphai.com` should return `k7501450.eero.online`/`98.169.20.123` and cert-manager HTTP/DNS solvers will stop seeing 127.0.0.1.
+
 Testing and TTL notes
 - TTL: Apex A records use TTL 60s. When the script uses public DNS as a fallback for reads (to avoid List permissions), a change made in Route 53 may take up to the TTL to be visible via resolvers. The periodic timer (every 5 minutes) is sufficient.
 - Simulate a change without touching Route 53 (dry-run):

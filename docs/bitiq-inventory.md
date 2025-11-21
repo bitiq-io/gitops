@@ -108,8 +108,8 @@ Umbrella toggles: `nostrQueryEnabled`, `nostrThreadsEnabled`, `nostrThreadCopier
 
 #### nostr-site (`charts/nostr-site/`)
 
-- Minimal nginx Deployment/Service with either an OpenShift Route (default) or a first-class Kubernetes Ingress for TLS.
-- Local env switches to an Ingress backed by `letsencrypt-http01-local`; TLS secret `nostr-site-tls` is created via HTTP-01 and referenced by the Ingress (which OpenShift turns into a Route automatically). Other envs can keep the legacy Route by leaving `ingress.enabled=false`.
+- Minimal nginx Deployment/Service with a Route (default) and an optional Ingress. The Route path uses the Route 53 DNS-01 issuer (`letsencrypt-dns01-route53-cyphai`) so it does not depend on WAN port 80 being reachable.
+- When you want to experiment with HTTP-01, set `route.enabled=false` and `ingress.enabled=true` so cert-manager requests `letsencrypt-http01-local` against the Ingress. That path requires the router’s port 80 to be publicly reachable (see MIGRATION_PLAN next steps).
 - Customize content by building a new container or layering ConfigMaps; no Secrets involved yet.
 
 ### Static web properties (nginx pack)
