@@ -9,7 +9,7 @@ Key Changes
   - scripts/dev-vault.sh: non-destructive default (DEV_VAULT_OVERWRITE=never|missing|always)
   - .gitignore: ignore entire `pac-config/`
 - Local runbooks
-  - docs/BITIQLIVE-DEV.md: ENV=local runbook (CRC sizing, dynamic DNS, systemd crc tunnel, safe Vault seeding)
+- docs/BITIQLIVE-DEV.md: ENV=local runbook (CRC sizing, dynamic DNS, iptables forwarder service for 80/443, safe Vault seeding)
   - docs/CERTS-LOCAL.md: HTTP‑01 ClusterIssuer YAML (staging/prod), Route annotation pattern, verification
 - Operator versions
   - docs/VERSION-MATRIX.md: add Couchbase Autonomous Operator (CAO) row and CSV verify command
@@ -62,4 +62,3 @@ Env Impact
 
 CI/Checks
 - make lint, helm-unittest, and make validate pass locally.
-

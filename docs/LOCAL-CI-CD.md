@@ -94,9 +94,9 @@ oc -n openshift-pipelines get eventlistener bitiq-listener
 
 6) Expose the EventListener to GitHub (CRC)
 
-GitHub cannot reach CRC Routes directly. Choose one option to expose the EventListener:
+GitHub cannot reach CRC Routes directly. First ensure the crc-router-forward systemd unit from `docs/BITIQLIVE-DEV.md` is active (or, on macOS/Windows builds that ship it, `crc tunnel`). Then choose one option to expose the EventListener:
 
-Option A — Dynamic DNS (no tunnel)
+Option A — Dynamic DNS (iptables forwarder on CRC host)
 
 ```bash
 # Bind the port-forward to all interfaces (run on the server)
@@ -114,7 +114,7 @@ GitHub repo → Settings → Webhooks → Add webhook
 - Secret: the secret printed above
 - Events: “Just the push event” (PRs are also supported)
 
-Option B — Tunnel (ngrok or cloudflared)
+Option B — Hosted tunnel (ngrok or cloudflared)
 
 ```bash
 # Terminal A: forward the EL service locally (choose HOST_PORT if 8080 is in use)

@@ -5,7 +5,7 @@ Last updated: 2025-10-28 (status updated; CI/CD E2E verified for nostr_* subset)
 
 Next Actions (quick scan)
 - Persistent dev Vault (PVC-backed, GitOps-managed) — Completed 2025-11-21; `oc -n vault-dev get sts/pvc/job/secret` show Ready 1/1, `data-vault-dev-0` Bound, `vault-dev-bootstrap` Complete, and `vault-bootstrap` Secret present. Runbook: `docs/VAULT-DEV-RECOVERY-PLAN.md`.
-- Local certs verify (Who: Codex/Human) — In progress. Added an OpenShift DNS stub server so cluster pods resolve `*.cyphai.com` via 1.1.1.1/8.8.8.8 instead of the host’s `/etc/hosts` entry (previously returned 127.0.0.1). HTTP‑01 issuance still fails because WAN port 80 is closed: Let’s Encrypt can reach `alpha.cyphai.com → 98.169.20.123` but `curl http://alpha.cyphai.com` times out and the challenge returns `connection: Timeout during connect (likely firewall problem)`. For now nostr-site keeps the Ingress shim but points it at the Route53 DNS‑01 issuer (`letsencrypt-dns01-route53-cyphai`) so HTTPS works. Action: when WAN port 80 is forwarded to the OpenShift router (or `crc tunnel` equivalent) switch the issuer back to `letsencrypt-http01-local`, resync, and re-run the HTTP‑01 validation.
+- Local certs verify (Who: Codex/Human) — In progress. Added an OpenShift DNS stub server so cluster pods resolve `*.cyphai.com` via 1.1.1.1/8.8.8.8 instead of the host’s `/etc/hosts` entry (previously returned 127.0.0.1). HTTP‑01 issuance still fails because WAN port 80 is closed: Let’s Encrypt can reach `alpha.cyphai.com → 98.169.20.123` but `curl http://alpha.cyphai.com` times out and the challenge returns `connection: Timeout during connect (likely firewall problem)`. For now nostr-site keeps the Ingress shim but points it at the Route53 DNS‑01 issuer (`letsencrypt-dns01-route53-cyphai`) so HTTPS works. Action: when WAN port 80 is forwarded to the OpenShift router via the iptables systemd unit (docs/BITIQLIVE-DEV.md) switch the issuer back to `letsencrypt-http01-local`, resync, and re-run the HTTP‑01 validation. (macOS/Windows builds can use `crc tunnel` if the command exists; Linux builds must use the iptables service.)
 - Inventory doc (Who: Codex) — Completed 2025-11-21 with `docs/bitiq-inventory.md` capturing strfry, Couchbase, nostr services, nginx, and GPU prerequisites from current GitOps state.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
@@ -94,7 +94,7 @@ Environment Model
 
 Status Summary
 - Completed: Final plan (this file); Dev-Vault safety (non-destructive seeding); Local runbook; CERTS (local) doc; Strfry/Couchbase charts scaffolded; Umbrella Applications and tests; cert-manager-config chart; bootstrap-operators umbrella app; CAO wired for local via ApplicationSet; Strfry ConfigMap added with production defaults and default-deny NetworkPolicy; Couchbase admin VSO secret wiring added; nginx static sites converted to Ingress; cert-manager Route 53 DNS-01 issuer with per-zone solvers via a single ClusterIssuer; operator recursive DNS overrides codified; Cloudflare DNS-01 removed; apex DDNS script and docs added; Couchbase cluster wiring (7.6.6, operator-managed buckets, admin ingress) with VSO-projected credentials and GitOps `CouchbaseUser`/`Group`/`RoleBinding`; Ollama chart scaffolded with external + GPU modes and umbrella toggles; nostr workloads (query, threads, thread-copier, nostouch) migrated to Helm with Vault-managed secrets and network policies, and nostouch streaming validated on CRC (DNS egress requires TCP/UDP 53 and 5353).
-- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until host 80/443 forwarder or `crc tunnel` is active; current ACME check returns connection timeout), Ollama GPU deployment validation & secret wiring.
+- In Progress: Operator bootstrap (monitor CAO chart for upstream upgrades), cert-manager issuance verification across all public hosts (HTTP-01 staging issuer blocked until the iptables forwarder service or equivalent router NAT is active; current ACME check returns connection timeout), Ollama GPU deployment validation & secret wiring.
 - Pending: Validation & cutover in a live cluster.
 
 Milestones (Updated for Local Defaults)
@@ -180,10 +180,10 @@ M7. cert-manager and Routes (local enabled by default)
 - Chart: `charts/cert-manager-config/` with ClusterIssuer and DNS creds (VSO‑projected) for prod; plus an HTTP‑01 issuer for local.
 - Local default: cert-manager enabled. Use HTTP‑01 with dynamic DNS:
   - Public FQDN → your WAN IP; NAT 80/443 → CRC host
-  - Run `crc tunnel` as a systemd service to expose router 80/443 to the host
+  - Run the iptables-based `crc-router-forward` systemd service (docs/BITIQLIVE-DEV.md) or an equivalent router NAT to expose router 80/443 to the host (macOS/Windows builds may use `crc tunnel` if available).
   - cert-manager issues real certs for Route hosts under your FQDN
 - DNS‑01 alternative: Use your DNS provider API creds (e.g., Route 53) to avoid port 80 ingress.
-- Progress: Added an OpenShift DNS stub so cluster pods resolve `*.cyphai.com` via 1.1.1.1/8.8.8.8 (fixes the 127.0.0.1 loopback issue). HTTP‑01 still cannot complete because WAN port 80 is closed (`curl http://alpha.cyphai.com` hangs and Let’s Encrypt reports `Timeout during connect`). nostr-site currently uses the Ingress + Route53 DNS‑01 issuer (`letsencrypt-dns01-route53-cyphai`) so HTTPS works. TODO: open 80→CRC (e.g., `crc tunnel` or router NAT), point the Ingress back to `letsencrypt-http01-local`, and document the successful validation.
+- Progress: Added an OpenShift DNS stub so cluster pods resolve `*.cyphai.com` via 1.1.1.1/8.8.8.8 (fixes the 127.0.0.1 loopback issue). HTTP‑01 still cannot complete because WAN port 80 is closed (`curl http://alpha.cyphai.com` hangs and Let’s Encrypt reports `Timeout during connect`). nostr-site currently uses the Ingress + Route53 DNS‑01 issuer (`letsencrypt-dns01-route53-cyphai`) so HTTPS works. TODO: open 80→CRC via the iptables forwarder service (docs/BITIQLIVE-DEV.md) or equivalent router NAT, point the Ingress back to `letsencrypt-http01-local`, and document the successful validation. (On macOS/Windows CRC builds you can use `crc tunnel` if the command exists.)
 - Acceptance: `oc get certificate` Ready; Routes terminate TLS with managed certs.
 
 M8. Cleanups and deprecation
@@ -286,7 +286,7 @@ Task Format: each task specifies Who, What, Where, Why, Acceptance.
 7) Docs/Runbooks
 - Status: Completed (BITIQLIVE-DEV and CERTS-LOCAL added)
 - Who: Codex agent (repo maintainer)
-- What: Add `docs/BITIQLIVE-DEV.md` covering dynamic DNS, NAT, and `crc tunnel` service; ensure rollback procedures refer to `docs/ROLLBACK.md`.
+- What: Add `docs/BITIQLIVE-DEV.md` covering dynamic DNS, the iptables forwarder/NAT service (macOS/Windows note about `crc tunnel` where applicable), and ensure rollback procedures refer to `docs/ROLLBACK.md`.
 - Where: `docs/*`
 - Why: Repeatable, documented local setup and safe rollback.
 - Acceptance: Docs present and referenced; developers can follow steps to reproduce local HTTPS setup.

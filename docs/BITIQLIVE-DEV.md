@@ -71,24 +71,7 @@ Expose CRC router to host 80/443
   - Requires root and iptables (nftables backend is fine on Ubuntu).
   - If your distro uses `nft` directly, you can adapt these rules to nft syntax.
 
-- Alternative (only if your CRC build supports it): `crc tunnel`
-  Some macOS/Windows builds include `crc tunnel`. If `crc --help` lists `tunnel`,
-  you can run it under systemd. Ensure `$HOME` is set to avoid panics under systemd:
-  [Unit]
-  Description=Expose OpenShift Local router on host 80/443 (crc tunnel)
-  After=network-online.target
-  Wants=network-online.target
-
-  [Service]
-  Type=simple
-  User=root
-  Environment=HOME=/root
-  Restart=always
-  RestartSec=5
-  ExecStart=/usr/bin/crc tunnel
-
-  [Install]
-  WantedBy=multi-user.target
+- Alternative (only if your CRC build supports it): some macOS/Windows bundles ship `crc tunnel`. If `crc --help` lists `tunnel`, you can substitute this command for the iptables unit so long as `$HOME` is set under systemd. Linux builds omit it, so default to the iptables unit above.
 - Enable and start (iptables forwarder):
   sudo systemctl daemon-reload
   sudo systemctl enable --now crc-router-forward
@@ -127,8 +110,6 @@ Certificates (HTTP-01 on local)
   oc get certificates -A
   oc get routes -n <app-ns>
   curl -I https://relay.<your-fqdn>
-
-Note (multi-zone DNS‑01): If port 80 is unavailable or you prefer DNS‑01, use a single cert-manager ClusterIssuer with per‑zone Route 53 solvers (zone selectors) rather than multiple Issuers. Keep all Ingress annotations pointing to that one issuer (e.g., `letsencrypt-dns01-route53-local`). See charts/cert-manager-config/templates/clusterissuer-dns01-route53.yaml:1 and charts/cert-manager-config/values-local.yaml:1 for the pattern and zone IDs.
 
 Strfry
 - Chart: `charts/strfry` (StatefulSet, Service, Route, PVC). Host formed as `relay.<baseDomain>`.

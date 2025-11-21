@@ -1,16 +1,16 @@
 # Local HTTPS with cert-manager (HTTP-01 on OpenShift Local)
 
 Purpose
-- Issue real TLS certificates for Routes on ENV=local using cert-manager and Let’s Encrypt with dynamic DNS and `crc tunnel`.
+- Issue real TLS certificates for Routes on ENV=local using cert-manager and Let’s Encrypt with dynamic DNS and a host-level port-forwarder to CRC (iptables or router NAT).
 
 Requirements
 - Dynamic DNS hostname resolving to your WAN IP (updated by your DDNS client).
-- Router NAT: TCP 80 and 443 forwarded to the Ubuntu host.
-- `crc tunnel` running as a systemd service to expose the OpenShift router on host 80/443.
+- Router NAT: TCP 80 and 443 forwarded to the Ubuntu host (or an equivalent forwarder).
+- Host forwarder that maps ports 80/443 to the CRC router (iptables-based service from docs/BITIQLIVE-DEV.md). `crc tunnel` only exists on macOS/Windows builds; on Linux use the iptables service.
 - Red Hat cert-manager operator installed (via `charts/bootstrap-operators`).
 
 Quick steps
-- Confirm `crc tunnel` is active (see docs/BITIQLIVE-DEV.md).
+- Confirm the iptables forwarder systemd unit is active (docs/BITIQLIVE-DEV.md).
 - Create a ClusterIssuer for Let’s Encrypt (start with staging to avoid rate limits).
 - Annotate service Routes (if using Route integration), or create Certificate resources and consume the secret in an Ingress (advanced/alternative).
 
@@ -56,7 +56,7 @@ spec:
 ```
 
 Route integration (preferred on OpenShift)
-- For clusters with the Red Hat cert-manager operator’s Route support, annotating a Route triggers certificate issuance and automatic TLS injection.
+- For clusters with the Red Hat cert-manager operator’s Route support, annotating a Route triggers certificate issuance and automatic TLS injection. Ensure your host forwarder (iptables service) is up so ACME HTTP-01 traffic reaches the router.
 - Example Route annotations (add to the Route metadata):
 
 ```yaml
@@ -67,7 +67,7 @@ metadata:
 ```
 
 - Ensure the Route `spec.host` is a DNS name under your DDNS FQDN (e.g., `relay.home.example.net`).
-- cert-manager will perform the HTTP-01 challenge via a temporary Ingress served by the OpenShift router. With `crc tunnel` and NAT in place, ACME should succeed.
+- cert-manager will perform the HTTP-01 challenge via a temporary Ingress served by the OpenShift router. With the iptables forwarder/NAT in place, ACME should succeed.
 
 DNS-01 alternative (when TCP/80 is blocked)
 - Some ISPs (or router configs) block inbound TCP/80, which prevents ACME HTTP-01. In that case, prefer DNS-01 with your DNS provider.
@@ -150,7 +150,7 @@ Verification
   - `oc get route -n bitiq-local strfry -o yaml | rg 'tls:' -n` and curl the host: `curl -I https://relay.<your-fqdn>`
 
 Troubleshooting
-- Pending challenges: ensure DNS resolves publicly to your WAN IP, NAT 80/443 to host, `crc tunnel` active.
+- Pending challenges: ensure DNS resolves publicly to your WAN IP, NAT 80/443 to host, and the iptables forwarder service is active (see docs/BITIQLIVE-DEV.md). On macOS/Windows builds you can use `crc tunnel` if it exists.
 - If HTTP-01 is pending/failed and port 80 scans show filtered/closed from Internet vantage, switch to DNS-01.
 - ACME rate limits: use the staging issuer first; switch to prod after success.
 - OpenShift Route integration missing: fall back to the Certificate CR path with an Ingress, or add chart logic to populate Route `spec.tls` using the issued Secret.
@@ -166,5 +166,5 @@ Local dev seeding with make dev-vault
     - export AWS_ROUTE53_SECRET_ACCESS_KEY=...
 - Then run: make dev-vault
 - The helper writes to `gitops/cert-manager/route53` with keys `access-key-id` and `secret-access-key` if the env vars are present; otherwise it skips with a note. No secrets are committed to Git.
-- docs/BITIQLIVE-DEV.md (crc tunnel systemd unit and local runbook)
+- docs/BITIQLIVE-DEV.md (iptables forwarder systemd unit, with optional macOS/Windows `crc tunnel` notes)
 - docs/MIGRATION_PLAN.md (local HTTPS requirements and acceptance)
