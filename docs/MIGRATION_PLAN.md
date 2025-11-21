@@ -5,7 +5,7 @@ Last updated: 2025-10-28 (status updated; CI/CD E2E verified for nostr_* subset)
 
 Next Actions (quick scan)
 - Persistent dev Vault (PVC-backed, GitOps-managed) — Completed 2025-11-21; `oc -n vault-dev get sts/pvc/job/secret` show Ready 1/1, `data-vault-dev-0` Bound, `vault-dev-bootstrap` Complete, and `vault-bootstrap` Secret present. Runbook: `docs/VAULT-DEV-RECOVERY-PLAN.md`.
-- Local certs verify (Who: Codex/Human) — In progress. HTTP‑01 ClusterIssuer (`letsencrypt-http01-local`) already Ready; nostr-site chart now renders an Ingress with TLS secret `nostr-site-tls` and annotations for that issuer. Next validation step: let Argo sync the change, watch `oc -n bitiq-local get certificate nostr-site-tls` flip to Ready, then `curl https://alpha.cyphai.com` without `--insecure`.
+- Local certs verify (Who: Codex/Human) — In progress. HTTP‑01 ClusterIssuer (`letsencrypt-http01-local`) already Ready; nostr-site chart now renders an Ingress with TLS secret `nostr-site-tls` and annotations for that issuer. First issuance attempt created a Challenge but Let’s Encrypt’s self-check hit `alpha.cyphai.com → 127.0.0.1:80` (see `oc -n bitiq-local describe challenge nostr-site-tls-…`). Action: point `alpha.cyphai.com` at the WAN IP that forwards 80/443 to CRC (or adjust the upstream resolver on CRC) so the solver stops resolving to loopback. Then re-run `oc -n openshift-gitops annotate application nostr-site-local argocd.argoproj.io/refresh=hard --overwrite` and verify `oc -n bitiq-local get certificate nostr-site-tls` shows `Ready=True`, followed by `curl https://alpha.cyphai.com`.
 - Inventory doc (Who: Codex) — Completed 2025-11-21 with `docs/bitiq-inventory.md` capturing strfry, Couchbase, nostr services, nginx, and GPU prerequisites from current GitOps state.
 - Open PR (Who: Codex). What: PR with env impact and runbooks linked. Acceptance: reviewers can reproduce local setup.
 
@@ -183,7 +183,7 @@ M7. cert-manager and Routes (local enabled by default)
   - Run `crc tunnel` as a systemd service to expose router 80/443 to the host
   - cert-manager issues real certs for Route hosts under your FQDN
 - DNS‑01 alternative: Use your DNS provider API creds (e.g., Route 53) to avoid port 80 ingress.
-- Progress: `letsencrypt-http01-local` ClusterIssuer shows `READY=True`, and nostr-site chart now renders an HTTP‑01-backed Ingress (`nostr-site-tls` Secret). Waiting for Argo sync/validation before enabling HTTP-01 on the remaining services.
+- Progress: `letsencrypt-http01-local` ClusterIssuer shows `READY=True`, and nostr-site chart now renders an HTTP‑01-backed Ingress (`nostr-site-tls` Secret). First issuance attempt is stuck because the CRC resolver returns `alpha.cyphai.com -> 127.0.0.1`, so cert-manager’s HTTP-01 self-check fails with `dial tcp 127.0.0.1:80`. Update DDNS/upstream resolvers so the hostname resolves to the WAN IP that forwards 80/443 to CRC, then re-trigger the Application sync and confirm the Certificate becomes Ready. Once validated, propagate the Ingress pattern to other services or fall back to DNS-01 until networking is opened.
 - Acceptance: `oc get certificate` Ready; Routes terminate TLS with managed certs.
 
 M8. Cleanups and deprecation
