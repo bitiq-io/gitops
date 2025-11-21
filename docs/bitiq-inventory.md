@@ -108,8 +108,9 @@ Umbrella toggles: `nostrQueryEnabled`, `nostrThreadsEnabled`, `nostrThreadCopier
 
 #### nostr-site (`charts/nostr-site/`)
 
-- Minimal nginx Deployment/Service with a Route (default) and an optional Ingress. The Route path uses the Route 53 DNS-01 issuer (`letsencrypt-dns01-route53-cyphai`) so it does not depend on WAN port 80 being reachable.
-- When you want to experiment with HTTP-01, set `route.enabled=false` and `ingress.enabled=true` so cert-manager requests `letsencrypt-http01-local` against the Ingress. That path requires the router’s port 80 to be publicly reachable (see MIGRATION_PLAN next steps).
+- Minimal nginx Deployment/Service with an Ingress (default) that drives cert-manager. Local uses the Route 53 DNS-01 issuer (`letsencrypt-dns01-route53-cyphai`) so it does not depend on WAN port 80 being reachable; the Ingress shim creates the TLS secret `nostr-site-tls` and the router-specific Route.
+- Optional Route template exists for environments that prefer managing Routes directly. Toggle `route.enabled=true` and `ingress.enabled=false` if you need to handcraft the Route manifest.
+- To experiment with HTTP-01, keep the Ingress enabled but switch its issuer to `letsencrypt-http01-local`. That path requires the router’s port 80 to be publicly reachable (see MIGRATION_PLAN next steps).
 - Customize content by building a new container or layering ConfigMaps; no Secrets involved yet.
 
 ### Static web properties (nginx pack)

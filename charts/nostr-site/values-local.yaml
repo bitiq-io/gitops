@@ -1,11 +1,11 @@
 baseDomain: apps-crc.testing
 route:
-  enabled: true
+  enabled: false
   host: "alpha.cyphai.com"
   clusterIssuerName: letsencrypt-dns01-route53-cyphai
 
 ingress:
-  enabled: false
+  enabled: true
   className: openshift-default
   tlsSecretName: nostr-site-tls
-  clusterIssuerName: letsencrypt-http01-local
+  clusterIssuerName: letsencrypt-dns01-route53-cyphai
