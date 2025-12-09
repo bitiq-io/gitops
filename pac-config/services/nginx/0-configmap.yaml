@@ -53,7 +53,6 @@ data:
         location / {
           root /usr/share/nginx/html/paulcapestany.com;
           index index.html index.htm;
-          try_files $uri $uri/ /index.html;
         }
       }
       server {

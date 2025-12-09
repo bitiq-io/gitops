@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: init-static-sites-v11
+  name: init-static-sites-v12
   namespace: bitiq-local
   annotations:
     argocd.argoproj.io/sync-wave: "1"

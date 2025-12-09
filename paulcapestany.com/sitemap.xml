@@ -1,9 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
   <url>
-    <loc>https://signet.ing/</loc>
-    <lastmod>2025-11-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <loc>http://paulcapestany.com/</loc>
+    <lastmod>2012-05-21T13:16:03-07:00</lastmod>
+    <priority>0</priority>
   </url>
+  
+  <url>
+    <loc>http://paulcapestany.com/2012/05/21/on-the-hill/</loc>
+    <lastmod>2012-05-21T13:16:03-07:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://paulcapestany.com/2011/06/25/goodbye-baltimore.-hello-san-francisco./</loc>
+    <lastmod>2011-06-25T12:29:48-07:00</lastmod>
+  </url>
+  
 </urlset>
