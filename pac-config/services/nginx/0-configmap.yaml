@@ -11,6 +11,10 @@ data:
     }
 
     http {
+      # Avoid leaking backend port in redirects when fronted by a TLS-terminating router
+      port_in_redirect off;
+      absolute_redirect off;
+
       server {
         listen 8080;
         server_name www.cyphai.com;
