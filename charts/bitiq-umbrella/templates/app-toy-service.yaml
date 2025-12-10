@@ -22,7 +22,7 @@ metadata:
     {{- if $toyServiceRepo }}
     argocd-image-updater.argoproj.io/image-list: toy-service={{ $toyServiceRepo }}
     {{- end }}
-    argocd-image-updater.argoproj.io/toy-service.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/toy-service.update-strategy: semver
     argocd-image-updater.argoproj.io/toy-service.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
     {{- if .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/toy-service.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}

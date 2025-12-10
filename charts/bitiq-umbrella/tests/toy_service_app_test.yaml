@@ -13,6 +13,9 @@ tests:
           path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
           value: "toy-service=quay.io/paulcapestany/toy-service"
       - equal:
+          path: metadata.annotations["argocd-image-updater.argoproj.io/toy-service.update-strategy"]
+          value: semver
+      - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/toy-service.helm.image-name"]
           value: image.repository
       - equal:
