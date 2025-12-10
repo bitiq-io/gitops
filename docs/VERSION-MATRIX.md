@@ -26,7 +26,7 @@ Source of truth for the versions we target across the CRC-based environment. Kee
 |-----------|---------|--------------|---------------|
 | Couchbase Server (local) | `couchbase/server:7.6.6` | `oc -n bitiq-local get couchbasecluster couchbase-cluster -o jsonpath='{.spec.image}'` | https://docs.couchbase.com/server/7.6/introduction/intro.html |
 | Strfry relay | `strfry 1.0.4` (`quay.io/paulcapestany/strfry:0d0faa1`) | `oc -n bitiq-local get statefulset strfry -o jsonpath='{.spec.template.spec.containers[0].image}'` | https://github.com/hoytech/strfry/releases/tag/v1.0.4 |
-| Toy Service (sample backend) | `quay.io/paulcapestany/toy-service:v0.3.38-commit.c709549` | `oc -n bitiq-local get deployment toy-service -o jsonpath='{.spec.template.spec.containers[0].image}'` | https://github.com/PaulCapestany/toy-service/releases/tag/v0.3.38 |
+| Toy Service (sample backend) | `quay.io/paulcapestany/toy-service:v0.3.39-commit.8a1475e` | `oc -n bitiq-local get deployment toy-service -o jsonpath='{.spec.template.spec.containers[0].image}'` | https://github.com/PaulCapestany/toy-service/releases/tag/v0.3.39 |
 | Go toolchain (CI builders) | `go1.24.6` (`registry.access.redhat.com/ubi9/go-toolset:1.24.6`) | `podman run --rm registry.access.redhat.com/ubi9/go-toolset:1.24.6 go version` | https://catalog.redhat.com/en/software/containers/ubi9/go-toolset/61e5c00b4ec9945c18787690 |
 
 > _Add additional services (Strfry, nostr workloads, etc.) to this matrix as they land in GitOps. Include the exact container tag or release and a stable documentation link for that version._

@@ -7,11 +7,7 @@ release:
   name: umbrella
   namespace: openshift-gitops
 tests:
-  - it: renders image updater annotations when explicitly resumed
-    set:
-      imageUpdater:
-        toyService:
-          pause: false
+  - it: renders image updater annotations by default
     asserts:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]
@@ -22,7 +18,11 @@ tests:
       - equal:
           path: metadata.annotations["argocd-image-updater.argoproj.io/write-back-target"]
           value: helmvalues:/charts/toy-service/values-local.yaml
-  - it: omits annotations when paused (default)
+  - it: omits annotations when paused
+    set:
+      imageUpdater:
+        toyService:
+          pause: true
     asserts:
       - notExists:
           path: metadata.annotations["argocd-image-updater.argoproj.io/image-list"]

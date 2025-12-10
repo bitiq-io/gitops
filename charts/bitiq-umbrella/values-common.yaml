@@ -21,8 +21,8 @@ imageUpdater:
   pullSecret: ""
   toyService:
     enabled: true
-    # Temporarily pause Image Updater write-back until toy-service publishes multi-arch images.
-    pause: true
+    # Image Updater enabled; platform filter stays on amd64 until multi-arch images are available.
+    pause: false
   toyWeb:
     pause: false
   nostrThreads:
