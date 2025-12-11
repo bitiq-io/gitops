@@ -8,6 +8,4 @@ env:
   ollamaHost: https://ollama.cyphai.com
 
 networkPolicy:
-  egress:
-    dnsCIDRs:
-      - 10.217.4.0/23
+  enabled: false
