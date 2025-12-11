@@ -9,6 +9,7 @@ spec:
   selector:
     matchLabels:
 {{ include "nostr-query.selectorLabels" . | indent 6 }}
+{{- $couchbaseHost := default (printf "couchbase://couchbase-cluster.%s.svc.cluster.local" .Release.Namespace) .Values.couchbase.host }}
   template:
     metadata:
       labels:
@@ -41,6 +42,12 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
           env:
+            - name: COUCHBASE_HOST
+              value: {{ $couchbaseHost | quote }}
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 {{- if .Values.env.envPrefix }}
             - name: ENV_PREFIX
               value: {{ .Values.env.envPrefix | quote }}
