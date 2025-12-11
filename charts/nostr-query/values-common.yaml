@@ -38,6 +38,9 @@ env:
 
 envFrom: []
 
+couchbase:
+  host: ""
+
 secrets:
   couchbase:
     enabled: true
