@@ -88,5 +88,7 @@ networkPolicy:
     additional: []
   egress:
     allowDNS: true
+    dnsCIDRs:
+      - 0.0.0.0/0
     allowSameNamespace: true
     additional: []
