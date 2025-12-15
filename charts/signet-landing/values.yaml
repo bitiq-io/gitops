@@ -2,6 +2,7 @@ image:
   repository: quay.io/paulcapestany/signet-landing
   tag: "0.1.0"
   pullPolicy: IfNotPresent
+imagePullSecrets: []
 
 replicaCount: 1
 service:
