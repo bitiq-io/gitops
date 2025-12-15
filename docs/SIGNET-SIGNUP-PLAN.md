@@ -6,7 +6,7 @@ Plan now gates signup work behind extracting the current signet.ing static site 
    name: Landing Repo Extraction  
    description: Carve the existing signet.ing landing assets (currently under signet-trailer/) into a dedicated app repo under github.com/signeting with build instructions, license, and README. Preserve current behavior/assets and remove any GitOps-only bits from app code.  
    dependencies: []  
-   status: pending  
+   status: complete (signeting/signet-landing created, initial import pushed)  
    acceptance_criteria: New repo (e.g., signeting/signet-landing) exists with clean history for the landing page, includes build steps and static output, no secrets or cluster manifests; old folder references are removed/archived here with pointers to the new repo.
 
 2. id: S1  
