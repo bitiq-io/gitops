@@ -55,6 +55,8 @@ nostrThreadCopier:
   enabled: false
 nostouch:
   enabled: false
+signetLanding:
+  enabled: false
 ollama:
   enabled: false
   mode: disabled

@@ -1,0 +1,26 @@
+{{- $route := default (dict) .Values.route }}
+{{- $routeEnabled := true }}
+{{- if hasKey $route "enabled" }}
+  {{- $routeEnabled = eq (lower (printf "%v" (get $route "enabled"))) "true" }}
+{{- end }}
+{{- if $routeEnabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: signet-landing
+  {{- $issuer := default "" (get $route "clusterIssuerName") }}
+  {{- if $issuer }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ $issuer | quote }}
+    haproxy.router.openshift.io/redirect-to-https: "true"
+  {{- end }}
+spec:
+  to:
+    kind: Service
+    name: signet-landing
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  host: {{ (get $route "host") | default "" | quote }}
+{{- end }}

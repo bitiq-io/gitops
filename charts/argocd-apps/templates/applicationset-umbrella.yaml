@@ -35,6 +35,7 @@ spec:
             vaultConfigPolicyName: {{ $e.vaultConfigPolicyName | quote }}
             vaultServerEnabled: {{ default false $e.vaultServerEnabled }}
             nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
+            signetLandingEnabled: {{ default false $e.signetLandingEnabled }}
             nostrQueryEnabled: {{ default false $e.nostrQueryEnabled }}
             nostrThreadsEnabled: {{ default false $e.nostrThreadsEnabled }}
             nostrThreadCopierEnabled: {{ default false $e.nostrThreadCopierEnabled }}
@@ -133,6 +134,8 @@ spec:
               value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
             - name: nostrSite.enabled
               value: '{{ "{{ .nostrSiteEnabled | default false }}" }}'
+            - name: signetLanding.enabled
+              value: '{{ "{{ .signetLandingEnabled | default false }}" }}'
             - name: nostrQuery.enabled
               value: '{{ "{{ .nostrQueryEnabled | default false }}" }}'
             - name: nostrThreads.enabled

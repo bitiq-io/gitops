@@ -1,0 +1,10 @@
+route:
+  enabled: true
+  host: signet.ing
+  clusterIssuerName: letsencrypt-dns01-route53-local
+
+ingress:
+  enabled: false
+  className: ""
+  tlsSecretName: ""
+  clusterIssuerName: ""

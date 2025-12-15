@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: signet-landing
+spec:
+  selector:
+    app: signet-landing
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: 8080
+  type: {{ .Values.service.type }}

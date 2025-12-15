@@ -13,7 +13,7 @@ Plan now gates signup work behind extracting the current signet.ing static site 
    name: GitOps Re-integration (Static Only)  
    description: Wire the extracted landing repo into this GitOps flow as a static site (no signup): decide artifact shape (container image vs. tar seed), ensure Routes/Ingress/TLS for signet.ing continue to work, and align values with docs/CONVENTIONS.md.  
    dependencies: [S0]  
-   status: pending  
+   status: in-progress (chart added; ghcr.io/signeting/signet-landing:0.1.0)  
    acceptance_criteria: Argo/umbrella config deploys the static site from the new repo/artifact; `make validate` passes; static content matches current production; no signup code or new secrets involved.
 
 3. id: S2  

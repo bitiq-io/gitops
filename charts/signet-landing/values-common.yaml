@@ -1,0 +1,21 @@
+image:
+  repository: ghcr.io/signeting/signet-landing
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+service:
+  port: 8080
+  type: ClusterIP
+
+route:
+  enabled: true
+  host: signet.ing  # explicit FQDN
+  clusterIssuerName: ""
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  tlsSecretName: ""
+  clusterIssuerName: ""

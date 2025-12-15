@@ -87,6 +87,9 @@ certManager:
 nostrSite:
   enabled: false
 
+signetLanding:
+  enabled: false
+
 nginxSites:
   enabled: false
 
