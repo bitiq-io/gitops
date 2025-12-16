@@ -20,8 +20,9 @@ Plan now gates signup work behind extracting the current signet.ing static site 
    name: Baseline Validation  
    description: Smoke-test the re-integrated static site across envs (at least local) and confirm signet.ing serves the expected content with existing CDN/TLS behaviors.  
    dependencies: [S1]  
-   status: pending  
-   acceptance_criteria: Documented check showing the deployed site matches the pre-extraction version; no regressions in routes, assets, or SEO tags; ready to proceed to signup work.
+   status: complete  
+   acceptance_criteria: Documented check showing the deployed site matches the pre-extraction version; no regressions in routes, assets, or SEO tags; ready to proceed to signup work.  
+   notes: Local CRC smoke validated via `oc port-forward svc/signet-landing 18080:8080` + curl (HTTP 200, HTML served). Route remains `signet.ing`; image 0.1.2 running without pull secret (repo public).
 
 4. id: S3  
    name: Signup Requirements & Architecture  
