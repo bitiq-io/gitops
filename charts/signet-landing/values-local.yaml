@@ -9,6 +9,5 @@ ingress:
   tlsSecretName: ""
   clusterIssuerName: ""
 
-# Use existing Quay pull secret for private image pulls in local
-imagePullSecrets:
-  - quay-auth
+# Repo is public; no pull secret needed in local
+imagePullSecrets: []
