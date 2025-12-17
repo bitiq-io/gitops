@@ -14,7 +14,8 @@ Plan now gates signup work behind extracting the current signet.ing static site 
    description: Wire the extracted landing repo into this GitOps flow as a static site (no signup): decide artifact shape (container image vs. tar seed), ensure Routes/Ingress/TLS for signet.ing continue to work, and align values with docs/CONVENTIONS.md.  
    dependencies: [S0]  
    status: complete (chart added; image quay.io/paulcapestany/signet-landing:0.1.2 multi-arch)  
-   acceptance_criteria: Argo/umbrella config deploys the static site from the new repo/artifact; `make validate` passes; static content matches current production; no signup code or new secrets involved.
+   acceptance_criteria: Argo/umbrella config deploys the static site from the new repo/artifact; `make validate` passes; static content matches current production; no signup code or new secrets involved.  
+   notes: Temporary GH Actions image build exists; migrate landing image builds to in-cluster Tekton/Quay in S10 to align with platform standards.
 
 3. id: S2  
    name: Baseline Validation  
@@ -26,7 +27,7 @@ Plan now gates signup work behind extracting the current signet.ing static site 
 
 4. id: S3  
    name: Signup Requirements & Architecture  
-   description: Lock scope (fields collected, double opt-in, data retention/deletion, host/path, latency/SLOs, storage choice) and confirm the signup service lives in its own app repo with Argo delivery from this GitOps repo.  
+   description: Lock scope (fields collected, double opt-in, data retention/deletion, host/path, latency/SLOs, storage choice) and confirm the signup service lives in its own app repo with Argo delivery from this GitOps repo. Default recommendations: email (required) + optional name/referrer only; double opt-in; API served same-origin under `https://signet.ing/api/signup` to avoid CORS; Postgres for idempotent storage; SES as default mail provider (Postmark alternate); per-IP rate limiting + disposable-domain blocklist; secrets via Vault (VSO/VCO); tokens HMAC-signed with 24h TTL; p99 <300ms and 99.5% availability target.  
    dependencies: [S2]  
    status: pending  
    acceptance_criteria: Written decision doc covering form fields, opt-in policy, storage (Postgres vs S3 object), mail provider (SES/Postmark/etc.), domain/Route shape, and abuse posture; agreed owner for app repo + image registry; call out any net-new infra.
@@ -75,10 +76,10 @@ Plan now gates signup work behind extracting the current signet.ing static site 
 
 11. id: S10  
     name: CI/CD & Image Promotion  
-    description: Add build/push pipeline (Tekton here or GH Actions in app repo) publishing tagged images to the approved registry; wire optional Argo CD Image Updater tracking.  
+    description: Add in-cluster Tekton build/push for the signup service (and migrate signet-landing off GH Actions) publishing tagged images to Quay; wire optional Argo CD Image Updater tracking.  
     dependencies: [S4]  
     status: pending  
-    acceptance_criteria: Pipeline builds/pushes tagged images; tags align with appVersion; if Image Updater is used, annotations/alias configured and tested; no manual pushes required.
+    acceptance_criteria: Tekton Pipeline/Trigger builds multi-arch images to Quay with Vault-sourced credentials; tags align with appVersion; signet-landing GH workflow disabled once Tekton path is live; if Image Updater is used, annotations/alias configured and tested; no manual pushes required.
 
 12. id: S11  
     name: Umbrella/AppSet Integration  
