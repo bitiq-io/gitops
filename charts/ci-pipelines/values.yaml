@@ -115,6 +115,24 @@ pipelines:
     fsGroup: ""
     eventTypes: ["push"]
 
+  - name: signet-landing-build-and-push
+    gitUrl: https://github.com/signeting/signet-landing.git
+    gitRevision: main
+    dockerfile: Dockerfile
+    contextDir: .
+    runTests: "false"
+    testImage: ""
+    testScript: ""
+    imageRegistry: quay.io
+    imageNamespace: paulcapestany
+    imageName: signet-landing
+    tlsVerify: "true"
+    repoFullNames:
+      - signeting/signet-landing
+    serviceAccountName: ""
+    fsGroup: ""
+    eventTypes: ["push"]
+
 appVersionAutomation:
   enabled: true
   pipelineName: gitops-maintenance
