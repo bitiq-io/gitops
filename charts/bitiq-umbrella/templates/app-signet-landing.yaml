@@ -3,6 +3,17 @@
 {{- if hasKey $sl "enabled" }}
   {{- $slEnabled = eq (lower (printf "%v" (get $sl "enabled"))) "true" }}
 {{- end }}
+{{- $slImgUpdater := default (dict) (get .Values.imageUpdater "signetLanding") }}
+{{- $slImgUpdaterEnabled := true }}
+{{- if hasKey $slImgUpdater "enabled" }}
+  {{- $slImgUpdaterEnabled = eq (lower (printf "%v" (get $slImgUpdater "enabled"))) "true" }}
+{{- end }}
+{{- $slImgUpdaterPaused := false }}
+{{- if hasKey $slImgUpdater "pause" }}
+  {{- $slImgUpdaterPaused = eq (lower (printf "%v" (get $slImgUpdater "pause"))) "true" }}
+{{- end }}
+{{- $manageSl := and $slImgUpdaterEnabled (not $slImgUpdaterPaused) }}
+{{- $slRepo := default "" (get .Values.sampleAppImages "signetLanding") }}
 {{- if $slEnabled }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -12,6 +23,25 @@ metadata:
   labels:
     bitiq.io/env: {{ .Values.env }}
     app.kubernetes.io/part-of: bitiq-umbrella
+  annotations:
+    {{- if $manageSl }}
+    {{- if $slRepo }}
+    argocd-image-updater.argoproj.io/image-list: signet-landing={{ $slRepo }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/signet-landing.update-strategy: semver
+    argocd-image-updater.argoproj.io/signet-landing.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
+    {{- if .Values.imageUpdater.pullSecret }}
+    argocd-image-updater.argoproj.io/signet-landing.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
+    {{- end }}
+    argocd-image-updater.argoproj.io/signet-landing.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/signet-landing.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/signet-landing.allow-tags: "regexp:^(v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}|\\d+\\.\\d+\\.\\d+)$"
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/signet-landing/values-common.yaml
+    argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}
+    argocd-image-updater.argoproj.io/dry-run: "false"
+    argocd-image-updater.argoproj.io/interval: 1m
+    {{- end }}
 spec:
   project: default
   source:

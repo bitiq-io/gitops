@@ -31,6 +31,9 @@ imageUpdater:
   nostouch:
     enabled: true
     pause: false
+  signetLanding:
+    enabled: true
+    pause: false
 
 # Vault operators integration (disabled by default until migration completes)
 vault:
@@ -55,6 +58,7 @@ sampleAppImages:
   toyWeb: quay.io/paulcapestany/toy-web
   nostrThreads: quay.io/paulcapestany/nostr_threads
   nostouch: quay.io/paulcapestany/nostouch
+  signetLanding: quay.io/paulcapestany/signet-landing
 
 # New services (env toggles)
 strfry:
