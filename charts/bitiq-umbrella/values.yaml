@@ -172,3 +172,18 @@ ciPipelines:
         fi
         npm test
       eventTypes: ["push"]
+    - name: signet-landing-build-and-push
+      gitUrl: https://github.com/signeting/signet-landing.git
+      gitRevision: main
+      dockerfile: Dockerfile
+      contextDir: .
+      imageRegistry: quay.io
+      imageNamespace: paulcapestany
+      imageName: signet-landing
+      tlsVerify: "true"
+      repoFullNames:
+        - signeting/signet-landing
+      runTests: "false"
+      testImage: ""
+      testScript: ""
+      eventTypes: ["push"]
