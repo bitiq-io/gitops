@@ -30,7 +30,7 @@ metadata:
     {{- end }}
     argocd-image-updater.argoproj.io/nostr-threads.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/nostr-threads.helm.image-tag: image.tag
-    argocd-image-updater.argoproj.io/nostr-threads.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}$"
+    argocd-image-updater.argoproj.io/nostr-threads.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.g[0-9a-f]{7,}$"
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/nostr-threads/values-{{ .Values.env }}.yaml
     argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}

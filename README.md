@@ -351,7 +351,7 @@ ENVS=local make unfreeze-updater
 ```
 
 Notes:
-- Tag grammar is enforced: `vX.Y.Z-commit.<sha>`.
+- Tag grammar is enforced: `vX.Y.Z-commit.g<sha>` (the `g` prefix keeps prereleases SemVer-valid even when the short SHA is numeric).
 - By default all envs are updated; when envs differ, the helper skips `verify-release` and computes `appVersion` from the first selected env.
 - Edits `charts/toy-service/values-<env>.yaml` and/or `charts/toy-web/values-<env>.yaml` based on chosen services, then runs `scripts/compute-appversion.sh`.
 - Limit scope with `SERVICES=backend|frontend` (or `--services`); unfreezing resumes Image Updater so it writes the newest allowed tags back to Git automatically for the selected services.
@@ -367,6 +367,12 @@ Notes:
 - [docs/ROLLBACK.md](docs/ROLLBACK.md) — revert + resync runbook
 - [AGENTS.md](AGENTS.md) — assistant-safe workflows and conventions
   - See also: `docs/adr/0002-helm-first-gitops-structure.md` for the Helm-first decision
+
+## Versioning & appVersion snapshot
+
+- Images follow `vX.Y.Z-commit.g<sha>`; the `g` prefix ensures tags stay SemVer-safe for Argo CD Image Updater.
+- Each app’s allow-tags regex and update-strategy expect that grammar; Tekton emits it in `charts/ci-pipelines/templates/pipeline.yaml`.
+- The umbrella `appVersion` is a composite of all participating services (e.g., `toy-service-v0.3.39-commit.g8a1475e_toy-web-v0.1.41-commit.gdddb93d`) so git history captures the exact mix running. See `docs/CONVENTIONS.md` and `docs/ROLLBACK.md` for rollback procedure.
 
 ## Contributing & Agents
 

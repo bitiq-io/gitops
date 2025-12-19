@@ -75,7 +75,7 @@ spec:
           - name: source
         results:
           - name: tag
-            description: "Deterministic image tag v<semver>-commit.<shortSHA>"
+            description: "Deterministic image tag v<semver>-commit.g<shortSHA>"
         steps:
           - name: compute
             image: alpine/git:2.45.2
@@ -123,7 +123,7 @@ spec:
               SHA=$(git rev-parse --short=7 HEAD)
               echo "[compute-image-tag] HEAD short SHA: $SHA"
 
-              TAG="${VER}-commit.${SHA}"
+              TAG="${VER}-commit.g${SHA}"
               echo "[compute-image-tag] writing tag result: $TAG"
               printf "%s" "$TAG" > $(results.tag.path)
       workspaces:

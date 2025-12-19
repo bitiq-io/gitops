@@ -4,7 +4,7 @@ Authoritative conventions for repository naming, versioning, and environment ove
 
 ## Image tags
 
-- Grammar: `v<MAJOR.MINOR.PATCH>-commit.<SHORT_SHA>` (e.g., `v0.3.2-commit.7e9c1f2`).
+- Grammar: `v<MAJOR.MINOR.PATCH>-commit.g<SHORT_SHA>` (e.g., `v0.3.2-commit.g7e9c1f2`). The `g` prefix guarantees the prerelease is SemVer-compliant even when the short SHA is numeric/leading-zero.
 - `SHORT_SHA` is 7+ characters for readability and uniqueness.
 - Tekton computes the tag via `scripts/ci-pipelines/templates/pipeline.yaml` to ensure CI outputs the deterministic form on every build.
 - Argo CD Image Updater is restricted to this grammar via `argocd-image-updater.argoproj.io/app.allow-tags`.
@@ -12,7 +12,7 @@ Authoritative conventions for repository naming, versioning, and environment ove
 
 ## Composite `appVersion`
 
-- Grammar: `<svcA>-vX.Y.Z-commit.<sha>_<svcB>-vA.B.C-commit.<sha>`; entries are sorted lexicographically by service name.
+- Grammar: `<svcA>-vX.Y.Z-commit.g<sha>_<svcB>-vA.B.C-commit.g<sha>`; entries are sorted lexicographically by service name.
 - Primary location: `charts/bitiq-umbrella/Chart.yaml`.
 - Generate/update by running:
 

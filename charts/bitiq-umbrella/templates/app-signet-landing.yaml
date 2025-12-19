@@ -28,14 +28,14 @@ metadata:
     {{- if $slRepo }}
     argocd-image-updater.argoproj.io/image-list: signet-landing={{ $slRepo }}
     {{- end }}
-    argocd-image-updater.argoproj.io/signet-landing.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/signet-landing.update-strategy: semver
     argocd-image-updater.argoproj.io/signet-landing.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
     {{- if .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/signet-landing.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
     {{- end }}
     argocd-image-updater.argoproj.io/signet-landing.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/signet-landing.helm.image-tag: image.tag
-    argocd-image-updater.argoproj.io/signet-landing.allow-tags: "regexp:^(v\\d+\\.\\d+\\.\\d+-commit\\.[0-9a-f]{7,}|\\d+\\.\\d+\\.\\d+)$"
+    argocd-image-updater.argoproj.io/signet-landing.allow-tags: "regexp:^v\\d+\\.\\d+\\.\\d+-commit\\.g[0-9a-f]{7,}$"
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:/charts/signet-landing/values-common.yaml
     argocd-image-updater.argoproj.io/git-branch: {{ .Values.targetRevision }}

@@ -83,6 +83,7 @@ The chart provides:
 - TriggerTemplates + TriggerBindings per pipeline, wired into a single EventListener with repo-based routing
 - ServiceAccount `pipeline` and RBAC (including cluster‑scope read for ClusterInterceptors)
 - Optional test phase driven by each pipeline’s `runTests`: backend runs `go test ./...` inside `registry.access.redhat.com/ubi9/go-toolset:1.24.6` (Go 1.24.6); frontend runs `npm ci && npm test -- --watch=false` using configurable builder images.
+- Tags emitted by the pipelines follow `vX.Y.Z-commit.g<sha>` (the `g` prefix keeps prereleases SemVer-safe for Image Updater).
 
 ```bash
 oc -n openshift-gitops annotate application ci-pipelines-${ENV} argocd.argoproj.io/refresh=hard --overwrite
