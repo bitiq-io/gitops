@@ -40,6 +40,8 @@ spec:
       kind: ServiceAccount
       jsonPointers:
         - /secrets
+        - /imagePullSecrets
+        - /metadata/annotations/openshift.io~1internal-registry-pull-secret-ref
   syncPolicy:
     automated:
       prune: true
