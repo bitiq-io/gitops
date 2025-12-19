@@ -15,7 +15,7 @@ Plan now gates signup work behind extracting the current signet.ing static site 
    dependencies: [S0]  
    status: complete (chart added; image quay.io/paulcapestany/signet-landing:0.1.2 multi-arch)  
    acceptance_criteria: Argo/umbrella config deploys the static site from the new repo/artifact; `make validate` passes; static content matches current production; no signup code or new secrets involved.  
-   notes: GH Actions workflow disabled; Tekton pipeline + webhook now build/push signet-landing to Quay (public). Argo CD Image Updater is enabled (write-back to `charts/signet-landing/values-common.yaml`) and verified end-to-end with release v0.1.6. GitHub webhook should target `http://k7501450.eero.online:18080` (EventListener); update if the tunnel/hostname changes.
+   notes: GH Actions workflow disabled; Tekton pipeline + webhook now build/push signet-landing to Quay (public) using semver-safe tags `vX.Y.Z-commit.g<sha>`. Argo CD Image Updater write-back to `charts/signet-landing/values-common.yaml` is live and validated end-to-end via webhook-triggered release v0.1.9 (Quay → Image Updater git commit → Argo sync). GitHub webhook should target `http://k7501450.eero.online:18080` (EventListener); update if the tunnel/hostname changes.
 
 3. id: S2  
    name: Baseline Validation  
@@ -80,7 +80,7 @@ Plan now gates signup work behind extracting the current signet.ing static site 
     dependencies: [S4]  
     status: pending  
     acceptance_criteria: Tekton Pipeline/Trigger builds multi-arch images to Quay with Vault-sourced credentials; tags align with appVersion; signet-landing GH workflow disabled once Tekton path is live; if Image Updater is used, annotations/alias configured and tested; no manual pushes required.  
-    notes: Signet-landing Tekton pipeline + Argo CD Image Updater are live and validated (v0.1.6 build -> Quay -> Image Updater write-back -> Argo sync). Signup service pipeline still to be added; GitHub webhook for signet-landing may need external exposure beyond CRC for automatic triggers.
+    notes: Signet-landing Tekton pipeline + Argo CD Image Updater are live and validated (v0.1.9 build via webhook -> Quay tag `v0.1.9-commit.g428cf12` -> Image Updater write-back -> Argo sync). Signup service pipeline still to be added; GitHub webhook for signet-landing may need external exposure beyond CRC for automatic triggers.
 
 12. id: S11  
     name: Umbrella/AppSet Integration  
