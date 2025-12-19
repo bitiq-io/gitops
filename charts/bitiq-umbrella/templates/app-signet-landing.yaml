@@ -28,7 +28,7 @@ metadata:
     {{- if $slRepo }}
     argocd-image-updater.argoproj.io/image-list: signet-landing={{ $slRepo }}
     {{- end }}
-    argocd-image-updater.argoproj.io/signet-landing.update-strategy: semver
+    argocd-image-updater.argoproj.io/signet-landing.update-strategy: newest-build
     argocd-image-updater.argoproj.io/signet-landing.platforms: {{ .Values.imageUpdater.platforms | default "linux/amd64" }}
     {{- if .Values.imageUpdater.pullSecret }}
     argocd-image-updater.argoproj.io/signet-landing.pull-secret: {{ .Values.imageUpdater.pullSecret | quote }}
