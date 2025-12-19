@@ -34,6 +34,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.pipelinesNamespace }}
+  ignoreDifferences:
+    # ServiceAccounts get auto-populated secrets/tokens (dockercfg) that are not deterministic
+    - group: ""
+      kind: ServiceAccount
+      jsonPointers:
+        - /secrets
   syncPolicy:
     automated:
       prune: true
