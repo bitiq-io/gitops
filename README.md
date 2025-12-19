@@ -21,6 +21,7 @@ It uses:
 - [LOCAL-RUNBOOK](docs/LOCAL-RUNBOOK.md) — CRC quick runbook for ENV=local (macOS)
 - [LOCAL-RUNBOOK-UBUNTU](docs/LOCAL-RUNBOOK-UBUNTU.md) — Remote Ubuntu/CRC runbook for ENV=local
 - [LOCAL-CI-CD](docs/LOCAL-CI-CD.md) — End-to-end local CI→CD (webhook via dynamic DNS or tunnel)
+- [CI-CD-FLOW](docs/CI-CD-FLOW.md) — Expected end-to-end CI/CD flow (Tekton → Quay → Image Updater → Argo)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
 - [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with Vault via VSO/VCO
@@ -317,6 +318,14 @@ make smoke ENV=local [BOOTSTRAP=true]  # cluster smoke checks (optional bootstra
 ```
 
 CI uses the same entrypoint: the workflow runs `make validate` for parity with local checks.
+
+## CI/CD at a glance
+
+- Push or tag (`vX.Y.Z`) in the app repo → GitHub webhook hits the Tekton EventListener (local CRC: `http://k7501450.eero.online:18080`; update if the hostname changes).
+- Tekton Pipeline computes a semver-safe tag `v<semver>-commit.g<sha>`, optionally runs tests, builds with Buildah, and pushes to Quay using VSO-managed creds.
+- Argo CD Image Updater (semver + allow-tags `^v\\d+\\.\\d+\\.\\d+-commit\\.g[0-9a-f]{7,}$`) bumps the relevant values file in this repo via git write-back.
+- Argo CD auto-sync rolls the Deployment; umbrella `appVersion` records the exact mix of service tags (check with `make verify-release`).
+- Rollbacks are git-first per `docs/ROLLBACK.md`. Full details: `docs/CI-CD-FLOW.md` and env specifics in `docs/LOCAL-CI-CD.md`.
 
 ### Pinning image tags (automation)
 

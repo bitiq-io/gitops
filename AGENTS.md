@@ -8,6 +8,7 @@ Purpose: Guide AI/dev assistants and contributors working in this GitOps repo (H
 - Never commit secrets, kubeconfigs, or tokens. Secrets are sourced exclusively via Vault operators — HashiCorp Vault Secrets Operator (VSO) for runtime delivery and Red Hat COP Vault Config Operator (VCO) for Vault control-plane configuration.
 - Follow Conventional Commits. Common scopes: `charts`, `umbrella`, `pipelines`, `image-updater`, `operators`.
 - Enforce the versioning and naming rules in `docs/CONVENTIONS.md` (image tags, composite appVersion, env overlays).
+- Follow the CI/CD contract in `docs/CI-CD-FLOW.md`: pushes/tags → Tekton webhook → Quay tag `v<semver>-commit.g<sha>` → Argo CD Image Updater git write-back → Argo sync. Avoid GitHub Actions for images unless explicitly agreed.
 - Keep platform/operator/workload versions aligned with `docs/VERSION-MATRIX.md` (CRC/OCP baseline, operators, Couchbase, etc.). Update that matrix and link to the matching upstream docs whenever you bump a version.
 - Rollbacks happen in Git: use `docs/ROLLBACK.md`. Do not patch live resources to “fix” state — reconcile via Git.
 - Do not change operator channels or critical defaults without explicit approval and notes in the PR body.

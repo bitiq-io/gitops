@@ -29,7 +29,7 @@ Remote server notes
 
 - CRC Routes resolve only on the host; to test them from elsewhere use SSH port forwarding (e.g., `ssh -L 8443:svc-web.apps-crc.testing:443`). Because toy-web now proxies `/echo` through the same host, forwarding `svc-web` is enough for the UI + API combo; keep a second tunnel (`svc-api`) only if you want to hit the backend Route directly.
 - Run the port-forward directly on the server so GitHub can reach the Tekton EventListener. With dynamic DNS, bind to `0.0.0.0` and open port `8080/tcp`; otherwise use a tunnel (ngrok/cloudflared).
-- For our remote Ubuntu CRC host the EventListener is currently exposed at `http://k7501450.eero.online:18080`; use that URL for GitHub webhooks targeting `signeting/signet-landing` (update if the tunnel/hostname changes).
+- For our remote Ubuntu CRC host the EventListener is currently exposed at `http://k7501450.eero.online:18080`; use that URL for GitHub webhooks targeting `signeting/signet-landing` (update if the tunnel/hostname changes). The standard flow (Tekton → Quay → Image Updater → Argo) is in `docs/CI-CD-FLOW.md`; this file adds local DNS/tunnel notes.
 - The Ubuntu-specific runbook (`docs/LOCAL-RUNBOOK-UBUNTU.md`) covers CLI installs and remote webhook tips in more detail.
 
 1) Bootstrap apps and operators
