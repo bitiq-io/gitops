@@ -39,7 +39,7 @@ envs:
     nginxSitesEnabled: true
     bootstrapOperatorsEnabled: true
     # CAO defaults for local (verify against docs/VERSION-MATRIX.md on your cluster)
-    caoEnabled: true
+    caoEnabled: false
     caoName: couchbase-operator-certified
     caoSource: certified-operators
     caoChannel: stable
