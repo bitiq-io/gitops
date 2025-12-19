@@ -5,6 +5,9 @@ kind: ServiceAccount
 metadata:
   name: {{ $saName }}
   namespace: openshift-pipelines
+  annotations:
+    # Ignore auto-added secrets/tokens (e.g., dockercfg) so Argo doesn't drift
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 {{- if $registrySecret }}
 imagePullSecrets:
   - name: {{ $registrySecret }}
