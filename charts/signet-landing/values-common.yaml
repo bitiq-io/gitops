@@ -1,6 +1,6 @@
 image:
   repository: quay.io/paulcapestany/signet-landing
-  tag: "v0.1.7-commit.0872211"
+  tag: "v0.1.8-commit.g8238ffe"
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 replicaCount: 1
