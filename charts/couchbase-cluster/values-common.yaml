@@ -10,7 +10,7 @@ storage:
 
 servers:
   size: 1
-  services: [data, index, query, search, eventing]
+  services: [data, index, query, search, eventing, analytics]
   # Set storage classes per volume type when needed; leave empty to use default
   storageClassRWO: ""   # e.g., ocs-storagecluster-ceph-rbd in prod
   storageClassRWX: ""   # e.g., ocs-storagecluster-cephfs in prod
@@ -21,6 +21,7 @@ clusterQuotas:
   query: 256Mi
   search: 256Mi
   eventing: 256Mi
+  analytics: 256Mi
 
 buckets:
   - name: all-nostr-events

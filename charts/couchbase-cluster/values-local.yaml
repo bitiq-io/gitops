@@ -11,7 +11,7 @@ clusterQuotas:
   query: 256Mi
   search: 256Mi
   eventing: 256Mi
-  # analytics disabled by not enabling the service
+  analytics: 256Mi
 route:
   enabled: false
   host: "cb.cyphai.com"
