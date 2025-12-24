@@ -1,4 +1,4 @@
 baseDomain: apps-crc.testing
 image:
   repository: quay.io/paulcapestany/toy-web
-  tag: v0.1.42-commit.gf6290f9
+  tag: v0.1.43-commit.g42e6409
