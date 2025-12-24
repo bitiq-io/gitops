@@ -6,7 +6,7 @@ additionalRoutes:
     path: /echo
 image:
   repository: quay.io/paulcapestany/toy-service
-  tag: v0.3.40-commit.g581dc4d
+  tag: v0.3.39-commit.8a1475e
 backend:
   secretMount:
     reloadSidecar:
