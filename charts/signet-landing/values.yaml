@@ -20,3 +20,4 @@ ingress:
   annotations: {}
   tlsSecretName: ""
   clusterIssuerName: ""
+  additionalHosts: []

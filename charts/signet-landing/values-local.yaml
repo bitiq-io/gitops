@@ -1,13 +1,15 @@
 route:
-  enabled: true
+  enabled: false
   host: signet.ing
   clusterIssuerName: letsencrypt-dns01-route53-local
 
 ingress:
-  enabled: false
+  enabled: true
   className: ""
-  tlsSecretName: ""
-  clusterIssuerName: ""
+  tlsSecretName: signet-landing-tls
+  clusterIssuerName: letsencrypt-dns01-route53-local
+  additionalHosts:
+    - www.signet.ing
 
 # Repo is public; no pull secret needed in local
 imagePullSecrets: []

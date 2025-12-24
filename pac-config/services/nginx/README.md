@@ -5,15 +5,16 @@ What this pack includes
 - NGINX config with per-domain server blocks and apex→www redirects where desired.
 - OpenShift Routes/Ingresses per domain with edge TLS and cert-manager issuer annotations.
 - One-shot Job to seed placeholder index.html files into the PVC.
+- Signet traffic is now served by the `charts/signet-landing` app; this pack no longer publishes `signet.ing`.
 
 Files
-- 0-configmap.yaml — nginx.conf (virtual hosts for cyphai.com, didgo.com, paulcapestany.com, bitiq.io, noelcapestany.com, beatricecapestany.com, ipiqi.com, neuance.net, signet.ing)
+- 0-configmap.yaml — nginx.conf (virtual hosts for cyphai.com, didgo.com, paulcapestany.com, bitiq.io, noelcapestany.com, beatricecapestany.com, ipiqi.com, neuance.net)
 - 1-nginx.yaml — Deployment (mounts PVC at `/usr/share/nginx/html`)
 - 2-service.yaml — ClusterIP Service
-- 3/4/5/6/8/9/10/11/16-ingress-*.yaml — Ingress resources for each domain
+- 3/4/5/6/8/9/10/11-ingress-*.yaml — Ingress resources for each domain
 - 7-static-site-pvc.yaml — PVC for static content
-- 12-init-static-sites-job.yaml — seeds index.html per domain directory and unpacks curated bundles (cyphai, neuance, signet)
-- 13/14/15-site-*-configmap.yaml — curated site payloads synced into the PVC
+- 12-init-static-sites-job.yaml — seeds index.html per domain directory and unpacks curated bundles (cyphai, neuance)
+- 13/14-site-*-configmap.yaml — curated site payloads synced into the PVC
 
 Usage
 1) Ensure DNS CNAMEs for each domain point to your cluster/router host.

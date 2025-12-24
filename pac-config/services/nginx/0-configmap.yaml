@@ -152,24 +152,6 @@ data:
           return 301 https://neuance.net$request_uri;
         }
       }
-      server {
-        listen 8080;
-        server_name signet.ing;
-
-        location / {
-          root /usr/share/nginx/html/signet.ing;
-          index index.html index.htm;
-          try_files $uri $uri/ /index.html;
-        }
-      }
-      server {
-        listen 8080;
-        server_name www.signet.ing;
-
-        location / {
-          return 301 https://signet.ing$request_uri;
-        }
-      }
       # Ensure correct MIME types
       types {
           text/html  html htm shtml;
