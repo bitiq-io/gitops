@@ -7,4 +7,4 @@ additionalRoutes:
 # Override image per env to ensure deterministic tag shape
 image:
   repository: quay.io/paulcapestany/toy-service
-  tag: v0.3.39-commit.8a1475e
+  tag: v0.3.40-commit.g581dc4d

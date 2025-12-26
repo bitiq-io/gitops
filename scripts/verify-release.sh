@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd -P)
 CHART_FILE="$ROOT/charts/bitiq-umbrella/Chart.yaml"
 ENVIRONMENTS=${ENVIRONMENTS:-"local sno prod"}
-TAG_REGEX='^[[:space:]]*tag:[[:space:]]*"?v[0-9]+\.[0-9]+\.[0-9]+-commit\.[0-9a-f]{7,}"?$'
+TAG_REGEX='^[[:space:]]*tag:[[:space:]]*"?v[0-9]+\.[0-9]+\.[0-9]+-commit\.g?[0-9a-f]{7,}"?$'
 APPVERSION_ANNOTATION=${APPVERSION_ANNOTATION:-"bitiq.io/appversion"}
 DEFAULT_CHARTS="charts/toy-service charts/toy-web"
 
