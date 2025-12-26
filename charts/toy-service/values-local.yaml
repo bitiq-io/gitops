@@ -1,9 +1,9 @@
 baseDomain: apps-crc.testing
 healthPath: "/healthz"
 additionalRoutes:
-- name: toy-service-echo-via-web
-  host: svc-web.apps-crc.testing
-  path: /echo
+  - name: toy-service-echo-via-web
+    host: svc-web.apps-crc.testing
+    path: /echo
 image:
   repository: quay.io/paulcapestany/toy-service
   tag: v0.3.40-commit.g581dc4d
