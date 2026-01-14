@@ -23,4 +23,4 @@ resources:
 secret:
   create: false
   name: argocd-image-updater-secret
-  key: argocd.token
+  key: token

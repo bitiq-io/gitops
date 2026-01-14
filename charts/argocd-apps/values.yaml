@@ -127,12 +127,12 @@ envs:
     caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
-    vaultRuntimeAddress: https://vault-prod.vault.svc:8200
+    vaultRuntimeAddress: http://vault-dev.vault-dev.svc:8200
     vaultRuntimeKubernetesMount: kubernetes
     vaultRuntimeRoleName: gitops-prod
-    vaultServerEnabled: false
+    vaultServerEnabled: true
     vaultConfigEnabled: true
-    vaultConfigAddress: https://vault-prod.vault.svc:8200
+    vaultConfigAddress: http://vault-dev.vault-dev.svc:8200
     vaultConfigKubernetesHost: https://kubernetes.default.svc
     vaultConfigMountPath: kubernetes
     vaultConfigConnectionRole: kube-auth

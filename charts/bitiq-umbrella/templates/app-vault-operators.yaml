@@ -26,6 +26,10 @@ spec:
           pipelines: {{ .Values.pipelinesNamespace }}
           app: {{ .Values.appNamespace }}
         secrets:
+          couchbaseAdmin:
+            enabled: {{ default false .Values.couchbase.enabled }}
+          nostrQuery:
+            enabled: {{ default false .Values.nostrQuery.enabled }}
           route53Credentials:
             enabled: {{ default false .Values.certManager.route53CredentialsEnabled }}
             path: {{ .Values.certManager.route53CredentialsPath | default "cert-manager/route53" | quote }}
@@ -72,6 +76,8 @@ spec:
           kubernetesHost: {{ .Values.vault.config.kubernetesHost | default "https://kubernetes.default.svc" | quote }}
           mountPath: {{ .Values.vault.config.mountPath | default "kubernetes" | quote }}
           connectionRole: {{ .Values.vault.config.connectionRole | default "kube-auth" | quote }}
+        policies:
+          - {{ .Values.vault.config.policyName | default (printf "gitops-%s" .Values.env) | quote }}
         roles:
           - name: {{ .Values.vault.config.roleName | default (printf "gitops-%s" .Values.env) | quote }}
             targetNamespaces:
