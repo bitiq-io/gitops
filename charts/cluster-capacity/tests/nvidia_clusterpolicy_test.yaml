@@ -1,0 +1,26 @@
+suite: NVIDIA ClusterPolicy
+templates:
+  - templates/nvidia-clusterpolicy.yaml
+release:
+  name: cluster-capacity
+  namespace: openshift-machine-api
+tests:
+  - it: renders ClusterPolicy with sync options
+    documentIndex: 0
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        clusterPolicy:
+          spec:
+            operator:
+              use_ocp_driver_toolkit: true
+    asserts:
+      - isKind:
+          of: ClusterPolicy
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: SkipDryRunOnMissingResource=true
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "1"
