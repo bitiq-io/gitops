@@ -1,0 +1,85 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $nfd := default (dict) $n.nfd -}}
+{{- $nfdEnabled := false }}
+{{- if hasKey $nfd "enabled" }}
+  {{- $nfdEnabled = eq (lower (printf "%v" (get $nfd "enabled"))) "true" }}
+{{- end }}
+{{- if $nfdEnabled }}
+{{- $ns := $nfd.installNamespace | default "openshift-nfd" -}}
+{{- $createNs := true -}}
+{{- if hasKey $nfd "createNamespace" }}
+  {{- $createNs = eq (lower (printf "%v" (get $nfd "createNamespace"))) "true" }}
+{{- end }}
+{{- if and $createNs (ne $ns "openshift-operators") }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $ns | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+---
+{{- end }}
+{{- $og := default (dict) $nfd.operatorGroup -}}
+{{- $ogCreate := true -}}
+{{- if hasKey $og "create" }}
+  {{- $ogCreate = eq (lower (printf "%v" (get $og "create"))) "true" }}
+{{- end }}
+{{- if $ogCreate }}
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: {{ $og.name | default "openshift-nfd" | quote }}
+  namespace: {{ $ns | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+{{ $targetNamespaces := $og.targetNamespaces | default (list $ns) }}
+spec:
+  targetNamespaces:
+{{ toYaml $targetNamespaces | indent 4 }}
+---
+{{- end }}
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ required "cluster-capacity: nvidia.nfd.subscription.name is required" $nfd.subscription.name | quote }}
+  namespace: {{ $ns | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  channel: {{ $nfd.subscription.channel | default "stable" | quote }}
+  name: {{ required "cluster-capacity: nvidia.nfd.subscription.name is required" $nfd.subscription.name | quote }}
+  source: {{ $nfd.subscription.source | default "redhat-operators" | quote }}
+  sourceNamespace: {{ $nfd.subscription.sourceNamespace | default "openshift-marketplace" | quote }}
+  installPlanApproval: {{ $nfd.subscription.approval | default "Automatic" | quote }}
+  {{- if $nfd.subscription.startingCSV }}
+  startingCSV: {{ $nfd.subscription.startingCSV | quote }}
+  {{- end }}
+---
+{{- $inst := default (dict) $nfd.instance -}}
+{{- $instCreate := true -}}
+{{- if hasKey $inst "create" }}
+  {{- $instCreate = eq (lower (printf "%v" (get $inst "create"))) "true" }}
+{{- end }}
+{{- if $instCreate }}
+apiVersion: {{ $inst.apiVersion | default "nfd.openshift.io/v1" | quote }}
+kind: NodeFeatureDiscovery
+metadata:
+  name: {{ $inst.name | default "nfd-instance" | quote }}
+  namespace: {{ $ns | quote }}
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+{{ toYaml (required "cluster-capacity: nvidia.nfd.instance.spec is required when instance.create=true" $inst.spec) | indent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
