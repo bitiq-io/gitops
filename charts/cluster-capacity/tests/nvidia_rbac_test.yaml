@@ -29,6 +29,12 @@ tests:
       - equal:
           path: rules[0].resources[0]
           value: clusterpolicies
+      - equal:
+          path: rules[1].apiGroups[0]
+          value: nfd.openshift.io
+      - equal:
+          path: rules[1].resources[0]
+          value: nodefeaturediscoveries
 
   - it: renders ClusterRoleBinding for Argo application controller
     documentIndex: 1
