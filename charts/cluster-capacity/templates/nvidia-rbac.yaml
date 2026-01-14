@@ -1,0 +1,54 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $rbac := default (dict) $n.rbac -}}
+{{- $rbacCreate := true -}}
+{{- if hasKey $rbac "create" }}
+  {{- $rbacCreate = eq (lower (printf "%v" (get $rbac "create"))) "true" }}
+{{- end }}
+{{- if $rbacCreate }}
+{{- $argocdNs := $rbac.argocdNamespace | default "openshift-gitops" -}}
+{{- $sa := $rbac.applicationControllerServiceAccount | default "openshift-gitops-argocd-application-controller" -}}
+{{- $baseName := printf "%s-argocd-nvidia-clusterpolicy" $argocdNs -}}
+{{- $name := $baseName | trunc 63 | trimSuffix "-" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+rules:
+  - apiGroups:
+      - nvidia.com
+    resources:
+      - clusterpolicies
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name | quote }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $sa | quote }}
+    namespace: {{ $argocdNs | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

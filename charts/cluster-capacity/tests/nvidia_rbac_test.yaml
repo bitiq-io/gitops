@@ -1,0 +1,59 @@
+suite: NVIDIA ClusterPolicy RBAC
+templates:
+  - templates/nvidia-rbac.yaml
+release:
+  name: cluster-capacity
+  namespace: openshift-machine-api
+tests:
+  - it: renders ClusterRole for ClusterPolicy
+    documentIndex: 0
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        rbac:
+          argocdNamespace: openshift-gitops
+          applicationControllerServiceAccount: openshift-gitops-argocd-application-controller
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: openshift-gitops-argocd-nvidia-clusterpolicy
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
+      - equal:
+          path: rules[0].apiGroups[0]
+          value: nvidia.com
+      - equal:
+          path: rules[0].resources[0]
+          value: clusterpolicies
+
+  - it: renders ClusterRoleBinding for Argo application controller
+    documentIndex: 1
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        rbac:
+          argocdNamespace: openshift-gitops
+          applicationControllerServiceAccount: openshift-gitops-argocd-application-controller
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: openshift-gitops-argocd-nvidia-clusterpolicy
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
+      - equal:
+          path: roleRef.name
+          value: openshift-gitops-argocd-nvidia-clusterpolicy
+      - equal:
+          path: subjects[0].name
+          value: openshift-gitops-argocd-application-controller
+      - equal:
+          path: subjects[0].namespace
+          value: openshift-gitops

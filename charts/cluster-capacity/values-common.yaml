@@ -18,6 +18,11 @@ nvidia:
   enabled: false
   installNamespace: nvidia-gpu-operator
   createNamespace: true
+  rbac:
+    create: true
+    # Argo CD Application controller ServiceAccount that applies this chart
+    argocdNamespace: openshift-gitops
+    applicationControllerServiceAccount: openshift-gitops-argocd-application-controller
   operatorGroup:
     create: true
     name: nvidia-gpu-operator
