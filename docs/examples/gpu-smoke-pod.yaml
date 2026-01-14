@@ -17,4 +17,3 @@ spec:
       resources:
         limits:
           nvidia.com/gpu: 1
-
