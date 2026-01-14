@@ -26,8 +26,7 @@ nvidia:
   operatorGroup:
     create: true
     name: nvidia-gpu-operator
-    # Cluster-scoped install
-    targetNamespaces: []
+    # Default: single-namespace install (GPU Operator does not support AllNamespaces)
   subscription:
     channel: stable
     # Package name in OperatorHub (commonly gpu-operator-certified)

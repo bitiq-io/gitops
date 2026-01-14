@@ -34,13 +34,10 @@ metadata:
   namespace: {{ $ns | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+{{ $targetNamespaces := $og.targetNamespaces | default (list $ns) }}
 spec:
-  {{- if hasKey $og "targetNamespaces" }}
   targetNamespaces:
-{{ toYaml $og.targetNamespaces | indent 4 }}
-  {{- else }}
-  targetNamespaces: []
-  {{- end }}
+{{ toYaml $targetNamespaces | indent 4 }}
 ---
 {{- end }}
 apiVersion: operators.coreos.com/v1alpha1
