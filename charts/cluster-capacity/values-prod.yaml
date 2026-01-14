@@ -1,0 +1,146 @@
+enabled: true
+
+# Cluster infraID (infrastructureName)
+infraID: prod-k5qtv
+
+# Recommended inference-first instance types given current Spot vCPU quotas:
+# - GPU (G and VT): g5.xlarge (4 vCPU, 1x A10G)  -> fits quota=4
+# - Inferentia (Inf): inf2.xlarge (expected 4 vCPU, 1x Inferentia2) -> fits quota=8
+#
+# To enable a pool:
+# 1) Copy an existing worker MachineSet providerSpec from the cluster
+# 2) Paste it under machineSets[].providerSpec
+# 3) Update at least: instanceType, placement.availabilityZone, and spot options
+# 4) Flip machineSets[].enabled=true (and chart enabled=true when ready)
+machineSets:
+  # NVIDIA GPU pool (general-purpose inference)
+  - enabled: true
+    nameSuffix: gpu-g5-xlarge-us-west-2a
+    replicas: 0
+    machineRole: gpu
+    machineType: gpu
+    nodeLabels:
+      node-role.kubernetes.io/worker: ""
+      node-role.kubernetes.io/gpu: ""
+    taints:
+      - key: nvidia.com/gpu
+        value: "true"
+        effect: NoSchedule
+    autoscaler:
+      enabled: false
+      minReplicas: 0
+      maxReplicas: 1
+    providerSpec:
+      ami:
+        id: ami-0d769ba340e913a8c
+      apiVersion: machine.openshift.io/v1beta1
+      blockDevices:
+        - ebs:
+            encrypted: true
+            iops: 0
+            kmsKey:
+              arn: ""
+            volumeSize: 120
+            volumeType: gp3
+      capacityReservationId: ""
+      credentialsSecret:
+        name: aws-cloud-credentials
+      deviceIndex: 0
+      iamInstanceProfile:
+        id: prod-k5qtv-worker-profile
+      instanceType: g5.xlarge
+      kind: AWSMachineProviderConfig
+      metadata:
+        creationTimestamp: null
+      metadataServiceOptions: {}
+      placement:
+        availabilityZone: us-west-2a
+        region: us-west-2
+      securityGroups:
+        - filters:
+            - name: tag:Name
+              values:
+                - prod-k5qtv-node
+        - filters:
+            - name: tag:Name
+              values:
+                - prod-k5qtv-lb
+      spotMarketOptions: {}
+      subnet:
+        filters:
+          - name: tag:Name
+            values:
+              - prod-k5qtv-subnet-private-us-west-2a
+      tags:
+        - name: kubernetes.io/cluster/prod-k5qtv
+          value: owned
+      userDataSecret:
+        name: worker-user-data
+
+  # AWS Inferentia2 pool (gated; verify Neuron support on OpenShift/RHCOS first)
+  - enabled: false
+    nameSuffix: inf-inf2-xlarge-us-west-2a
+    replicas: 0
+    machineRole: inferentia
+    machineType: inferentia
+    nodeLabels:
+      node-role.kubernetes.io/worker: ""
+      node-role.kubernetes.io/inferentia: ""
+    taints:
+      - key: aws.amazon.com/neuron
+        value: "true"
+        effect: NoSchedule
+    autoscaler:
+      enabled: false
+      minReplicas: 0
+      maxReplicas: 2
+    providerSpec:
+      ami:
+        id: ami-0d769ba340e913a8c
+      apiVersion: machine.openshift.io/v1beta1
+      blockDevices:
+        - ebs:
+            encrypted: true
+            iops: 0
+            kmsKey:
+              arn: ""
+            volumeSize: 120
+            volumeType: gp3
+      capacityReservationId: ""
+      credentialsSecret:
+        name: aws-cloud-credentials
+      deviceIndex: 0
+      iamInstanceProfile:
+        id: prod-k5qtv-worker-profile
+      instanceType: inf2.xlarge
+      kind: AWSMachineProviderConfig
+      metadata:
+        creationTimestamp: null
+      metadataServiceOptions: {}
+      placement:
+        availabilityZone: us-west-2a
+        region: us-west-2
+      securityGroups:
+        - filters:
+            - name: tag:Name
+              values:
+                - prod-k5qtv-node
+        - filters:
+            - name: tag:Name
+              values:
+                - prod-k5qtv-lb
+      spotMarketOptions: {}
+      subnet:
+        filters:
+          - name: tag:Name
+            values:
+              - prod-k5qtv-subnet-private-us-west-2a
+      tags:
+        - name: kubernetes.io/cluster/prod-k5qtv
+          value: owned
+      userDataSecret:
+        name: worker-user-data
+
+# NVIDIA GPU Operator (enable after the first GPU node is Ready)
+nvidia:
+  enabled: false

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cluster-capacity
+description: Specialized worker pools (MachineSets) and accelerator operators (NVIDIA GPU, optional Inferentia)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+

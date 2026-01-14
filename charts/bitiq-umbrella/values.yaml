@@ -13,6 +13,12 @@ argocdControllerServiceAccount: openshift-gitops-argocd-application-controller
 repoUrl: https://github.com/bitiq-io/gitops.git
 targetRevision: main
 
+capacity:
+  enabled: false
+  # When autoscaling is enabled (MachineAutoscaler), Argo CD must not fight live
+  # changes to MachineSet replicas. Enable ignoreDifferences on /spec/replicas.
+  ignoreMachineSetReplicas: false
+
 imageUpdater:
   platforms: linux/amd64
   pullSecret: ""

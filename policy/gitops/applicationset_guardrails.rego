@@ -23,6 +23,8 @@ required := [
   "repoUrl",
   "targetRevision",
   "imageUpdater.platforms",
+  "capacity.enabled",
+  "capacity.ignoreMachineSetReplicas",
   "ciPipelines.fsGroup",
   "vault.runtime.enabled",
   "vault.config.enabled",

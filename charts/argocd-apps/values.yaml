@@ -38,6 +38,8 @@ envs:
     certManagerRoute53SecretNamespace: cert-manager
     nginxSitesEnabled: true
     bootstrapOperatorsEnabled: true
+    capacityEnabled: false
+    capacityIgnoreMachineSetReplicas: false
     # CAO defaults for local (verify against docs/VERSION-MATRIX.md on your cluster)
     caoEnabled: false
     caoName: couchbase-operator-certified
@@ -87,6 +89,8 @@ envs:
     couchbaseOperatorEnabled: false
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
+    capacityEnabled: false
+    capacityIgnoreMachineSetReplicas: false
     caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
@@ -124,6 +128,8 @@ envs:
     couchbaseOperatorEnabled: false
     certManagerEnabled: false
     bootstrapOperatorsEnabled: false
+    capacityEnabled: true
+    capacityIgnoreMachineSetReplicas: false
     caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true

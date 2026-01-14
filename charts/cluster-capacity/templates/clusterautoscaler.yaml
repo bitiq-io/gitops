@@ -1,0 +1,16 @@
+{{- if .Values.enabled }}
+{{- $autoscaling := default (dict) .Values.autoscaling -}}
+{{- $ca := default (dict) $autoscaling.clusterAutoscaler -}}
+{{- $caEnabled := false }}
+{{- if hasKey $ca "enabled" }}
+  {{- $caEnabled = eq (lower (printf "%v" (get $ca "enabled"))) "true" }}
+{{- end }}
+{{- if $caEnabled }}
+apiVersion: autoscaling.openshift.io/v1
+kind: ClusterAutoscaler
+metadata:
+  name: {{ $ca.name | default "default" }}
+spec:
+{{ toYaml (required "cluster-capacity: autoscaling.clusterAutoscaler.spec is required when enabled=true" $ca.spec) | indent 2 }}
+{{- end }}
+{{- end }}

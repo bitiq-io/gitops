@@ -1,0 +1,55 @@
+{{- $cap := default (dict) .Values.capacity -}}
+{{- $capEnabled := false }}
+{{- if hasKey $cap "enabled" }}
+  {{- $capEnabled = eq (lower (printf "%v" (get $cap "enabled"))) "true" }}
+{{- end }}
+{{- if $capEnabled }}
+{{- $ignoreReplicas := false }}
+{{- if hasKey $cap "ignoreMachineSetReplicas" }}
+  {{- $ignoreReplicas = eq (lower (printf "%v" (get $cap "ignoreMachineSetReplicas"))) "true" }}
+{{- end }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-capacity-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/cluster-capacity
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+      parameters:
+        - name: env
+          value: {{ .Values.env | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-machine-api
+{{- if $ignoreReplicas }}
+  ignoreDifferences:
+    - group: machine.openshift.io
+      kind: MachineSet
+      jsonPointers:
+        - /spec/replicas
+{{- end }}
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
