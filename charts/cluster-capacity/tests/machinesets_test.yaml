@@ -1,0 +1,65 @@
+suite: Cluster capacity MachineSets
+templates:
+  - templates/machinesets.yaml
+release:
+  name: cluster-capacity
+  namespace: openshift-machine-api
+tests:
+  - it: renders a GPU MachineSet when enabled
+    documentIndex: 0
+    set:
+      enabled: true
+      infraID: test-infra
+      machineSets:
+        - enabled: true
+          nameSuffix: gpu-us-west-2a
+          replicas: 0
+          machineRole: gpu
+          machineType: gpu
+          nodeLabels:
+            node-role.kubernetes.io/worker: ""
+            node-role.kubernetes.io/gpu: ""
+          taints:
+            - key: nvidia.com/gpu
+              value: "true"
+              effect: NoSchedule
+          providerSpec:
+            apiVersion: machine.openshift.io/v1beta1
+            kind: AWSMachineProviderConfig
+    asserts:
+      - isKind:
+          of: MachineSet
+      - equal:
+          path: metadata.name
+          value: test-infra-gpu-us-west-2a
+      - equal:
+          path: spec.template.spec.metadata.labels["node-role.kubernetes.io/gpu"]
+          value: ""
+      - equal:
+          path: spec.template.spec.taints[0].key
+          value: nvidia.com/gpu
+
+  - it: renders a MachineAutoscaler when enabled
+    documentIndex: 1
+    set:
+      enabled: true
+      infraID: test-infra
+      machineSets:
+        - enabled: true
+          nameSuffix: gpu-us-west-2a
+          providerSpec:
+            apiVersion: machine.openshift.io/v1beta1
+            kind: AWSMachineProviderConfig
+          autoscaler:
+            enabled: true
+            minReplicas: 0
+            maxReplicas: 2
+    asserts:
+      - isKind:
+          of: MachineAutoscaler
+      - equal:
+          path: metadata.name
+          value: test-infra-gpu-us-west-2a
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: MachineSet

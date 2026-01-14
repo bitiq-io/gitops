@@ -1,0 +1,57 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $ns := $n.installNamespace | default "nvidia-gpu-operator" -}}
+{{- $createNs := true -}}
+{{- if hasKey $n "createNamespace" }}
+  {{- $createNs = eq (lower (printf "%v" (get $n "createNamespace"))) "true" }}
+{{- end }}
+{{- if and $createNs (ne $ns "openshift-operators") }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $ns | quote }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+---
+{{- end }}
+{{- $og := default (dict) $n.operatorGroup -}}
+{{- $ogCreate := true -}}
+{{- if hasKey $og "create" }}
+  {{- $ogCreate = eq (lower (printf "%v" (get $og "create"))) "true" }}
+{{- end }}
+{{- if $ogCreate }}
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: {{ $og.name | default "nvidia-gpu-operator" | quote }}
+  namespace: {{ $ns | quote }}
+spec:
+  {{- if hasKey $og "targetNamespaces" }}
+  targetNamespaces:
+{{ toYaml $og.targetNamespaces | indent 4 }}
+  {{- else }}
+  targetNamespaces: []
+  {{- end }}
+---
+{{- end }}
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ required "cluster-capacity: nvidia.subscription.name is required" $n.subscription.name | quote }}
+  namespace: {{ $ns | quote }}
+spec:
+  channel: {{ $n.subscription.channel | default "stable" | quote }}
+  name: {{ required "cluster-capacity: nvidia.subscription.name is required" $n.subscription.name | quote }}
+  source: {{ $n.subscription.source | default "certified-operators" | quote }}
+  sourceNamespace: {{ $n.subscription.sourceNamespace | default "openshift-marketplace" | quote }}
+  installPlanApproval: {{ $n.subscription.approval | default "Automatic" | quote }}
+  {{- if $n.subscription.startingCSV }}
+  startingCSV: {{ $n.subscription.startingCSV | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

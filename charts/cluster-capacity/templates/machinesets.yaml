@@ -1,0 +1,73 @@
+{{- if .Values.enabled }}
+{{- range $ms := (default (list) .Values.machineSets) }}
+{{- $msEnabled := false }}
+{{- if hasKey $ms "enabled" }}
+  {{- $msEnabled = eq (lower (printf "%v" (get $ms "enabled"))) "true" }}
+{{- end }}
+{{- if $msEnabled }}
+{{- $infraID := required "cluster-capacity: infraID is required when enabled=true" $.Values.infraID -}}
+{{- $suffix := required "cluster-capacity: machineSets[].nameSuffix is required" $ms.nameSuffix -}}
+{{- $msName := printf "%s-%s" $infraID $suffix -}}
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: {{ $msName }}
+  namespace: {{ $ms.namespace | default "openshift-machine-api" }}
+  labels:
+    machine.openshift.io/cluster-api-cluster: {{ $infraID }}
+{{- with $ms.labels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  replicas: {{ $ms.replicas | default 0 }}
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: {{ $infraID }}
+      machine.openshift.io/cluster-api-machineset: {{ $msName }}
+  template:
+    metadata:
+      labels:
+        machine.openshift.io/cluster-api-cluster: {{ $infraID }}
+        machine.openshift.io/cluster-api-machine-role: {{ $ms.machineRole | default "worker" }}
+        machine.openshift.io/cluster-api-machine-type: {{ $ms.machineType | default ($ms.machineRole | default "worker") }}
+        machine.openshift.io/cluster-api-machineset: {{ $msName }}
+{{- with $ms.templateLabels }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+{{- with $ms.nodeLabels }}
+      metadata:
+        labels:
+{{ toYaml . | indent 10 }}
+{{- end }}
+{{- with $ms.taints }}
+      taints:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      providerSpec:
+        value:
+{{ toYaml (required "cluster-capacity: machineSets[].providerSpec is required" $ms.providerSpec) | indent 10 }}
+---
+{{- $as := default (dict) $ms.autoscaler -}}
+{{- $asEnabled := false }}
+{{- if hasKey $as "enabled" }}
+  {{- $asEnabled = eq (lower (printf "%v" (get $as "enabled"))) "true" }}
+{{- end }}
+{{- if $asEnabled }}
+apiVersion: autoscaling.openshift.io/v1beta1
+kind: MachineAutoscaler
+metadata:
+  name: {{ $msName }}
+  namespace: {{ $ms.namespace | default "openshift-machine-api" }}
+spec:
+  minReplicas: {{ required "cluster-capacity: machineSets[].autoscaler.minReplicas is required when autoscaler.enabled=true" $as.minReplicas }}
+  maxReplicas: {{ required "cluster-capacity: machineSets[].autoscaler.maxReplicas is required when autoscaler.enabled=true" $as.maxReplicas }}
+  scaleTargetRef:
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet
+    name: {{ $msName }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

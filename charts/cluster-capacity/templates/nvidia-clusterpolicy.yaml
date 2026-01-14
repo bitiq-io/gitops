@@ -1,0 +1,22 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $cp := default (dict) $n.clusterPolicy -}}
+{{- $cpCreate := true -}}
+{{- if hasKey $cp "create" }}
+  {{- $cpCreate = eq (lower (printf "%v" (get $cp "create"))) "true" }}
+{{- end }}
+{{- if $cpCreate }}
+apiVersion: {{ $cp.apiVersion | default "nvidia.com/v1" | quote }}
+kind: ClusterPolicy
+metadata:
+  name: {{ $cp.name | default "cluster-policy" | quote }}
+spec:
+{{ toYaml (required "cluster-capacity: nvidia.clusterPolicy.spec is required when clusterPolicy.create=true" $cp.spec) | indent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

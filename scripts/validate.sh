@@ -131,6 +131,18 @@ for env in local sno prod; do
   policy_test "$out"
 done
 
+# Capacity (MachineSets / accelerators) is disabled by default; render per env to
+# ensure templates remain valid even when charts emit no resources.
+log "Render + validate: cluster-capacity chart (local, sno, prod)"
+for env in local sno prod; do
+  out="$OUT_DIR/cluster-capacity-$env.yaml"
+  render_chart "$ROOT_DIR/charts/cluster-capacity" "$out" \
+    -f "$ROOT_DIR/charts/cluster-capacity/values-common.yaml" \
+    -f "$ROOT_DIR/charts/cluster-capacity/values-$env.yaml"
+  validate_file "$out"
+  policy_test "$out"
+done
+
 # ESO examples removed (T17). Validation intentionally excludes ESO to enforce VSO/VCO-only manifests.
 
 log "Render + validate: image-updater"

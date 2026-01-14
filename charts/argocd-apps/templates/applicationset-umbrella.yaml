@@ -49,6 +49,8 @@ spec:
             certManagerEnabled: {{ default false $e.certManagerEnabled }}
             nginxSitesEnabled: {{ default false $e.nginxSitesEnabled }}
             bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
+            capacityEnabled: {{ default false $e.capacityEnabled }}
+            capacityIgnoreMachineSetReplicas: {{ default false $e.capacityIgnoreMachineSetReplicas }}
             caoEnabled: {{ default false $e.caoEnabled }}
             caoName: {{ $e.caoName | quote }}
             caoSource: {{ $e.caoSource | quote }}
@@ -116,6 +118,10 @@ spec:
               value: '{{ "{{ .nginxSitesEnabled | default false }}" }}'
             - name: bootstrapOperators.enabled
               value: '{{ "{{ .bootstrapOperatorsEnabled | default false }}" }}'
+            - name: capacity.enabled
+              value: '{{ "{{ .capacityEnabled | default false }}" }}'
+            - name: capacity.ignoreMachineSetReplicas
+              value: '{{ "{{ .capacityIgnoreMachineSetReplicas | default false }}" }}'
             - name: bootstrapOperators.caoEnabled
               value: '{{ "{{ .caoEnabled | default false }}" }}'
             - name: bootstrapOperators.caoChannel

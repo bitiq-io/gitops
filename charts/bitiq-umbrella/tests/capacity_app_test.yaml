@@ -1,0 +1,43 @@
+suite: Cluster capacity Application
+templates:
+  - templates/app-cluster-capacity.yaml
+values:
+  - ../values-common.yaml
+release:
+  name: umbrella
+  namespace: openshift-gitops
+tests:
+  - it: renders Application when enabled
+    set:
+      env: prod
+      capacity:
+        enabled: true
+        ignoreMachineSetReplicas: true
+    asserts:
+      - equal:
+          path: kind
+          value: Application
+      - equal:
+          path: metadata.name
+          value: cluster-capacity-prod
+      - equal:
+          path: spec.source.path
+          value: charts/cluster-capacity
+      - equal:
+          path: spec.syncPolicy.automated.prune
+          value: false
+      - equal:
+          path: spec.ignoreDifferences[0].group
+          value: machine.openshift.io
+      - equal:
+          path: spec.ignoreDifferences[0].kind
+          value: MachineSet
+      - contains:
+          path: spec.ignoreDifferences[0].jsonPointers
+          content: /spec/replicas
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-common.yaml
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: values-prod.yaml
