@@ -30,6 +30,28 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["vault"]
           args: ["server", "-config=/vault/config/vault.hcl"]
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    set +e
+                    export VAULT_ADDR=http://127.0.0.1:{{ .Values.service.port }}
+                    if [ ! -f /bootstrap-secret/unseal_key ]; then
+                      exit 0
+                    fi
+                    key=$(cat /bootstrap-secret/unseal_key 2>/dev/null)
+                    if [ -z "$key" ]; then
+                      exit 0
+                    fi
+                    # Best-effort unseal for restarts. Never fail the hook.
+                    for i in $(seq 1 30); do
+                      vault operator unseal "$key" >/dev/null 2>&1 && break
+                      sleep 2
+                    done
+                    exit 0
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -56,6 +78,9 @@ spec:
               mountPath: /vault/config
             - name: data
               mountPath: /vault/file
+            - name: bootstrap-secret
+              mountPath: /bootstrap-secret
+              readOnly: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -64,6 +89,10 @@ spec:
         - name: config
           configMap:
             name: {{ .Values.service.name }}-config
+        - name: bootstrap-secret
+          secret:
+            secretName: {{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}
+            optional: true
   volumeClaimTemplates:
     - metadata:
         name: data
