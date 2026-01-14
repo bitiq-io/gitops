@@ -16,7 +16,7 @@ machineSets:
   # NVIDIA GPU pool (general-purpose inference)
   - enabled: true
     nameSuffix: gpu-g5-xlarge-us-west-2a
-    replicas: 0
+    replicas: 1
     machineRole: gpu
     machineType: gpu
     nodeLabels:
