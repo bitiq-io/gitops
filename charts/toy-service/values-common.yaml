@@ -2,7 +2,7 @@ baseDomain: ""
 
 replicaCount: 1
 hostPrefix: "svc-api"
-healthPath: "/"
+healthPath: "/healthz"
 image:
   repository: quay.io/paulcapestany/toy-service
   tag: "v0.2.21-commit.b7791f1"
