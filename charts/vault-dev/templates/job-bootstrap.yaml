@@ -223,7 +223,7 @@ spec:
                   '  capabilities = ["create","read","update","list"]' \
                   '}' \
                   'path "sys/policies/acl/*" {' \
-                  '  capabilities = ["create","read","update","delete","list"]' \
+                  '  capabilities = ["create","read","update","delete","list","sudo"]' \
                   '}' \
                   'path "auth/token/lookup-self" {' \
                   '  capabilities = ["read"]' \
@@ -235,13 +235,13 @@ spec:
                   '  capabilities = ["read","list"]' \
                   '}' \
                   'path "sys/auth" {' \
-                  '  capabilities = ["read","update"]' \
+                  '  capabilities = ["read","update","sudo"]' \
                   '}' \
                   'path "sys/auth/*" {' \
-                  '  capabilities = ["create","read","update","delete","list"]' \
+                  '  capabilities = ["create","read","update","delete","list","sudo"]' \
                   '}' \
                   'path "sys/policies/acl" {' \
-                  '  capabilities = ["read","list"]' \
+                  '  capabilities = ["read","list","sudo"]' \
                   '}' \
                   > /tmp/vco.hcl
                 vault policy write {{ .Values.bootstrap.vcoPolicyName }} /tmp/vco.hcl >/dev/null
