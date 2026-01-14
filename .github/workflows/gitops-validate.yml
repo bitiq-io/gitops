@@ -26,7 +26,7 @@ jobs:
             | sudo tar -xz -C /usr/local/bin conftest
 
       - name: Install helm-unittest plugin
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+        run: helm plugin install --verify=false https://github.com/helm-unittest/helm-unittest
 
       - name: Validate (make validate)
         run: make validate
