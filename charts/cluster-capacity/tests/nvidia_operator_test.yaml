@@ -1,0 +1,55 @@
+suite: NVIDIA GPU Operator Subscription
+templates:
+  - templates/nvidia-operator.yaml
+release:
+  name: cluster-capacity
+  namespace: openshift-machine-api
+tests:
+  - it: renders Namespace with sync-wave 0
+    documentIndex: 0
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        subscription:
+          name: gpu-operator-certified
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
+
+  - it: renders OperatorGroup with sync-wave 0
+    documentIndex: 1
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        subscription:
+          name: gpu-operator-certified
+    asserts:
+      - isKind:
+          of: OperatorGroup
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
+
+  - it: renders Subscription with sync-wave 0
+    documentIndex: 2
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        subscription:
+          name: gpu-operator-certified
+          channel: v25.10
+    asserts:
+      - isKind:
+          of: Subscription
+      - equal:
+          path: spec.channel
+          value: v25.10
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
