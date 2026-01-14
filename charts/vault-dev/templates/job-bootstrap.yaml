@@ -10,11 +10,15 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: {{ printf "%s-bootstrap" .Values.service.name }}
+      serviceAccountName: {{ .Values.service.name }}
       volumes:
         - name: bootstrap-secret
           secret:
             secretName: {{ .Values.bootstrap.secretName | default (printf "%s-bootstrap" .Values.service.name) }}
+            optional: true
+        - name: tokenreview
+          secret:
+            secretName: {{ printf "%s-tokenreview" .Values.service.name }}
             optional: true
       containers:
         - name: vault-bootstrap
@@ -41,12 +45,26 @@ spec:
 
               ROOT_TOKEN=""
               UNSEAL_KEY=""
+              TOKEN_REVIEWER_JWT=""
 
               if [ -f "$SECRET_PATH/root_token" ]; then
                 ROOT_TOKEN=$(cat "$SECRET_PATH/root_token")
               fi
               if [ -f "$SECRET_PATH/unseal_key" ]; then
                 UNSEAL_KEY=$(cat "$SECRET_PATH/unseal_key")
+              fi
+
+              TOKEN_REVIEWER_JWT_FILE="/tokenreview/token"
+              for i in $(seq 1 60); do
+                if [ -s "${TOKEN_REVIEWER_JWT_FILE}" ]; then
+                  TOKEN_REVIEWER_JWT=$(cat "${TOKEN_REVIEWER_JWT_FILE}")
+                  break
+                fi
+                sleep 2
+              done
+              if [ -z "${TOKEN_REVIEWER_JWT}" ]; then
+                log 'ERROR: token reviewer JWT not available (expected Secret {{ printf "%s-tokenreview" .Values.service.name }})'
+                exit 1
               fi
 
               CURL_URL="https://github.com/moparisthebest/static-curl/releases/latest/download/curl-amd64"
@@ -174,7 +192,7 @@ spec:
                 log "configuring Kubernetes auth mount"
                 vault auth enable -path=kubernetes kubernetes >/dev/null 2>&1 || true
                 vault write auth/kubernetes/config \
-                  token_reviewer_jwt="$(cat ${SA_TOKEN_FILE})" \
+                  token_reviewer_jwt="${TOKEN_REVIEWER_JWT}" \
                   kubernetes_host="${KUBERNETES_HOST}" \
                   kubernetes_ca_cert=@${CA_CERT} >/dev/null
 
@@ -241,6 +259,9 @@ spec:
           volumeMounts:
             - name: bootstrap-secret
               mountPath: /bootstrap-secret
+            - name: tokenreview
+              mountPath: /tokenreview
+              readOnly: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
 {{- end }}

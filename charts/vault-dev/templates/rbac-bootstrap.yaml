@@ -1,8 +1,32 @@
-{{- if and .Values.enabled .Values.bootstrap.enabled }}
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ printf "%s-bootstrap" .Values.service.name }}
+  name: {{ .Values.service.name }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ printf "%s-tokenreview" .Values.service.name }}
+  annotations:
+    kubernetes.io/service-account.name: {{ .Values.service.name }}
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-%s-tokenreview" .Release.Namespace .Values.service.name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.service.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+
+{{- if and .Values.enabled .Values.bootstrap.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -23,5 +47,6 @@ roleRef:
   name: {{ printf "%s-bootstrap" .Values.service.name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ printf "%s-bootstrap" .Values.service.name }}
+    name: {{ .Values.service.name }}
+    namespace: {{ .Release.Namespace }}
 {{- end }}
