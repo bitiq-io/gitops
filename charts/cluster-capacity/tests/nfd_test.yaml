@@ -1,0 +1,133 @@
+suite: Node Feature Discovery (NFD)
+templates:
+  - templates/nvidia-nfd.yaml
+release:
+  name: cluster-capacity
+  namespace: openshift-machine-api
+tests:
+  - it: renders NFD Namespace
+    documentIndex: 0
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        nfd:
+          enabled: true
+          subscription:
+            name: nfd
+          instance:
+            spec:
+              workerConfig:
+                configData: |
+                  sources:
+                    pci:
+                      deviceClassWhitelist:
+                        - "03"
+                      deviceLabelFields:
+                        - "vendor"
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: openshift-nfd
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "0"
+
+  - it: renders NFD OperatorGroup
+    documentIndex: 1
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        nfd:
+          enabled: true
+          subscription:
+            name: nfd
+          instance:
+            spec:
+              workerConfig:
+                configData: |
+                  sources:
+                    pci:
+                      deviceClassWhitelist:
+                        - "03"
+                      deviceLabelFields:
+                        - "vendor"
+    asserts:
+      - isKind:
+          of: OperatorGroup
+      - equal:
+          path: metadata.namespace
+          value: openshift-nfd
+      - equal:
+          path: spec.targetNamespaces[0]
+          value: openshift-nfd
+
+  - it: renders NFD Subscription
+    documentIndex: 2
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        nfd:
+          enabled: true
+          subscription:
+            name: nfd
+            channel: stable
+          instance:
+            spec:
+              workerConfig:
+                configData: |
+                  sources:
+                    pci:
+                      deviceClassWhitelist:
+                        - "03"
+                      deviceLabelFields:
+                        - "vendor"
+    asserts:
+      - isKind:
+          of: Subscription
+      - equal:
+          path: metadata.name
+          value: nfd
+      - equal:
+          path: spec.channel
+          value: stable
+
+  - it: renders NodeFeatureDiscovery instance
+    documentIndex: 3
+    set:
+      enabled: true
+      nvidia:
+        enabled: true
+        nfd:
+          enabled: true
+          subscription:
+            name: nfd
+          instance:
+            spec:
+              workerConfig:
+                configData: |
+                  sources:
+                    pci:
+                      deviceClassWhitelist:
+                        - "03"
+                      deviceLabelFields:
+                        - "vendor"
+    asserts:
+      - isKind:
+          of: NodeFeatureDiscovery
+      - equal:
+          path: metadata.name
+          value: nfd-instance
+      - equal:
+          path: metadata.namespace
+          value: openshift-nfd
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "1"
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: SkipDryRunOnMissingResource=true

@@ -23,6 +23,35 @@ nvidia:
     # Argo CD Application controller ServiceAccount that applies this chart
     argocdNamespace: openshift-gitops
     applicationControllerServiceAccount: openshift-gitops-argocd-application-controller
+  # Node Feature Discovery is required so the GPU Operator can detect GPU nodes
+  # via NFD labels (e.g., feature.node.kubernetes.io/pci-10de.present=true).
+  nfd:
+    enabled: true
+    installNamespace: openshift-nfd
+    createNamespace: true
+    operatorGroup:
+      create: true
+      name: openshift-nfd
+    subscription:
+      channel: stable
+      name: nfd
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      startingCSV: ""
+      approval: Automatic
+    instance:
+      create: true
+      apiVersion: nfd.openshift.io/v1
+      name: nfd-instance
+      spec:
+        workerConfig:
+          configData: |
+            sources:
+              pci:
+                deviceClassWhitelist:
+                  - "03"
+                deviceLabelFields:
+                  - "vendor"
   operatorGroup:
     create: true
     name: nvidia-gpu-operator
