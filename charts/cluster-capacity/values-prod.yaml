@@ -143,4 +143,6 @@ machineSets:
 
 # NVIDIA GPU Operator (enable after the first GPU node is Ready)
 nvidia:
-  enabled: false
+  enabled: true
+  subscription:
+    channel: v25.10
