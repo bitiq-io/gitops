@@ -176,13 +176,26 @@ helm_args_ops=(
   --wait
   --timeout 10m
 )
-helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}"
+
+needs_argocd_instance=false
+if ! oc get crd argocds.argoproj.io >/dev/null 2>&1; then
+  # Prevent Helm from applying an ArgoCD CR before the operator installs the CRD.
+  # Also disable the operator's default instance so we can create a helm-managed
+  # instance once the CRD is present (avoids adoption/conflict issues).
+  needs_argocd_instance=true
+  helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}" \
+    --set operators.gitops.disableDefaultInstance=true \
+    --set argoInstance.create=false
+else
+  helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}"
+fi
 
 wait_for_subscription_csv "$GITOPS_SUBSCRIPTION_NAMESPACE" "$GITOPS_SUBSCRIPTION"
 wait_for_subscription_csv "$PIPELINES_SUBSCRIPTION_NAMESPACE" "$PIPELINES_SUBSCRIPTION"
 wait_for_subscription_csv "$VSO_SUBSCRIPTION_NAMESPACE" "$VSO_SUBSCRIPTION"
 wait_for_subscription_csv "$VCO_SUBSCRIPTION_NAMESPACE" "$VCO_SUBSCRIPTION"
 wait_for_subscription_csv "$CERTMANAGER_SUBSCRIPTION_NAMESPACE" "$CERTMANAGER_SUBSCRIPTION"
+wait_for_crd argocds.argoproj.io
 # VSO core CRDs
 wait_for_crd vaultconnections.secrets.hashicorp.com
 wait_for_crd vaultauths.secrets.hashicorp.com
@@ -196,6 +209,19 @@ wait_for_crd policies.redhatcop.redhat.io || true
 wait_for_crd clusterissuers.cert-manager.io || true
 wait_for_crd certificates.cert-manager.io || true
 ## ESO fully decommissioned; no waits or cleanup required.
+
+# If this was a fresh cluster, create the helm-managed ArgoCD instance now that
+# the CRD is available (and ensure the target namespace exists first).
+if [[ "${needs_argocd_instance}" == "true" ]]; then
+  if ! oc get ns openshift-gitops >/dev/null 2>&1; then
+    log "Creating namespace openshift-gitops"
+    oc create ns openshift-gitops
+  fi
+  log "Creating/ensuring helm-managed ArgoCD instance via bootstrap-operators…"
+  helm upgrade --install bootstrap-operators charts/bootstrap-operators "${helm_args_ops[@]}" \
+    --set operators.gitops.disableDefaultInstance=true \
+    --set argoInstance.create=true
+fi
 
 # Wait for the openshift-pipelines namespace to exist (created by the operator)
 for i in {1..60}; do
