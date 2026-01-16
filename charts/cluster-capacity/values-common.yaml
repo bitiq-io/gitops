@@ -18,6 +18,12 @@ nvidia:
   enabled: false
   installNamespace: nvidia-gpu-operator
   createNamespace: true
+  dashboards:
+    enabled: false
+    # OpenShift Console dashboards are discovered from ConfigMaps in
+    # openshift-config-managed labeled console.openshift.io/dashboard=true.
+    namespace: openshift-config-managed
+    configMapName: grafana-dashboard-nvidia-dcgm-exporter
   rbac:
     create: true
     # Argo CD Application controller ServiceAccount that applies this chart
