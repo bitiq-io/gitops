@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $ns := $n.installNamespace | default "nvidia-gpu-operator" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nvidia-dcgm-exporter
+  namespace: {{ $ns | quote }}
+  labels:
+    app: nvidia-dcgm-exporter
+    app.kubernetes.io/name: cluster-capacity
+    app.kubernetes.io/part-of: cluster-capacity
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  jobLabel: app
+  namespaceSelector:
+    matchNames:
+      - {{ $ns | quote }}
+  selector:
+    matchLabels:
+      app: nvidia-dcgm-exporter
+  endpoints:
+    - port: gpu-metrics
+      path: /metrics
+{{- end }}
+{{- end }}
