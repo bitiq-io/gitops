@@ -21,6 +21,9 @@ spec:
     {{- if $saName }}
     serviceAccountName: {{ $saName }}
     {{- end }}
+    {{- if .Values.predictor.runtimeClassName }}
+    runtimeClassName: {{ .Values.predictor.runtimeClassName | quote }}
+    {{- end }}
     {{- with .Values.predictor.nodeSelector }}
     nodeSelector:
 {{ toYaml . | nindent 6 }}

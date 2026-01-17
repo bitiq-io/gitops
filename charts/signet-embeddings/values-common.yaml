@@ -7,6 +7,7 @@ serviceAccount:
 predictor:
   minReplicas: 1
   maxReplicas: 1
+  runtimeClassName: ""
   nodeSelector:
     nvidia.com/gpu.present: "true"
   tolerations:
