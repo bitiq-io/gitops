@@ -1,0 +1,32 @@
+{{- if .Values.runtime.create }}
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: {{ .Values.runtime.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/part-of: signet-inference
+spec:
+  multiModel: false
+  protocolVersions:
+{{ toYaml .Values.runtime.protocolVersions | nindent 4 }}
+  supportedModelFormats:
+{{ toYaml .Values.runtime.supportedModelFormats | nindent 4 }}
+  containers:
+    - name: {{ .Values.runtime.container.name }}
+      image: {{ .Values.runtime.image }}
+      imagePullPolicy: {{ .Values.runtime.imagePullPolicy }}
+      {{- with .Values.runtime.container.command }}
+      command:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.runtime.container.args }}
+      args:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.runtime.container.env }}
+      env:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

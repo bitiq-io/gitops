@@ -30,6 +30,32 @@ model:
     tokenKey: token
     envName: HUGGING_FACE_HUB_TOKEN
 
+runtime:
+  create: true
+  name: vllm-runtime
+  image: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:ad756c01ec99a99cc7d93401c41b8d92ca96fb1ab7c5262919d818f2be4f3768
+  imagePullPolicy: IfNotPresent
+  protocolVersions:
+    - v2
+  supportedModelFormats:
+    - name: vllm
+      version: "1"
+      autoSelect: true
+  container:
+    name: kserve-container
+    command:
+      - python
+      - -m
+      - vllm.entrypoints.openai.api_server
+    args:
+      - --model
+      - /mnt/models
+      - --port
+      - "8080"
+      - --host
+      - "0.0.0.0"
+    env: []
+
 resources:
   requests:
     cpu: "2"
