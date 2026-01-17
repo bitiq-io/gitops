@@ -38,17 +38,31 @@ script:
     export const options = {
       insecureSkipTLSVerify: true,
       scenarios: {
-        bursty: {
+        chat_bursty: {
+          executor: 'ramping-vus',
+          startVUs: 2,
+          stages: [
+            { duration: '2m', target: 8 },
+            { duration: '3m', target: 25 },
+            { duration: '2m', target: 6 },
+            { duration: '3m', target: 35 },
+            { duration: '2m', target: 0 },
+          ],
+          gracefulRampDown: '30s',
+          exec: 'runChat',
+        },
+        embeddings_bursty: {
           executor: 'ramping-vus',
           startVUs: 2,
           stages: [
             { duration: '2m', target: 10 },
-            { duration: '3m', target: 35 },
-            { duration: '2m', target: 5 },
-            { duration: '3m', target: 45 },
+            { duration: '3m', target: 30 },
+            { duration: '2m', target: 10 },
+            { duration: '3m', target: 40 },
             { duration: '2m', target: 0 },
           ],
           gracefulRampDown: '30s',
+          exec: 'runEmbeddings',
         },
       },
     };
@@ -66,44 +80,58 @@ script:
       return chunk.repeat(Math.ceil(len / chunk.length)).slice(0, len);
     }
 
-    export default function () {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    function buildHeaders() {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-      const doChat = Math.random() < 0.55;
-
-      if (doChat) {
-        const maxTokens = randInt(64, 512);
-        const promptLen = randInt(200, 4000);
-        const body = JSON.stringify({
-          model: "signet-llm",
-          messages: [
-            { role: "system", content: "You are a concise assistant." },
-            { role: "user", content: randomText(promptLen) + "\\nSummarize in bullets with actionable steps." }
-          ],
-          max_tokens: maxTokens,
-          temperature: Math.random(),
-          stream: false
-        });
-
-        http.post(`${chatBase}/v1/chat/completions`, body, { headers });
-      } else {
-        const batchSize = randInt(1, 16);
-        const itemLen = randInt(50, 1500);
-        const input = Array.from({ length: batchSize }, () => randomText(itemLen));
-
-        const body = JSON.stringify({
-          model: "signet-embeddings",
-          input
-        });
-
-        http.post(`${embedBase}/v1/embeddings`, body, { headers });
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
+      return headers;
+    }
+
+    export function runChat() {
+      if (!chatBase) {
+        sleep(1);
+        return;
+      }
+
+      const headers = buildHeaders();
+      const maxTokens = randInt(96, 512);
+      const promptLen = randInt(400, 5000);
+      const body = JSON.stringify({
+        model: "signet-llm",
+        messages: [
+          { role: "system", content: "You are a concise assistant." },
+          { role: "user", content: randomText(promptLen) + "\\nSummarize in bullets with actionable steps." }
+        ],
+        max_tokens: maxTokens,
+        temperature: Math.random(),
+        stream: false
+      });
+
+      http.post(`${chatBase}/v1/chat/completions`, body, { headers });
       sleep(Math.random() * 1.5);
+    }
+
+    export function runEmbeddings() {
+      if (!embedBase) {
+        sleep(1);
+        return;
+      }
+
+      const headers = buildHeaders();
+      const batchSize = randInt(8, 32);
+      const itemLen = randInt(200, 2000);
+      const input = Array.from({ length: batchSize }, () => randomText(itemLen));
+
+      const body = JSON.stringify({
+        model: "signet-embeddings",
+        input
+      });
+
+      http.post(`${embedBase}/v1/embeddings`, body, { headers });
+      sleep(Math.random() * 1.2);
     }

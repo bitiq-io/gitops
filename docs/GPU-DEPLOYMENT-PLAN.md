@@ -407,6 +407,8 @@ The stress test and microservices should standardize on:
 
 Keep tokens out of Git; inject them at runtime via environment variables or VSO-managed Secrets.
 
+**Headless service note (cluster-local):** the default KServe predictor Service is **headless** (`clusterIP: None`). If you use the service DNS directly, you must include **`:8080`** in the base URL because DNS resolves to pod IPs and port 80 is not listening. Example: `http://signet-llm-predictor.<APP_NS>.svc.cluster.local:8080`.
+
 **Important for GitOps correctness:** if Argo CD self-heal is enabled for the load-test Deployment (it is in this repo by default), manual `oc scale` changes will be reverted. Prefer running the load test by **committing a temporary value change** (replicas 0 → 1) and reverting it after the run.
 
 ---
@@ -432,7 +434,7 @@ nvidia-smi
 
 ### 7.3 Run one chat request + one embeddings request
 
-Use curl against the Routes with `Authorization: Bearer …` (keep these as scripted checks in this repo).
+Use curl against the Routes with `Authorization: Bearer …` (keep these as scripted checks in this repo). If you call the cluster-local predictor service directly, include `:8080` in the URL.
 
 ---
 
@@ -459,7 +461,7 @@ Create `charts/signet-loadtest/` that installs:
 
 ### k6 script behavior
 
-* Randomly chooses **chat** vs **embeddings** per iteration
+* Runs **two concurrent scenarios** (chat + embeddings) so each GPU is exercised independently
 * Randomizes:
 
   * request sizes
@@ -510,45 +512,21 @@ function randomText(len) {
   return chunk.repeat(Math.ceil(len / chunk.length)).slice(0, len);
 }
 
-export default function () {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-  };
+    export const options = {
+      insecureSkipTLSVerify: true,
+      scenarios: {
+        chat_bursty: { executor: 'ramping-vus', stages: [/* ... */], exec: 'runChat' },
+        embeddings_bursty: { executor: 'ramping-vus', stages: [/* ... */], exec: 'runEmbeddings' },
+      },
+    };
 
-  const doChat = Math.random() < 0.55;
+    export function runChat() {
+      // POST to /v1/chat/completions with random prompt + max_tokens
+    }
 
-  if (doChat) {
-    const maxTokens = randInt(64, 512);
-    const promptLen = randInt(200, 4000);
-    const body = JSON.stringify({
-      model: "deployed-chat-model-name",
-      messages: [
-        { role: "system", content: "You are a concise assistant." },
-        { role: "user", content: randomText(promptLen) + "\nSummarize in bullets with actionable steps." }
-      ],
-      max_tokens: maxTokens,
-      temperature: Math.random(),
-      stream: false
-    });
-
-    http.post(`${chatBase}/v1/chat/completions`, body, { headers });
-  } else {
-    const batchSize = randInt(1, 16);
-    const itemLen = randInt(50, 1500);
-    const input = Array.from({ length: batchSize }, () => randomText(itemLen));
-
-    const body = JSON.stringify({
-      model: "deployed-embedding-model-name",
-      input
-    });
-
-    http.post(`${embedBase}/v1/embeddings`, body, { headers });
-  }
-
-  // jitter to create non-steady-state load
-  sleep(Math.random() * 1.5);
-}
+    export function runEmbeddings() {
+      // POST to /v1/embeddings with random batch sizes + input lengths
+    }
 ```
 
 ### Observability: proving GPU usage
