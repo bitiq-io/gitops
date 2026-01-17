@@ -6,7 +6,7 @@ model:
     - name: NVIDIA_VISIBLE_DEVICES
       value: "all"
 predictor:
-  runtimeClassName: nvidia-cdi
+  runtimeClassName: nvidia-legacy
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:
