@@ -7,6 +7,9 @@ infraID: prod-k5qtv
 # - GPU (G and VT): g5.xlarge (4 vCPU, 1x A10G)  -> fits quota=4
 # - Inferentia (Inf): inf2.xlarge (expected 4 vCPU, 1x Inferentia2) -> fits quota=8
 #
+# NOTE: Spot quota is currently exhausted in prod, so the GPU pool uses on-demand
+# (spotMarketOptions omitted). Re-enable spot after quota increases.
+#
 # To enable a pool:
 # 1) Copy an existing worker MachineSet providerSpec from the cluster
 # 2) Paste it under machineSets[].providerSpec
@@ -65,7 +68,6 @@ machineSets:
             - name: tag:Name
               values:
                 - prod-k5qtv-lb
-      spotMarketOptions: {}
       subnet:
         filters:
           - name: tag:Name
