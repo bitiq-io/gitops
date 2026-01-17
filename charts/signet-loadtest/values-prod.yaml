@@ -1,4 +1,4 @@
-replicaCount: 0
+replicaCount: 1
 
 env:
   llmBaseUrl: "http://signet-llm-predictor.bitiq-prod.svc.cluster.local:8080"
