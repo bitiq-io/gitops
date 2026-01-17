@@ -1,0 +1,49 @@
+name: signet-llm
+
+serviceAccount:
+  create: false
+  name: ""
+
+predictor:
+  minReplicas: 1
+  maxReplicas: 1
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  affinity: {}
+
+model:
+  runtime: vllm-runtime
+  modelFormat: vllm
+  storageUri: ""
+  servedModelName: signet-llm
+  args:
+    - --served-model-name=signet-llm
+    - --max-model-len=8192
+  env: []
+  auth:
+    enabled: false
+    secretName: huggingface-token
+    tokenKey: token
+    envName: HUGGING_FACE_HUB_TOKEN
+
+resources:
+  requests:
+    cpu: "2"
+    memory: 16Gi
+    nvidia.com/gpu: "1"
+  limits:
+    cpu: "4"
+    memory: 32Gi
+    nvidia.com/gpu: "1"
+
+route:
+  enabled: false
+  host: ""
+  serviceName: ""
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

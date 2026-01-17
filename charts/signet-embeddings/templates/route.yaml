@@ -1,0 +1,19 @@
+{{- if .Values.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/part-of: signet-inference
+spec:
+  {{- if .Values.route.host }}
+  host: {{ .Values.route.host | quote }}
+  {{- end }}
+  to:
+    kind: Service
+    name: {{ required "route.serviceName is required when route.enabled=true" .Values.route.serviceName }}
+  tls:
+    termination: {{ .Values.route.tls.termination | default "edge" | quote }}
+    insecureEdgeTerminationPolicy: {{ .Values.route.tls.insecureEdgeTerminationPolicy | default "Redirect" | quote }}
+{{- end }}

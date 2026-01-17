@@ -30,6 +30,10 @@ spec:
             enabled: {{ default false .Values.couchbase.enabled }}
           nostrQuery:
             enabled: {{ default false .Values.nostrQuery.enabled }}
+          huggingFaceToken:
+            enabled: {{ or (default false .Values.signetLLM.huggingFaceTokenEnabled) (default false .Values.signetEmbeddings.huggingFaceTokenEnabled) }}
+          openshiftAIToken:
+            enabled: {{ default false .Values.signetLoadtest.openshiftAITokenEnabled }}
           route53Credentials:
             enabled: {{ default false .Values.certManager.route53CredentialsEnabled }}
             path: {{ .Values.certManager.route53CredentialsPath | default "cert-manager/route53" | quote }}

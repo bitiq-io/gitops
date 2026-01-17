@@ -21,6 +21,15 @@ spec:
     helm:
       values: |
         operators:
+          openshiftAI:
+            enabled: {{ .Values.bootstrapOperators.openshiftAIEnabled | default false }}
+            channel: {{ .Values.bootstrapOperators.openshiftAIChannel | quote }}
+            name: {{ .Values.bootstrapOperators.openshiftAIName | quote }}
+            source: {{ .Values.bootstrapOperators.openshiftAISource | quote }}
+            sourceNamespace: {{ .Values.bootstrapOperators.openshiftAISourceNamespace | default "openshift-marketplace" | quote }}
+            installNamespace: {{ .Values.bootstrapOperators.openshiftAIInstallNamespace | default "openshift-operators" | quote }}
+            startingCSV: {{ .Values.bootstrapOperators.openshiftAIStartingCSV | quote }}
+            approval: {{ .Values.bootstrapOperators.openshiftAIApproval | default "Automatic" | quote }}
           cao:
             enabled: {{ .Values.bootstrapOperators.caoEnabled | default false }}
             channel: {{ .Values.bootstrapOperators.caoChannel | quote }}
@@ -46,4 +55,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
 {{- end }}
-

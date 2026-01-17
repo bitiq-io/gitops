@@ -48,6 +48,16 @@ operators:
     startingCSV: ""
     approval: Automatic
 
+  openshiftAI:
+    enabled: false
+    channel: fast-3.x
+    name: rhods-operator
+    source: redhat-operators
+    sourceNamespace: openshift-marketplace
+    installNamespace: openshift-operators
+    startingCSV: ""
+    approval: Automatic
+
   # Couchbase Autonomous Operator (disabled by default). Provide the correct
   # catalog source and package name for your environment, then set enabled=true.
   cao:

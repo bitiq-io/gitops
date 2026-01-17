@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-openshift-ai-cluster-access
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+rules:
+  - apiGroups: ["datasciencecluster.opendatahub.io"]
+    resources: ["datascienceclusters"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-openshift-ai-cluster-access
+  labels:
+    app.kubernetes.io/part-of: bitiq-umbrella
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.argocdControllerServiceAccount | default "openshift-gitops-argocd-application-controller" }}
+    namespace: {{ .Values.gitopsNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-openshift-ai-cluster-access

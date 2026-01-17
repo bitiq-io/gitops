@@ -1,0 +1,6 @@
+apiVersion: v2
+name: signet-loadtest
+description: Signet GPU inference load test (k6)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

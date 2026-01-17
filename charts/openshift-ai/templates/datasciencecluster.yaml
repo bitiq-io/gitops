@@ -1,0 +1,10 @@
+apiVersion: datasciencecluster.opendatahub.io/v2
+kind: DataScienceCluster
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app.kubernetes.io/name: openshift-ai
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  components:
+{{- toYaml .Values.components | nindent 4 }}

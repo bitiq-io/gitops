@@ -67,6 +67,15 @@ nostouch:
   enabled: false
 signetLanding:
   enabled: false
+signetLLM:
+  enabled: false
+  huggingFaceTokenEnabled: false
+signetEmbeddings:
+  enabled: false
+  huggingFaceTokenEnabled: false
+signetLoadtest:
+  enabled: false
+  openshiftAITokenEnabled: false
 ollama:
   enabled: false
   mode: disabled
@@ -80,6 +89,9 @@ certManager:
 nginxSites:
   enabled: false
 
+openshiftAI:
+  enabled: false
+
 bootstrapOperators:
   enabled: false
   caoEnabled: false
@@ -90,6 +102,14 @@ bootstrapOperators:
   caoInstallNamespace: openshift-operators
   caoStartingCSV: ""
   caoApproval: Automatic
+  openshiftAIEnabled: false
+  openshiftAIChannel: fast-3.x
+  openshiftAIName: rhods-operator
+  openshiftAISource: redhat-operators
+  openshiftAISourceNamespace: openshift-marketplace
+  openshiftAIInstallNamespace: openshift-operators
+  openshiftAIStartingCSV: ""
+  openshiftAIApproval: Automatic
 
 ciPipelines:
   serviceAccountName: pipeline

@@ -62,6 +62,8 @@ The `vault-runtime-<env>` Application renders the VSO chart (`charts/vault-runti
 | `gitops/data/services/toy-service/config` | `toy-service-config` | `bitiq-<env>` | Includes `rolloutRestartTargets` so pods restart on Secret changes. |
 | `gitops/data/services/toy-web/config` | `toy-web-config` | `bitiq-<env>` | Example runtime config for the frontend. |
 | `gitops/data/services/nostr-query/credentials` | `nostr-query-credentials` | `bitiq-<env>` | Provides the `OPENAI_API_KEY` consumed by the nostr-query workload. |
+| `gitops/data/ai/huggingface` | `huggingface-token` | `bitiq-<env>` | Optional Hugging Face token for model pulls (vLLM / KServe). |
+| `gitops/data/ai/openshift-ai` | `openshift-ai-token` | `bitiq-<env>` | Optional Bearer token for Signet GPU load tests. |
 
 **Checklist**
 
@@ -97,6 +99,12 @@ vault kv put gitops/data/github/gitops-repo \
 vault kv put gitops/data/services/toy-service/config FAKE_SECRET='<value>'
 vault kv put gitops/data/services/toy-web/config API_BASE_URL='https://svc-web.apps.<cluster-domain>'
 vault kv put gitops/data/services/nostr-query/credentials OPENAI_API_KEY='<openai-pat>'
+
+# Optional: Hugging Face token (if models are gated)
+vault kv put gitops/data/ai/huggingface token='<hf-token>'
+
+# Optional: OpenShift AI Bearer token for load testing
+vault kv put gitops/data/ai/openshift-ai token='<openshift-bearer-token>'
 ```
 
 For local development, `make dev-vault` provisions a dev-mode Vault, seeds demo values, and renders the same VCO/VSO resources with `VAULT_OPERATORS=true`.

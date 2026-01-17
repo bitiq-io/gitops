@@ -100,7 +100,22 @@ nostrSite:
 signetLanding:
   enabled: false
 
+signetLLM:
+  enabled: false
+  huggingFaceTokenEnabled: false
+
+signetEmbeddings:
+  enabled: false
+  huggingFaceTokenEnabled: false
+
+signetLoadtest:
+  enabled: false
+  openshiftAITokenEnabled: false
+
 nginxSites:
+  enabled: false
+
+openshiftAI:
   enabled: false
 
 bootstrapOperators:
@@ -114,6 +129,15 @@ bootstrapOperators:
   caoInstallNamespace: openshift-operators
   caoStartingCSV: ""
   caoApproval: Automatic
+  # OpenShift AI (RHOAI) operator overrides (passed into bootstrap-operators)
+  openshiftAIEnabled: false
+  openshiftAIChannel: fast-3.x
+  openshiftAIName: rhods-operator
+  openshiftAISource: redhat-operators
+  openshiftAISourceNamespace: openshift-marketplace
+  openshiftAIInstallNamespace: openshift-operators
+  openshiftAIStartingCSV: ""
+  openshiftAIApproval: Automatic
 
 ciPipelines:
   serviceAccountName: pipeline

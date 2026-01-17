@@ -1,0 +1,72 @@
+{{- $name := .Values.name -}}
+{{- $saName := "" -}}
+{{- if .Values.serviceAccount.create }}
+{{- $saName = (default $name .Values.serviceAccount.name) -}}
+{{- else if .Values.serviceAccount.name }}
+{{- $saName = .Values.serviceAccount.name -}}
+{{- end }}
+{{- $hasExtraEnv := and .Values.env.extra (gt (len .Values.env.extra) 0) -}}
+{{- $hasEnv := or .Values.env.llmBaseUrl .Values.env.embeddingsBaseUrl .Values.env.token.secretName $hasExtraEnv -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: signet-inference
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/part-of: signet-inference
+    spec:
+      {{- if $saName }}
+      serviceAccountName: {{ $saName }}
+      {{- end }}
+      containers:
+        - name: k6
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - /scripts/{{ .Values.script.fileName }}
+          {{- if $hasEnv }}
+          env:
+          {{- if .Values.env.llmBaseUrl }}
+            - name: LLM_BASE_URL
+              value: {{ .Values.env.llmBaseUrl | quote }}
+          {{- end }}
+          {{- if .Values.env.embeddingsBaseUrl }}
+            - name: EMBEDDINGS_BASE_URL
+              value: {{ .Values.env.embeddingsBaseUrl | quote }}
+          {{- end }}
+          {{- if .Values.env.token.secretName }}
+            - name: OPENSHIFT_AI_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.token.secretName | quote }}
+                  key: {{ .Values.env.token.secretKey | quote }}
+          {{- end }}
+          {{- if $hasExtraEnv }}
+{{ toYaml .Values.env.extra | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+{{ toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ $name }}-script

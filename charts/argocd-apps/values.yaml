@@ -31,6 +31,7 @@ envs:
     couchbaseEnabled: true
     couchbaseOperatorEnabled: true
     certManagerEnabled: true
+    openshiftAIEnabled: false
     # Route53 DNS-01 via VSO on local
     certManagerRoute53CredentialsEnabled: true
     certManagerRoute53CredentialsPath: cert-manager/route53
@@ -40,6 +41,13 @@ envs:
     bootstrapOperatorsEnabled: true
     capacityEnabled: false
     capacityIgnoreMachineSetReplicas: false
+    openshiftAIChannel: fast-3.x
+    openshiftAIName: rhods-operator
+    openshiftAISource: redhat-operators
+    openshiftAISourceNamespace: openshift-marketplace
+    openshiftAIInstallNamespace: openshift-operators
+    openshiftAIStartingCSV: ""
+    openshiftAIApproval: Automatic
     # CAO defaults for local (verify against docs/VERSION-MATRIX.md on your cluster)
     caoEnabled: false
     caoName: couchbase-operator-certified
@@ -68,6 +76,12 @@ envs:
     vaultServerEnabled: true
     nostrSiteEnabled: true
     signetLandingEnabled: true
+    signetLLMEnabled: false
+    signetEmbeddingsEnabled: false
+    signetLoadtestEnabled: false
+    signetLLMHuggingFaceTokenEnabled: false
+    signetEmbeddingsHuggingFaceTokenEnabled: false
+    signetLoadtestOpenShiftAITokenEnabled: false
     ollamaEnabled: true
     ollamaMode: external
     nostrQueryEnabled: true
@@ -88,9 +102,17 @@ envs:
     couchbaseEnabled: false
     couchbaseOperatorEnabled: false
     certManagerEnabled: false
+    openshiftAIEnabled: false
     bootstrapOperatorsEnabled: false
     capacityEnabled: false
     capacityIgnoreMachineSetReplicas: false
+    openshiftAIChannel: fast-3.x
+    openshiftAIName: rhods-operator
+    openshiftAISource: redhat-operators
+    openshiftAISourceNamespace: openshift-marketplace
+    openshiftAIInstallNamespace: openshift-operators
+    openshiftAIStartingCSV: ""
+    openshiftAIApproval: Automatic
     caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
@@ -107,6 +129,12 @@ envs:
     vaultServerEnabled: false
     nostrSiteEnabled: false
     signetLandingEnabled: false
+    signetLLMEnabled: false
+    signetEmbeddingsEnabled: false
+    signetLoadtestEnabled: false
+    signetLLMHuggingFaceTokenEnabled: false
+    signetEmbeddingsHuggingFaceTokenEnabled: false
+    signetLoadtestOpenShiftAITokenEnabled: false
     ollamaEnabled: false
     ollamaMode: disabled
     nostrQueryEnabled: false
@@ -127,9 +155,17 @@ envs:
     couchbaseEnabled: false
     couchbaseOperatorEnabled: false
     certManagerEnabled: false
-    bootstrapOperatorsEnabled: false
+    openshiftAIEnabled: true
+    bootstrapOperatorsEnabled: true
     capacityEnabled: true
     capacityIgnoreMachineSetReplicas: false
+    openshiftAIChannel: fast-3.x
+    openshiftAIName: rhods-operator
+    openshiftAISource: redhat-operators
+    openshiftAISourceNamespace: openshift-marketplace
+    openshiftAIInstallNamespace: openshift-operators
+    openshiftAIStartingCSV: rhods-operator.3.0.0
+    openshiftAIApproval: Automatic
     caoEnabled: false
     tektonFsGroup: ""
     vaultRuntimeEnabled: true
@@ -146,6 +182,12 @@ envs:
     vaultConfigPolicyName: gitops-prod
     nostrSiteEnabled: false
     signetLandingEnabled: false
+    signetLLMEnabled: true
+    signetEmbeddingsEnabled: true
+    signetLoadtestEnabled: true
+    signetLLMHuggingFaceTokenEnabled: false
+    signetEmbeddingsHuggingFaceTokenEnabled: false
+    signetLoadtestOpenShiftAITokenEnabled: false
     ollamaEnabled: false
     ollamaMode: disabled
     nostrQueryEnabled: false

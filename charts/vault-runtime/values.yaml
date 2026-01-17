@@ -76,6 +76,20 @@ secrets:
     path: services/nostr-query/credentials
     type: Opaque
 
+  huggingFaceToken:
+    enabled: false
+    namespace: ""
+    destinationName: huggingface-token
+    path: ai/huggingface
+    type: Opaque
+
+  openshiftAIToken:
+    enabled: false
+    namespace: ""
+    destinationName: openshift-ai-token
+    path: ai/openshift-ai
+    type: Opaque
+
   # Optional: AWS credentials for Route53 DNS-01
   route53Credentials:
     enabled: false

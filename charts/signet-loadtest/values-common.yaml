@@ -1,0 +1,106 @@
+name: signet-loadtest
+
+replicaCount: 0
+
+image:
+  repository: grafana/k6
+  tag: 0.49.0
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: false
+  name: ""
+
+env:
+  llmBaseUrl: ""
+  embeddingsBaseUrl: ""
+  token:
+    secretName: openshift-ai-token
+    secretKey: token
+  extra: []
+
+envFrom: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+script:
+  fileName: loadtest.js
+  contents: |
+    import http from 'k6/http';
+    import { sleep } from 'k6';
+
+    export const options = {
+      insecureSkipTLSVerify: true,
+      scenarios: {
+        bursty: {
+          executor: 'ramping-vus',
+          startVUs: 2,
+          stages: [
+            { duration: '2m', target: 10 },
+            { duration: '3m', target: 35 },
+            { duration: '2m', target: 5 },
+            { duration: '3m', target: 45 },
+            { duration: '2m', target: 0 },
+          ],
+          gracefulRampDown: '30s',
+        },
+      },
+    };
+
+    const token = __ENV.OPENSHIFT_AI_TOKEN;
+    const chatBase = __ENV.LLM_BASE_URL;
+    const embedBase = __ENV.EMBEDDINGS_BASE_URL;
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomText(len) {
+      const chunk = "signet nostr reputation receipts ";
+      return chunk.repeat(Math.ceil(len / chunk.length)).slice(0, len);
+    }
+
+    export default function () {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
+      const doChat = Math.random() < 0.55;
+
+      if (doChat) {
+        const maxTokens = randInt(64, 512);
+        const promptLen = randInt(200, 4000);
+        const body = JSON.stringify({
+          model: "signet-llm",
+          messages: [
+            { role: "system", content: "You are a concise assistant." },
+            { role: "user", content: randomText(promptLen) + "\\nSummarize in bullets with actionable steps." }
+          ],
+          max_tokens: maxTokens,
+          temperature: Math.random(),
+          stream: false
+        });
+
+        http.post(`${chatBase}/v1/chat/completions`, body, { headers });
+      } else {
+        const batchSize = randInt(1, 16);
+        const itemLen = randInt(50, 1500);
+        const input = Array.from({ length: batchSize }, () => randomText(itemLen));
+
+        const body = JSON.stringify({
+          model: "signet-embeddings",
+          input
+        });
+
+        http.post(`${embedBase}/v1/embeddings`, body, { headers });
+      }
+
+      sleep(Math.random() * 1.5);
+    }

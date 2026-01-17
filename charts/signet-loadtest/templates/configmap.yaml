@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-script
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/part-of: signet-inference
+data:
+  {{ .Values.script.fileName }}: |
+{{ .Values.script.contents | nindent 4 }}

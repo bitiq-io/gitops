@@ -1,0 +1,61 @@
+{{- $name := .Values.name -}}
+{{- $saName := "" -}}
+{{- if .Values.serviceAccount.create }}
+{{- $saName = (default $name .Values.serviceAccount.name) -}}
+{{- else if .Values.serviceAccount.name }}
+{{- $saName = .Values.serviceAccount.name -}}
+{{- end }}
+{{- $authEnabled := and .Values.model.auth.enabled .Values.model.auth.secretName -}}
+{{- $hasEnvList := and .Values.model.env (gt (len .Values.model.env) 0) -}}
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: signet-inference
+spec:
+  predictor:
+    minReplicas: {{ .Values.predictor.minReplicas }}
+    maxReplicas: {{ .Values.predictor.maxReplicas }}
+    {{- if $saName }}
+    serviceAccountName: {{ $saName }}
+    {{- end }}
+    {{- with .Values.predictor.nodeSelector }}
+    nodeSelector:
+{{ toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.predictor.tolerations }}
+    tolerations:
+{{ toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.predictor.affinity }}
+    affinity:
+{{ toYaml . | nindent 6 }}
+    {{- end }}
+    model:
+      runtime: {{ .Values.model.runtime | quote }}
+      modelFormat:
+        name: {{ .Values.model.modelFormat | quote }}
+      {{- if .Values.model.storageUri }}
+      storageUri: {{ .Values.model.storageUri | quote }}
+      {{- end }}
+      {{- with .Values.model.args }}
+      args:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or $authEnabled $hasEnvList }}
+      env:
+      {{- if $authEnabled }}
+        - name: {{ .Values.model.auth.envName | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.model.auth.secretName | quote }}
+              key: {{ .Values.model.auth.tokenKey | quote }}
+      {{- end }}
+      {{- if $hasEnvList }}
+{{ toYaml .Values.model.env | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      resources:
+{{ toYaml .Values.resources | nindent 8 }}

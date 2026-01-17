@@ -36,6 +36,12 @@ spec:
             vaultServerEnabled: {{ default false $e.vaultServerEnabled }}
             nostrSiteEnabled: {{ default false $e.nostrSiteEnabled }}
             signetLandingEnabled: {{ default false $e.signetLandingEnabled }}
+            signetLLMEnabled: {{ default false $e.signetLLMEnabled }}
+            signetEmbeddingsEnabled: {{ default false $e.signetEmbeddingsEnabled }}
+            signetLoadtestEnabled: {{ default false $e.signetLoadtestEnabled }}
+            signetLLMHuggingFaceTokenEnabled: {{ default false $e.signetLLMHuggingFaceTokenEnabled }}
+            signetEmbeddingsHuggingFaceTokenEnabled: {{ default false $e.signetEmbeddingsHuggingFaceTokenEnabled }}
+            signetLoadtestOpenShiftAITokenEnabled: {{ default false $e.signetLoadtestOpenShiftAITokenEnabled }}
             nostrQueryEnabled: {{ default false $e.nostrQueryEnabled }}
             nostrThreadsEnabled: {{ default false $e.nostrThreadsEnabled }}
             nostrThreadCopierEnabled: {{ default false $e.nostrThreadCopierEnabled }}
@@ -47,6 +53,7 @@ spec:
             couchbaseEnabled: {{ default false $e.couchbaseEnabled }}
             couchbaseOperatorEnabled: {{ default false $e.couchbaseOperatorEnabled }}
             certManagerEnabled: {{ default false $e.certManagerEnabled }}
+            openshiftAIEnabled: {{ default false $e.openshiftAIEnabled }}
             nginxSitesEnabled: {{ default false $e.nginxSitesEnabled }}
             bootstrapOperatorsEnabled: {{ default false $e.bootstrapOperatorsEnabled }}
             capacityEnabled: {{ default false $e.capacityEnabled }}
@@ -59,6 +66,13 @@ spec:
             caoInstallNamespace: {{ $e.caoInstallNamespace | default "openshift-operators" | quote }}
             caoStartingCSV: {{ $e.caoStartingCSV | quote }}
             caoApproval: {{ $e.caoApproval | default "Automatic" | quote }}
+            openshiftAIChannel: {{ $e.openshiftAIChannel | quote }}
+            openshiftAIName: {{ $e.openshiftAIName | quote }}
+            openshiftAISource: {{ $e.openshiftAISource | quote }}
+            openshiftAISourceNamespace: {{ $e.openshiftAISourceNamespace | default "openshift-marketplace" | quote }}
+            openshiftAIInstallNamespace: {{ $e.openshiftAIInstallNamespace | default "openshift-operators" | quote }}
+            openshiftAIStartingCSV: {{ $e.openshiftAIStartingCSV | quote }}
+            openshiftAIApproval: {{ $e.openshiftAIApproval | default "Automatic" | quote }}
 {{- end }}
 {{- end }}
   template:
@@ -106,6 +120,8 @@ spec:
               value: '{{ "{{ .ollamaMode | default \"disabled\" }}" }}'
             - name: certManager.enabled
               value: '{{ "{{ .certManagerEnabled | default false }}" }}'
+            - name: openshiftAI.enabled
+              value: '{{ "{{ .openshiftAIEnabled | default false }}" }}'
             - name: certManager.route53CredentialsEnabled
               value: '{{ "{{ .certManagerRoute53CredentialsEnabled | default false }}" }}'
             - name: certManager.route53CredentialsPath
@@ -138,10 +154,38 @@ spec:
               value: '{{ "{{ .caoStartingCSV }}" }}'
             - name: bootstrapOperators.caoApproval
               value: '{{ "{{ .caoApproval | default \"Automatic\" }}" }}'
+            - name: bootstrapOperators.openshiftAIEnabled
+              value: '{{ "{{ .openshiftAIEnabled | default false }}" }}'
+            - name: bootstrapOperators.openshiftAIChannel
+              value: '{{ "{{ .openshiftAIChannel }}" }}'
+            - name: bootstrapOperators.openshiftAIName
+              value: '{{ "{{ .openshiftAIName }}" }}'
+            - name: bootstrapOperators.openshiftAISource
+              value: '{{ "{{ .openshiftAISource }}" }}'
+            - name: bootstrapOperators.openshiftAISourceNamespace
+              value: '{{ "{{ .openshiftAISourceNamespace | default \"openshift-marketplace\" }}" }}'
+            - name: bootstrapOperators.openshiftAIInstallNamespace
+              value: '{{ "{{ .openshiftAIInstallNamespace | default \"openshift-operators\" }}" }}'
+            - name: bootstrapOperators.openshiftAIStartingCSV
+              value: '{{ "{{ .openshiftAIStartingCSV }}" }}'
+            - name: bootstrapOperators.openshiftAIApproval
+              value: '{{ "{{ .openshiftAIApproval | default \"Automatic\" }}" }}'
             - name: nostrSite.enabled
               value: '{{ "{{ .nostrSiteEnabled | default false }}" }}'
             - name: signetLanding.enabled
               value: '{{ "{{ .signetLandingEnabled | default false }}" }}'
+            - name: signetLLM.enabled
+              value: '{{ "{{ .signetLLMEnabled | default false }}" }}'
+            - name: signetEmbeddings.enabled
+              value: '{{ "{{ .signetEmbeddingsEnabled | default false }}" }}'
+            - name: signetLoadtest.enabled
+              value: '{{ "{{ .signetLoadtestEnabled | default false }}" }}'
+            - name: signetLLM.huggingFaceTokenEnabled
+              value: '{{ "{{ .signetLLMHuggingFaceTokenEnabled | default false }}" }}'
+            - name: signetEmbeddings.huggingFaceTokenEnabled
+              value: '{{ "{{ .signetEmbeddingsHuggingFaceTokenEnabled | default false }}" }}'
+            - name: signetLoadtest.openshiftAITokenEnabled
+              value: '{{ "{{ .signetLoadtestOpenShiftAITokenEnabled | default false }}" }}'
             - name: nostrQuery.enabled
               value: '{{ "{{ .nostrQueryEnabled | default false }}" }}'
             - name: nostrThreads.enabled

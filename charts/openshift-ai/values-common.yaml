@@ -1,0 +1,31 @@
+name: default-dsc
+
+components:
+  dashboard:
+    managementState: Managed
+  kserve:
+    managementState: Managed
+  aipipelines:
+    managementState: Removed
+    argoWorkflowsControllers:
+      managementState: Removed
+  feastoperator:
+    managementState: Removed
+  kueue:
+    managementState: Removed
+    defaultClusterQueueName: default
+    defaultLocalQueueName: default
+  llamastackoperator:
+    managementState: Removed
+  modelregistry:
+    managementState: Removed
+    registriesNamespace: rhoai-model-registries
+  ray:
+    managementState: Removed
+  trainingoperator:
+    managementState: Removed
+  trustyai:
+    managementState: Removed
+  workbenches:
+    managementState: Removed
+    workbenchNamespace: rhods-notebooks

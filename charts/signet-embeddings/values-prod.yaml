@@ -1,0 +1,2 @@
+model:
+  storageUri: hf://intfloat/e5-mistral-7b-instruct

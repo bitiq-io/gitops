@@ -1,0 +1,41 @@
+{{- $emb := default (dict) .Values.signetEmbeddings }}
+{{- $embEnabled := false }}
+{{- if hasKey $emb "enabled" }}
+  {{- $embEnabled = eq (lower (printf "%v" (get $emb "enabled"))) "true" }}
+{{- end }}
+{{- if $embEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: signet-embeddings-{{ .Values.env }}
+  namespace: {{ .Values.gitopsNamespace }}
+  labels:
+    bitiq.io/env: {{ .Values.env }}
+    app.kubernetes.io/part-of: bitiq-umbrella
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoUrl }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/signet-embeddings
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-{{ .Values.env }}.yaml
+      ignoreMissingValueFiles: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
