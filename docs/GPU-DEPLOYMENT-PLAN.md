@@ -13,6 +13,8 @@ Key claims are grounded in current docs (Jan 2026) with citations and short dire
 
 **Repo reality check (important):** this repo deploys workloads via **ApplicationSet → umbrella chart → child Argo CD Applications**. So “add a new chart” is not sufficient by itself — this plan includes the exact “wiring” steps an agent must do so Argo CD actually syncs the new components (see **5.0 Repo wiring (critical)**).
 
+**Prod cluster access:** use the kubeconfig rules in `docs/CLUSTER-ACCESS.md` (do not copy or print kubeconfig contents).
+
 ---
 **Primary objective (short-term):** Get GPUs **usable + testable ASAP** on prod OCP by deploying:
 
