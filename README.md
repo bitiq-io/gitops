@@ -24,6 +24,7 @@ It uses:
 - [CI-CD-FLOW](docs/CI-CD-FLOW.md) — Expected end-to-end CI/CD flow (Tekton → Quay → Image Updater → Argo)
 - [SNO-RUNBOOK](docs/SNO-RUNBOOK.md) — Provision SNO and bootstrap ENV=sno
 - [PROD-RUNBOOK](docs/PROD-RUNBOOK.md) — Bootstrap and operate ENV=prod on OCP 4.19
+- [CLUSTER-ACCESS](docs/CLUSTER-ACCESS.md) — Prod kubeconfig location and usage rules
 - [PROD-SECRETS](docs/PROD-SECRETS.md) — Manage prod secrets with Vault via VSO/VCO
 - [VERSION-MATRIX](docs/VERSION-MATRIX.md) — pinned operator/workload versions and documentation links
 

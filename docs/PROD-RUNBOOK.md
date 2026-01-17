@@ -11,7 +11,7 @@ This runbook documents how to bootstrap the `gitops` repository onto a productio
   - Wildcard DNS record for applications: `*.apps.<cluster-domain>` resolves to the ingress load balancer VIP.
   - Outbound connectivity to Git hosting, container registry (e.g., Quay.io), and Red Hat Operator Catalog sources.
 - **Workstation**: `oc`, `helm` 3.14+, `git`, `make`, and this repository cloned.
-- **Access**: Cluster-admin privileges on the target cluster; credentials to write to the Git repository and container registry.
+- **Access**: Cluster-admin privileges on the target cluster; credentials to write to the Git repository and container registry. For prod kubeconfig location and usage rules, see `docs/CLUSTER-ACCESS.md`.
 - **Security**: Secrets are managed via Vault operators — HashiCorp Vault Secrets Operator (VSO) for runtime delivery and Red Hat COP Vault Config Operator (VCO) for control-plane configuration. Never commit secrets to Git or create them manually with `oc`.
 
 ## 2. Decide operator channels (GitOps & Pipelines)
