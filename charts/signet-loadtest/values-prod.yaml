@@ -1,5 +1,7 @@
+replicaCount: 1
+
 env:
-  llmBaseUrl: "http://signet-llm-predictor.bitiq-prod.svc.cluster.local"
-  embeddingsBaseUrl: "http://signet-embeddings-predictor.bitiq-prod.svc.cluster.local"
+  llmBaseUrl: "http://signet-llm-predictor.bitiq-prod.svc.cluster.local:8080"
+  embeddingsBaseUrl: "http://signet-embeddings-predictor.bitiq-prod.svc.cluster.local:8080"
   token:
     secretName: ""
