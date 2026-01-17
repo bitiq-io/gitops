@@ -2,3 +2,8 @@ model:
   storageUri: hf://Qwen/Qwen2.5-14B-Instruct
 predictor:
   runtimeClassName: nvidia
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1

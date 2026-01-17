@@ -24,6 +24,10 @@ spec:
     {{- if .Values.predictor.runtimeClassName }}
     runtimeClassName: {{ .Values.predictor.runtimeClassName | quote }}
     {{- end }}
+    {{- with .Values.predictor.deploymentStrategy }}
+    deploymentStrategy:
+{{ toYaml . | nindent 6 }}
+    {{- end }}
     {{- with .Values.predictor.nodeSelector }}
     nodeSelector:
 {{ toYaml . | nindent 6 }}

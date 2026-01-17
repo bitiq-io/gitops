@@ -8,6 +8,7 @@ predictor:
   minReplicas: 1
   maxReplicas: 1
   runtimeClassName: ""
+  deploymentStrategy: {}
   nodeSelector:
     nvidia.com/gpu.present: "true"
   tolerations:
