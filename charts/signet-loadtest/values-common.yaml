@@ -67,10 +67,13 @@ script:
     }
 
     export default function () {
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      };
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
       const doChat = Math.random() < 0.55;
 
