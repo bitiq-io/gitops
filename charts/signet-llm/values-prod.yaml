@@ -2,7 +2,7 @@ model:
   storageUri: hf://Qwen/Qwen2.5-14B-Instruct
   env:
     - name: LD_LIBRARY_PATH
-      value: "/usr/local/nvidia/lib64:/usr/local/nvidia/lib:$(LD_LIBRARY_PATH)"
+      value: "/usr/lib64:/usr/local/nvidia/lib64:/usr/local/nvidia/lib"
     - name: NVIDIA_VISIBLE_DEVICES
       value: "all"
 predictor:
@@ -16,4 +16,4 @@ runtime:
   container:
     env:
       - name: LD_LIBRARY_PATH
-        value: "/usr/local/nvidia/lib64:/usr/local/nvidia/lib:$(LD_LIBRARY_PATH)"
+        value: "/usr/lib64:/usr/local/nvidia/lib64:/usr/local/nvidia/lib"
