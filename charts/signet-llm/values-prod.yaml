@@ -3,6 +3,8 @@ model:
   env:
     - name: LD_LIBRARY_PATH
       value: "/usr/local/nvidia/lib64:/usr/local/nvidia/lib:$(LD_LIBRARY_PATH)"
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: "all"
 predictor:
   runtimeClassName: nvidia-cdi
   deploymentStrategy:
