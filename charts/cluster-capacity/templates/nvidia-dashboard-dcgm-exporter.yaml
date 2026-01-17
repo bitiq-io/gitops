@@ -1,0 +1,30 @@
+{{- if .Values.enabled }}
+{{- $n := default (dict) .Values.nvidia -}}
+{{- $nEnabled := false }}
+{{- if hasKey $n "enabled" }}
+  {{- $nEnabled = eq (lower (printf "%v" (get $n "enabled"))) "true" }}
+{{- end }}
+{{- if $nEnabled }}
+{{- $dash := default (dict) $n.dashboards -}}
+{{- $dashEnabled := false }}
+{{- if hasKey $dash "enabled" }}
+  {{- $dashEnabled = eq (lower (printf "%v" (get $dash "enabled"))) "true" }}
+{{- end }}
+{{- if $dashEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $dash.configMapName | default "grafana-dashboard-nvidia-dcgm-exporter" | quote }}
+  namespace: {{ $dash.namespace | default "openshift-config-managed" | quote }}
+  labels:
+    console.openshift.io/dashboard: "true"
+    app.kubernetes.io/name: cluster-capacity
+    app.kubernetes.io/part-of: cluster-capacity
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+data:
+  nvidia-dcgm-exporter-dashboard.json: |-
+{{- .Files.Get "dashboards/nvidia-dcgm-exporter-dashboard.json" | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

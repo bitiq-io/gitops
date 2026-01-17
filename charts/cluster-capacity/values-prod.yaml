@@ -1,11 +1,11 @@
 enabled: true
 
 # Cluster infraID (infrastructureName)
-infraID: prod-k5qtv
+infraID: prod-nkqd9
 
-# Recommended inference-first instance types given current Spot vCPU quotas:
-# - GPU (G and VT): g5.xlarge (4 vCPU, 1x A10G)  -> fits quota=4
-# - Inferentia (Inf): inf2.xlarge (expected 4 vCPU, 1x Inferentia2) -> fits quota=8
+# AWS accelerator quotas are vCPU-based. With `Running On-Demand G and VT instances = 8`,
+# the highest GPU count you can run without a quota increase is:
+# - 2x g6e.xlarge (4 vCPU each, 1x L40S 48GB each)
 #
 # NOTE: Spot quota is currently exhausted in prod, so the GPU pool uses on-demand
 # (spotMarketOptions omitted). Re-enable spot after quota increases.
@@ -13,13 +13,14 @@ infraID: prod-k5qtv
 # To enable a pool:
 # 1) Copy an existing worker MachineSet providerSpec from the cluster
 # 2) Paste it under machineSets[].providerSpec
-# 3) Update at least: instanceType, placement.availabilityZone, and spot options
+# 3) Update at least: instanceType and placement.availabilityZone
+# 4) Ensure spotMarketOptions is absent for on-demand
 # 4) Flip machineSets[].enabled=true (and chart enabled=true when ready)
 machineSets:
   # NVIDIA GPU pool (general-purpose inference)
   - enabled: true
-    nameSuffix: gpu-g5-xlarge-us-west-2a
-    replicas: 1
+    nameSuffix: gpu-g6e-xlarge-us-west-2a
+    replicas: 2
     machineRole: gpu
     machineType: gpu
     nodeLabels:
@@ -32,7 +33,7 @@ machineSets:
     autoscaler:
       enabled: false
       minReplicas: 0
-      maxReplicas: 1
+      maxReplicas: 2
     providerSpec:
       ami:
         id: ami-0d769ba340e913a8c
@@ -50,8 +51,8 @@ machineSets:
         name: aws-cloud-credentials
       deviceIndex: 0
       iamInstanceProfile:
-        id: prod-k5qtv-worker-profile
-      instanceType: g5.xlarge
+        id: prod-nkqd9-worker-profile
+      instanceType: g6e.xlarge
       kind: AWSMachineProviderConfig
       metadata:
         creationTimestamp: null
@@ -63,18 +64,18 @@ machineSets:
         - filters:
             - name: tag:Name
               values:
-                - prod-k5qtv-node
+                - prod-nkqd9-node
         - filters:
             - name: tag:Name
               values:
-                - prod-k5qtv-lb
+                - prod-nkqd9-lb
       subnet:
         filters:
           - name: tag:Name
             values:
-              - prod-k5qtv-subnet-private-us-west-2a
+              - prod-nkqd9-subnet-private-us-west-2a
       tags:
-        - name: kubernetes.io/cluster/prod-k5qtv
+        - name: kubernetes.io/cluster/prod-nkqd9
           value: owned
       userDataSecret:
         name: worker-user-data
@@ -113,7 +114,7 @@ machineSets:
         name: aws-cloud-credentials
       deviceIndex: 0
       iamInstanceProfile:
-        id: prod-k5qtv-worker-profile
+        id: prod-nkqd9-worker-profile
       instanceType: inf2.xlarge
       kind: AWSMachineProviderConfig
       metadata:
@@ -126,19 +127,18 @@ machineSets:
         - filters:
             - name: tag:Name
               values:
-                - prod-k5qtv-node
+                - prod-nkqd9-node
         - filters:
             - name: tag:Name
               values:
-                - prod-k5qtv-lb
-      spotMarketOptions: {}
+                - prod-nkqd9-lb
       subnet:
         filters:
           - name: tag:Name
             values:
-              - prod-k5qtv-subnet-private-us-west-2a
+              - prod-nkqd9-subnet-private-us-west-2a
       tags:
-        - name: kubernetes.io/cluster/prod-k5qtv
+        - name: kubernetes.io/cluster/prod-nkqd9
           value: owned
       userDataSecret:
         name: worker-user-data
@@ -146,5 +146,7 @@ machineSets:
 # NVIDIA GPU Operator (enable after the first GPU node is Ready)
 nvidia:
   enabled: true
+  dashboards:
+    enabled: true
   subscription:
     channel: v25.10
